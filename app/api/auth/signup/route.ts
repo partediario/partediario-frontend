@@ -133,6 +133,7 @@ export async function POST(request: NextRequest) {
       empresa_id: empresaId,
       usuario_id: userId,
       establecimiento_id: null,
+      is_owner: true,
     })
 
     if (asignacionError) {
