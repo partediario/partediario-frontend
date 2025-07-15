@@ -5,6 +5,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const body = await request.json()
     const { nombre, superficie_total, superfice_util, recurso_forrajero, receptividad, receptividad_unidad } = body
 
+    console.log("Datos recibidos en API PUT:", body) // Para debug
+
     if (!nombre || !superficie_total) {
       return NextResponse.json({ error: "Nombre y superficie total son requeridos" }, { status: 400 })
     }
@@ -27,6 +29,18 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const url = `${supabaseUrl}/rest/v1/pd_potreros?id=eq.${params.id}`
 
+    // Preparar datos para actualizar - usar Number() para preservar decimales
+    const updateData = {
+      nombre: nombre.trim(),
+      superficie_total: Number(superficie_total),
+      superfice_util: superfice_util ? Number(superfice_util) : null,
+      recurso_forrajero: recurso_forrajero || null,
+      receptividad: receptividad ? Number(receptividad) : null,
+      receptividad_unidad: receptividad_unidad || null,
+    }
+
+    console.log("Datos a actualizar en BD:", updateData) // Para debug
+
     const response = await fetch(url, {
       method: "PATCH",
       headers: {
@@ -35,14 +49,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         "Content-Type": "application/json",
         Prefer: "return=representation",
       },
-      body: JSON.stringify({
-        nombre: nombre.trim(),
-        superficie_total: Number.parseFloat(superficie_total),
-        superfice_util: superfice_util ? Number.parseFloat(superfice_util) : null,
-        recurso_forrajero: recurso_forrajero || null,
-        receptividad: receptividad ? Number.parseInt(receptividad) : null,
-        receptividad_unidad: receptividad_unidad || null,
-      }),
+      body: JSON.stringify(updateData),
     })
 
     if (!response.ok) {
@@ -52,6 +59,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const potrero = await response.json()
+    console.log("Potrero actualizado:", potrero[0]) // Para debug
 
     return NextResponse.json({ potrero: potrero[0] })
   } catch (error) {

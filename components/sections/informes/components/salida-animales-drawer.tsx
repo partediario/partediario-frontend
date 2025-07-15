@@ -45,20 +45,13 @@ interface CategoriaExistente {
   sexo?: string
   edad?: string
   lote_id: string
+  cantidad: number
 }
 
 interface TipoMovimiento {
   id: string
   nombre: string
   direccion?: string
-}
-
-interface UsuarioPerfil {
-  id: string
-  nombres: string
-  apellidos: string
-  email: string
-  phone?: string
 }
 
 export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: SalidaAnimalesDrawerProps) {
@@ -100,49 +93,6 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
 
   // Datos del usuario desde la vista
   const { usuario, loading: loadingUsuario } = useUser()
-
-  // Obtener establecimiento_id y empresa_id actual del localStorage
-  useEffect(() => {
-    // Obtener establecimiento_id
-    // const establecimientoGuardado = localStorage.getItem("establecimiento_seleccionado")
-    // if (establecimientoGuardado) {
-    //   setEstablecimientoId(establecimientoGuardado)
-    //   console.log("Establecimiento obtenido del localStorage:", establecimientoGuardado)
-    // } else {
-    //   setEstablecimientoId("2")
-    //   console.log("No se encontró establecimiento en localStorage, usando valor por defecto: 2")
-    // }
-    // // Obtener empresa_id
-    // const empresaGuardada = localStorage.getItem("empresa_seleccionada")
-    // if (empresaGuardada) {
-    //   setEmpresaId(empresaGuardada)
-    //   console.log("Empresa obtenida del localStorage:", empresaGuardada)
-    // } else {
-    //   setEmpresaId("1")
-    //   console.log("No se encontró empresa en localStorage, usando valor por defecto: 1")
-    // }
-    // // Escuchar eventos de cambio
-    // const handleEstablishmentChange = (event: CustomEvent) => {
-    //   const nuevoEstablecimientoId = event.detail?.establecimientoId
-    //   if (nuevoEstablecimientoId) {
-    //     console.log("Evento de cambio de establecimiento detectado:", nuevoEstablecimientoId)
-    //     setEstablecimientoId(nuevoEstablecimientoId)
-    //   }
-    // }
-    // const handleCompanyChange = (event: CustomEvent) => {
-    //   const nuevaEmpresaId = event.detail?.empresaId
-    //   if (nuevaEmpresaId) {
-    //     console.log("Evento de cambio de empresa detectado:", nuevaEmpresaId)
-    //     setEmpresaId(nuevaEmpresaId)
-    //   }
-    // }
-    // window.addEventListener("establishmentChange", handleEstablishmentChange as EventListener)
-    // window.addEventListener("companyChange", handleCompanyChange as EventListener)
-    // return () => {
-    //   window.removeEventListener("establishmentChange", handleEstablishmentChange as EventListener)
-    //   window.removeEventListener("companyChange", handleCompanyChange as EventListener)
-    // }
-  }, [])
 
   // Cargar datos iniciales cuando se abre el drawer y tenemos los IDs necesarios
   useEffect(() => {
@@ -228,6 +178,11 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
       setLotes(data.lotes || [])
     } catch (error) {
       console.error("Error cargando lotes:", error)
+      toast({
+        title: "Error cargando lotes",
+        description: error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      })
       // Datos de fallback para desarrollo
       setLotes([
         { id: "1", nombre: "Lote A" },
@@ -247,21 +202,25 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
 
     setLoadingCategorias(true)
     try {
-      console.log("Cargando categorías existentes para lote_id:", loteSeleccionado)
+      console.log("🔄 Cargando categorías existentes para lote_id:", loteSeleccionado)
       const response = await fetch(`/api/categorias-animales-existentes?lote_id=${loteSeleccionado}`)
+
+      console.log("📡 Respuesta del servidor - Status:", response.status)
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || `HTTP ${response.status}`)
+        console.error("❌ Error del servidor:", errorData)
+        throw new Error(errorData.details || errorData.error || `HTTP ${response.status}`)
       }
 
       const data = await response.json()
-      console.log("Datos de categorías existentes recibidos:", data)
+      console.log("✅ Datos de categorías existentes recibidos:", data)
       console.log("📋 CATEGORÍAS EXISTENTES DETALLADAS:")
+
       if (data.categorias && data.categorias.length > 0) {
         data.categorias.forEach((cat: any, index: number) => {
           console.log(
-            `  ${index + 1}. ID: ${cat.categoria_animal_id} | Nombre: ${cat.nombre_categoria_animal} | Sexo: ${cat.sexo} | Edad: ${cat.edad}`,
+            `  ${index + 1}. ID: ${cat.categoria_animal_id} | Nombre: ${cat.nombre_categoria_animal} | Stock: ${cat.cantidad} | Sexo: ${cat.sexo} | Edad: ${cat.edad}`,
           )
         })
       } else {
@@ -270,11 +229,18 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
 
       setCategoriasExistentes(data.categorias || [])
     } catch (error) {
-      console.error("Error cargando categorías existentes:", error)
+      console.error("💥 Error cargando categorías existentes:", error)
+
+      toast({
+        title: "Error cargando categorías",
+        description: error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      })
+
       // Datos de fallback para desarrollo
       setCategoriasExistentes([
-        { categoria_animal_id: "1", nombre_categoria_animal: "Terneros", lote_id: loteSeleccionado },
-        { categoria_animal_id: "2", nombre_categoria_animal: "Vaquillonas", lote_id: loteSeleccionado },
+        { categoria_animal_id: "1", nombre_categoria_animal: "Terneros", lote_id: loteSeleccionado, cantidad: 10 },
+        { categoria_animal_id: "2", nombre_categoria_animal: "Vaquillonas", lote_id: loteSeleccionado, cantidad: 5 },
       ])
     } finally {
       setLoadingCategorias(false)
@@ -303,6 +269,11 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
       setTiposMovimiento(data.tipos || [])
     } catch (error) {
       console.error("Error cargando tipos de movimiento:", error)
+      toast({
+        title: "Error cargando tipos de movimiento",
+        description: error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      })
       // Datos de fallback para desarrollo
       setTiposMovimiento([
         { id: "1", nombre: "Venta" },
@@ -351,6 +322,51 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
       errores.push("El peso debe ser mayor a 0")
     }
 
+    // VALIDACIÓN DE STOCK
+    if (nuevoDetalle.categoria_id && nuevoDetalle.cantidad > 0) {
+      console.log("🔍 INICIANDO VALIDACIÓN DE STOCK")
+      console.log("   Categoría seleccionada ID:", nuevoDetalle.categoria_id)
+      console.log("   Cantidad solicitada:", nuevoDetalle.cantidad)
+      console.log("   Categorías disponibles:", categoriasExistentes.length)
+
+      const categoriaSeleccionada = categoriasExistentes.find(
+        (c) => c.categoria_animal_id === nuevoDetalle.categoria_id,
+      )
+
+      console.log("   Categoría encontrada:", categoriaSeleccionada)
+
+      if (categoriaSeleccionada) {
+        // Calcular cantidad ya utilizada en otros detalles de la misma categoría
+        const cantidadYaUtilizada = detalles
+          .filter((d) => d.categoria_id === nuevoDetalle.categoria_id && d.id !== editandoDetalle)
+          .reduce((sum, d) => sum + d.cantidad, 0)
+
+        const stockDisponible = Number(categoriaSeleccionada.cantidad) - cantidadYaUtilizada
+
+        console.log(`📊 Validación de stock para ${categoriaSeleccionada.nombre_categoria_animal}:`)
+        console.log(
+          `   Stock total: ${categoriaSeleccionada.cantidad} (tipo: ${typeof categoriaSeleccionada.cantidad})`,
+        )
+        console.log(`   Ya utilizado en otros detalles: ${cantidadYaUtilizada}`)
+        console.log(`   Stock disponible: ${stockDisponible}`)
+        console.log(`   Cantidad solicitada: ${nuevoDetalle.cantidad}`)
+        console.log(`   ¿Supera el stock?: ${nuevoDetalle.cantidad > stockDisponible}`)
+
+        if (nuevoDetalle.cantidad > stockDisponible) {
+          const errorMsg =
+            `Stock insuficiente para ${categoriaSeleccionada.nombre_categoria_animal}. ` +
+            `Disponible: ${stockDisponible}, solicitado: ${nuevoDetalle.cantidad}`
+          console.log("❌ ERROR DE STOCK:", errorMsg)
+          errores.push(errorMsg)
+        } else {
+          console.log("✅ Stock suficiente")
+        }
+      } else {
+        console.log("❌ No se encontró la categoría seleccionada en las categorías existentes")
+        errores.push("No se pudo validar el stock para la categoría seleccionada")
+      }
+    }
+
     console.log("Errores encontrados en detalle:", errores)
 
     // Si hay errores, mostrarlos y no agregar el detalle
@@ -360,7 +376,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
 
       // También mostrar toast
       toast({
-        title: "Campos faltantes en el detalle",
+        title: "Error en validación",
         description: errores.join(", "),
         variant: "destructive",
       })
@@ -829,7 +845,17 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium text-gray-700">Categoría Animal *</Label>
+                    <Label className="text-sm font-medium text-gray-700">
+                      Categoría Animal *
+                      {nuevoDetalle.categoria_id && (
+                        <span className="text-xs text-gray-500 ml-2">
+                          (Stock:{" "}
+                          {categoriasExistentes.find((c) => c.categoria_animal_id === nuevoDetalle.categoria_id)
+                            ?.cantidad || 0}
+                          )
+                        </span>
+                      )}
+                    </Label>
                     <div className="mt-1">
                       <CustomCombobox
                         options={opcionesCategorias}

@@ -100,6 +100,20 @@ export function Potreros() {
     }
   }
 
+  // Función para formatear la receptividad con el label correcto y coma decimal
+  const formatReceptividad = (receptividad: number | null, unidad: string | null) => {
+    if (!receptividad || !unidad) return "-"
+
+    // Convertir unidad de API a label de display
+    const unidadLabel = unidad === "KILOS" ? "Kg" : unidad === "UG" ? "Ug" : unidad
+
+    // Formatear número con coma decimal si tiene decimales
+    const numeroFormateado =
+      receptividad % 1 === 0 ? receptividad.toString() : receptividad.toString().replace(".", ",")
+
+    return `${numeroFormateado} ${unidadLabel}`
+  }
+
   if (!establecimientoSeleccionado) {
     return (
       <div className="space-y-6">
@@ -178,11 +192,7 @@ export function Potreros() {
                     <TableCell>{potrero.superficie_total} ha</TableCell>
                     <TableCell>{potrero.superfice_util ? `${potrero.superfice_util} ha` : "-"}</TableCell>
                     <TableCell>{potrero.recurso_forrajero || "-"}</TableCell>
-                    <TableCell>
-                      {potrero.receptividad && potrero.receptividad_unidad
-                        ? `${potrero.receptividad} ${potrero.receptividad_unidad}`
-                        : "-"}
-                    </TableCell>
+                    <TableCell>{formatReceptividad(potrero.receptividad, potrero.receptividad_unidad)}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         {/* Solo mostrar botón editar si NO es consultor */}

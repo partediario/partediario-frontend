@@ -13,6 +13,14 @@ export const metadata: Metadata = {
   title: "Parte Diario PRO",
   description: "Sistema de gestión ganadera",
   generator: "v0.dev",
+  icons: {
+    icon: [
+      {
+        url: "/favicon.svg",
+        type: "image/svg+xml",
+      },
+    ],
+  },
 }
 
 export default function RootLayout({
@@ -22,6 +30,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
+      <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+      </head>
       <body className={inter.className}>
         <UserProvider>
           <EstablishmentProvider>

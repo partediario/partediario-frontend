@@ -48,7 +48,10 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
   })
   const [errors, setErrors] = useState<string[]>([])
 
-  const unidadesReceptividad = ["UG", "KILOS"]
+  const unidadesReceptividad = [
+    { value: "UG", label: "Ug" },
+    { value: "KILOS", label: "Kg" },
+  ]
 
   // Cargar datos del potrero cuando se abre el drawer
   useEffect(() => {
@@ -122,9 +125,23 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
     }
 
     if (formData.receptividad.trim()) {
-      const receptividad = Number.parseInt(formData.receptividad)
-      if (isNaN(receptividad) || receptividad <= 0) {
-        newErrors.push("La receptividad debe ser un número entero mayor a 0")
+      if (formData.receptividad_unidad === "UG") {
+        // Para UG permitir decimales
+        const receptividad = Number.parseFloat(formData.receptividad)
+        if (isNaN(receptividad) || receptividad <= 0) {
+          newErrors.push("La receptividad debe ser un número mayor a 0")
+        }
+      } else if (formData.receptividad_unidad === "KILOS") {
+        // Para KILOS solo enteros
+        const receptividad = Number.parseInt(formData.receptividad)
+        if (isNaN(receptividad) || receptividad <= 0 || !Number.isInteger(Number.parseFloat(formData.receptividad))) {
+          newErrors.push("La receptividad debe ser un número entero mayor a 0 cuando la unidad es Kg")
+        }
+      } else {
+        const receptividad = Number.parseFloat(formData.receptividad)
+        if (isNaN(receptividad) || receptividad <= 0) {
+          newErrors.push("La receptividad debe ser un número mayor a 0")
+        }
       }
     }
 
@@ -143,6 +160,12 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
     try {
       let response
 
+      // Preparar datos para enviar, asegurando que receptividad sea número
+      const dataToSend = {
+        ...formData,
+        receptividad: formData.receptividad ? Number.parseFloat(formData.receptividad) : null,
+      }
+
       if (mode === "create") {
         response = await fetch("/api/potreros-crud", {
           method: "POST",
@@ -150,7 +173,7 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            ...formData,
+            ...dataToSend,
             establecimiento_id: establecimientoId,
             empresa_id: empresaSeleccionada,
           }),
@@ -161,7 +184,7 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(dataToSend),
         })
       }
 
@@ -200,6 +223,29 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
 
   const cancelar = () => {
     onClose()
+  }
+
+  // Determinar el tipo de input y step según la unidad seleccionada
+  const getReceptividadInputProps = () => {
+    if (formData.receptividad_unidad === "UG") {
+      return {
+        type: "number",
+        step: "0.1",
+        min: "0.1",
+      }
+    } else if (formData.receptividad_unidad === "KILOS") {
+      return {
+        type: "number",
+        step: "1",
+        min: "1",
+      }
+    } else {
+      return {
+        type: "number",
+        step: "0.1",
+        min: "0.1",
+      }
+    }
   }
 
   return (
@@ -336,49 +382,51 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="receptividad" className="text-sm font-medium text-gray-700">
-                      Receptividad
-                    </Label>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <HelpCircle className="w-4 h-4 text-slate-400" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Capacidad de carga del potrero (número entero)</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
+              {/* Receptividad y Unidad en la misma fila */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-medium text-gray-700">Receptividad</Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="w-4 h-4 text-slate-400" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        Capacidad de carga del potrero
+                        {formData.receptividad_unidad === "UG" && " (permite decimales)"}
+                        {formData.receptividad_unidad === "KILOS" && " (solo números enteros)"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <Input
                     id="receptividad"
-                    type="number"
-                    step="1"
+                    {...getReceptividadInputProps()}
                     value={formData.receptividad}
                     onChange={(e) => setFormData((prev) => ({ ...prev, receptividad: e.target.value }))}
-                    placeholder="100"
+                    placeholder={formData.receptividad_unidad === "KILOS" ? "100" : "100.5"}
                     disabled={loading}
-                    className="mt-1"
                   />
-                </div>
-
-                <div>
-                  <Label htmlFor="receptividad_unidad" className="text-sm font-medium text-gray-700">
-                    Unidad
-                  </Label>
                   <Select
                     value={formData.receptividad_unidad}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, receptividad_unidad: value }))}
+                    onValueChange={(value) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        receptividad_unidad: value,
+                        // Limpiar receptividad cuando cambia la unidad para forzar revalidación
+                        receptividad: prev.receptividad,
+                      }))
+                    }}
                     disabled={loading}
                   >
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger>
                       <SelectValue placeholder="Seleccionar unidad" />
                     </SelectTrigger>
                     <SelectContent>
                       {unidadesReceptividad.map((unidad) => (
-                        <SelectItem key={unidad} value={unidad}>
-                          {unidad}
+                        <SelectItem key={unidad.value} value={unidad.value}>
+                          {unidad.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -394,6 +442,7 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
                 <li>• Los potreros son las divisiones de pastoreo de tu establecimiento</li>
                 <li>• La superficie útil debe ser menor o igual a la superficie total</li>
                 <li>• La receptividad indica la capacidad de carga animal</li>
+                <li>• Para Ug se permiten decimales, para Kg solo números enteros</li>
                 <li>• El recurso forrajero ayuda a planificar el manejo</li>
               </ul>
             </div>

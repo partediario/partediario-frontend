@@ -11,7 +11,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 interface Lote {
   id: number
@@ -79,7 +78,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
     categoria_animal_id: "",
     cantidad: "",
     peso: "",
-    tipo_peso: "total", // "total" o "promedio"
+    tipo_peso: "", // Cambiado para que inicie vacío
   })
   const [stockErrors, setStockErrors] = useState<string[]>([])
 
@@ -235,7 +234,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
       categoria_animal_id: "",
       cantidad: "",
       peso: "",
-      tipo_peso: "total",
+      tipo_peso: "", // Vacío por defecto
     })
     setStockErrors([])
   }
@@ -244,12 +243,12 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
     setEditandoStock(stockItem)
     setMostrandoFormularioStock(true)
 
-    // Al editar, siempre mostramos como "total" ya que el peso_total ya está calculado
+    // Al editar, siempre por defecto "total" pero permite cambiar
     setStockForm({
       categoria_animal_id: stockItem.categoria_animal_id.toString(),
       cantidad: stockItem.cantidad.toString(),
       peso: stockItem.peso_total?.toString() || "",
-      tipo_peso: "total",
+      tipo_peso: "total", // Por defecto "total" al editar
     })
     setStockErrors([])
   }
@@ -261,7 +260,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
       categoria_animal_id: "",
       cantidad: "",
       peso: "",
-      tipo_peso: "total",
+      tipo_peso: "",
     })
     setStockErrors([])
   }
@@ -279,8 +278,16 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
       newErrors.push("La cantidad debe ser mayor a 0")
     }
 
-    if (stockForm.peso && Number.parseFloat(stockForm.peso) < 0) {
-      newErrors.push("El peso no puede ser negativo")
+    // Peso ahora es requerido y debe ser mayor a 0
+    if (!stockForm.peso) {
+      newErrors.push("El peso es requerido")
+    } else if (Number.parseInt(stockForm.peso) <= 0) {
+      newErrors.push("El peso debe ser mayor a 0")
+    }
+
+    // Tipo de peso ahora es requerido
+    if (!stockForm.tipo_peso) {
+      newErrors.push("Debe seleccionar el tipo de peso")
     }
 
     setStockErrors(newErrors)
@@ -290,7 +297,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
   const calcularPesoTotal = () => {
     if (!stockForm.peso || !stockForm.cantidad) return null
 
-    const peso = Number.parseFloat(stockForm.peso)
+    const peso = Number.parseInt(stockForm.peso)
     const cantidad = Number.parseInt(stockForm.cantidad)
 
     if (stockForm.tipo_peso === "promedio") {
@@ -647,28 +654,49 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
                   </Alert>
                 )}
 
+                {/* Layout reorganizado: Categoría y Tipo de peso en columna izquierda, Cantidad y Peso en columnas derechas */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="categoria_animal_id" className="text-sm font-medium text-gray-700">
-                      Categoría Animal *
-                    </Label>
-                    <div className="mt-1">
-                      <CustomCombobox
-                        options={categorias.map((categoria) => ({
-                          value: categoria.id.toString(),
-                          label: categoria.nombre,
-                        }))}
-                        value={stockForm.categoria_animal_id}
-                        onValueChange={(value) => setStockForm((prev) => ({ ...prev, categoria_animal_id: value }))}
-                        placeholder="Selecciona categoría..."
-                        searchPlaceholder="Buscar categoría..."
-                        emptyMessage="No se encontraron categorías."
-                        loading={loadingCategorias}
-                        disabled={loadingCategorias}
-                      />
+                  {/* Primera columna: Categoría Animal y Tipo de peso */}
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="categoria_animal_id" className="text-sm font-medium text-gray-700">
+                        Categoría Animal *
+                      </Label>
+                      <div className="mt-1">
+                        <CustomCombobox
+                          options={categorias.map((categoria) => ({
+                            value: categoria.id.toString(),
+                            label: categoria.nombre,
+                          }))}
+                          value={stockForm.categoria_animal_id}
+                          onValueChange={(value) => setStockForm((prev) => ({ ...prev, categoria_animal_id: value }))}
+                          placeholder="Selecciona categoría..."
+                          searchPlaceholder="Buscar categoría..."
+                          emptyMessage="No se encontraron categorías."
+                          loading={loadingCategorias}
+                          disabled={loadingCategorias}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Tipo de peso *</Label>
+                      <Select
+                        value={stockForm.tipo_peso}
+                        onValueChange={(value) => setStockForm((prev) => ({ ...prev, tipo_peso: value }))}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Selecciona" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="promedio">Promedio</SelectItem>
+                          <SelectItem value="total">Total</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
+                  {/* Segunda columna: Cantidad */}
                   <div>
                     <Label htmlFor="cantidad" className="text-sm font-medium text-gray-700">
                       Cantidad *
@@ -684,9 +712,10 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
                     />
                   </div>
 
+                  {/* Tercera columna: Peso */}
                   <div>
                     <Label htmlFor="peso" className="text-sm font-medium text-gray-700">
-                      Peso (kg)
+                      Peso (kg) *
                     </Label>
                     <Input
                       id="peso"
@@ -695,44 +724,19 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
                       onChange={(e) => setStockForm((prev) => ({ ...prev, peso: e.target.value }))}
                       placeholder="Ej: 400"
                       className="mt-1"
-                      min="0"
-                      step="0.01"
+                      min="1"
+                      step="1"
                     />
                   </div>
                 </div>
 
-                {/* Selector de tipo de peso */}
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Tipo de peso</Label>
-                  <RadioGroup
-                    value={stockForm.tipo_peso}
-                    onValueChange={(value) => setStockForm((prev) => ({ ...prev, tipo_peso: value }))}
-                    className="flex items-center space-x-6 mt-2"
-                    disabled={editandoStock !== null} // Deshabilitar al editar
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="total" id="total" />
-                      <Label htmlFor="total" className="text-sm">
-                        Total
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="promedio" id="promedio" />
-                      <Label htmlFor="promedio" className="text-sm">
-                        Promedio
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                  {stockForm.tipo_peso === "promedio" && stockForm.peso && stockForm.cantidad && (
-                    <p className="text-xs text-blue-600 mt-1">
-                      Peso total calculado:{" "}
-                      {(Number.parseFloat(stockForm.peso) * Number.parseInt(stockForm.cantidad)).toFixed(2)} kg
-                    </p>
-                  )}
-                  {editandoStock && (
-                    <p className="text-xs text-gray-500 mt-1">Al editar, el peso se muestra como total calculado</p>
-                  )}
-                </div>
+                {/* Información del cálculo */}
+                {stockForm.tipo_peso === "promedio" && stockForm.peso && stockForm.cantidad && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    Peso total calculado:{" "}
+                    {(Number.parseInt(stockForm.peso) * Number.parseInt(stockForm.cantidad)).toFixed(0)} kg
+                  </p>
+                )}
 
                 <div className="flex gap-2 justify-end">
                   <Button onClick={cancelarStock} variant="outline" size="sm">
