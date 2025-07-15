@@ -57,7 +57,7 @@ export function PluviometriaTable({ year }: PluviometriaTableProps) {
   // Organizar datos por mes
   const datosPorMes = datosAnuales.reduce(
     (acc, dato) => {
-      const mes = dato.mes - 1 // Convertir a índice 0-based
+      const mes = dato.mes - 1
       if (!acc[mes]) {
         acc[mes] = {}
       }
@@ -73,15 +73,7 @@ export function PluviometriaTable({ year }: PluviometriaTableProps) {
     return Object.values(datosMes).reduce((sum, valor) => sum + (valor || 0), 0)
   })
 
-  // Calcular promedios por mes (solo días con lluvia)
-  const promediosPorMes = meses.map((_, mesIndex) => {
-    const datosMes = datosPorMes[mesIndex] || {}
-    const valoresConLluvia = Object.values(datosMes).filter((valor) => valor && valor > 0)
-    if (valoresConLluvia.length === 0) return 0
-    return valoresConLluvia.reduce((sum, valor) => sum + valor, 0) / valoresConLluvia.length
-  })
-
-  // Calcular totales por día (columna)
+  // Calcular totales por día
   const totalesPorDia = dias.map((dia) => {
     return meses.reduce((sum, _, mesIndex) => {
       const valor = datosPorMes[mesIndex]?.[dia] || 0
@@ -90,8 +82,6 @@ export function PluviometriaTable({ year }: PluviometriaTableProps) {
   })
 
   const totalGeneral = totalesPorMes.reduce((sum, total) => sum + total, 0)
-  const promedioGeneral =
-    promediosPorMes.reduce((sum, prom) => sum + prom, 0) / promediosPorMes.filter((p) => p > 0).length || 0
 
   const getRainColorClass = (valor: number | undefined) => {
     if (!valor || valor === 0) return ""
@@ -128,128 +118,73 @@ export function PluviometriaTable({ year }: PluviometriaTableProps) {
         </div>
       </div>
 
-      {/* Tabla con scroll horizontal solo en fechas */}
+      {/* Tabla simplificada */}
       <div className="w-full border rounded-lg overflow-hidden bg-white">
-        <div className="flex">
-          {/* Columna fija de meses */}
-          <div className="flex-shrink-0 border-r bg-gray-50">
-            <div className="h-12 flex items-center px-4 border-b bg-gray-50">
-              <span className="font-semibold text-gray-900">MES</span>
-            </div>
+        <table className="w-full">
+          <thead>
+            <tr className="bg-gray-50 h-12">
+              <th className="px-4 text-left font-semibold text-gray-900 border-r">MES</th>
+              {dias.map((dia) => (
+                <th key={dia} className="w-10 text-center text-xs font-medium text-gray-700 border-r">
+                  {dia}
+                </th>
+              ))}
+              <th className="w-24 text-center text-xs font-semibold text-gray-900 bg-green-50">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
             {meses.map((mes, mesIndex) => (
-              <div key={mes} className="h-10 flex items-center px-4 border-b hover:bg-gray-100">
-                <span className="font-medium text-gray-900 text-sm">{mes}</span>
-              </div>
-            ))}
-            <div className="h-10 flex items-center px-4 bg-gray-800">
-              <span className="font-bold text-white text-sm">TOTAL</span>
-            </div>
-          </div>
-
-          {/* Área con scroll horizontal para fechas */}
-          <div className="flex-1 overflow-x-auto">
-            <div className="min-w-max">
-              <div className="flex">
-                {/* Columnas de días */}
-                <div className="flex">
-                  {/* Header de días */}
-                  <div className="flex border-b bg-gray-50 h-12">
-                    {dias.map((dia) => (
-                      <div key={dia} className="w-10 flex items-center justify-center border-r">
-                        <span className="text-xs font-medium text-gray-700">{dia}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Filas de datos */}
-              <div>
-                {meses.map((mes, mesIndex) => (
-                  <div key={mes} className="flex border-b hover:bg-gray-50 h-10">
-                    {dias.map((dia) => {
-                      const valor = datosPorMes[mesIndex]?.[dia]
-                      return (
-                        <div key={dia} className="w-10 flex items-center justify-center border-r">
-                          {valor ? (
-                            <Badge
-                              variant="secondary"
-                              className={`${getRainColorClass(valor)} font-medium text-xs px-1 py-0.5`}
-                            >
-                              {valor}
-                            </Badge>
-                          ) : (
-                            <span className="text-gray-400 text-xs">-</span>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                ))}
-
-                {/* Fila TOTAL */}
-                <div className="flex bg-gray-800 text-white h-10">
-                  {dias.map((dia) => (
-                    <div key={dia} className="w-10 flex items-center justify-center border-r border-gray-600">
-                      {totalesPorDia[dia - 1] > 0 ? (
-                        <span className="text-xs font-medium">{totalesPorDia[dia - 1]}</span>
+              <tr key={mes} className="border-b hover:bg-gray-50 h-10">
+                <td className="px-4 font-medium text-gray-900 text-sm border-r bg-gray-50">{mes}</td>
+                {dias.map((dia) => {
+                  const valor = datosPorMes[mesIndex]?.[dia]
+                  return (
+                    <td key={dia} className="w-10 text-center border-r">
+                      {valor ? (
+                        <Badge
+                          variant="secondary"
+                          className={`${getRainColorClass(valor)} font-medium text-xs px-1 py-0.5`}
+                        >
+                          {valor}
+                        </Badge>
                       ) : (
-                        <span className="text-xs opacity-50">-</span>
+                        <span className="text-gray-400 text-xs">-</span>
                       )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Columnas fijas de totales */}
-          <div className="flex-shrink-0 border-l">
-            <div className="flex">
-              <div className="w-24 border-r bg-blue-50">
-                <div className="h-12 flex items-center justify-center border-b bg-blue-50">
-                  <span className="font-semibold text-gray-900 text-xs">PROMEDIO</span>
-                </div>
-                {meses.map((mes, mesIndex) => (
-                  <div key={mes} className="h-10 flex items-center justify-center border-b">
-                    <span className="text-xs font-medium">
-                      {promediosPorMes[mesIndex] > 0 ? `${Math.round(promediosPorMes[mesIndex])} mm` : "0 mm"}
-                    </span>
-                  </div>
-                ))}
-                <div className="h-10 flex items-center justify-center bg-blue-600">
-                  <span className="text-xs font-medium text-white">
-                    {promedioGeneral > 0 ? `${Math.round(promedioGeneral)} mm` : "0 mm"}
+                    </td>
+                  )
+                })}
+                <td className="w-24 text-center bg-green-50">
+                  <span className="text-xs font-medium">
+                    {totalesPorMes[mesIndex] > 0 ? `${totalesPorMes[mesIndex]} mm` : "0 mm"}
                   </span>
-                </div>
-              </div>
-
-              <div className="w-24 bg-green-50">
-                <div className="h-12 flex items-center justify-center border-b bg-green-50">
-                  <span className="font-semibold text-gray-900 text-xs">TOTAL</span>
-                </div>
-                {meses.map((mes, mesIndex) => (
-                  <div key={mes} className="h-10 flex items-center justify-center border-b">
-                    <span className="text-xs font-medium">
-                      {totalesPorMes[mesIndex] > 0 ? `${totalesPorMes[mesIndex]} mm` : "0 mm"}
-                    </span>
-                  </div>
-                ))}
-                <div className="h-10 flex items-center justify-center bg-green-600">
-                  <span className="text-xs font-medium text-white">
-                    {totalGeneral > 0 ? `${totalGeneral} mm` : "0 mm"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                </td>
+              </tr>
+            ))}
+            <tr className="bg-gray-800 text-white h-10">
+              <td className="px-4 font-bold text-sm">TOTAL</td>
+              {dias.map((dia) => (
+                <td key={dia} className="w-10 text-center border-r border-gray-600">
+                  {totalesPorDia[dia - 1] > 0 ? (
+                    <span className="text-xs font-medium">{totalesPorDia[dia - 1]}</span>
+                  ) : (
+                    <span className="text-xs opacity-50">-</span>
+                  )}
+                </td>
+              ))}
+              <td className="w-24 text-center bg-green-600">
+                <span className="text-xs font-medium text-white">
+                  {totalGeneral > 0 ? `${totalGeneral} mm` : "0 mm"}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {/* Información adicional para pantallas pequeñas */}
       <div className="block lg:hidden bg-blue-50 p-4 rounded-lg">
         <p className="text-sm text-blue-800">
-          💡 <strong>Tip:</strong> Desliza horizontalmente en la sección central para ver todos los días del mes.
+          💡 <strong>Tip:</strong> Desliza horizontalmente para ver todos los días del mes.
         </p>
       </div>
     </div>
