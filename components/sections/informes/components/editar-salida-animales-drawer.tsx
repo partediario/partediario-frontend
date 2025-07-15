@@ -47,13 +47,21 @@ interface CategoriaExistente {
   sexo?: string
   edad?: string
   lote_id: string
-  cantidad: number
+  cantidad: number // Agregar este campo
 }
 
 interface TipoMovimiento {
   id: string
   nombre: string
   direccion?: string
+}
+
+interface UsuarioPerfil {
+  id: string
+  nombres: string
+  apellidos: string
+  email: string
+  phone?: string
 }
 
 interface MovimientoDetalle {
@@ -124,6 +132,7 @@ export default function EditarSalidaAnimalesDrawer({
   const [editandoDetalle, setEditandoDetalle] = useState<DetalleItem | null>(null)
 
   // Datos del usuario desde la vista
+  // Usar el contexto de usuario en lugar de carga individual
   const { usuario, loading: loadingUsuario } = useUser()
 
   // Datos del movimiento original
@@ -131,6 +140,67 @@ export default function EditarSalidaAnimalesDrawer({
 
   // Estado para controlar si estamos en carga inicial
   const cargaInicialRef = useRef(true)
+
+  // Función para limpiar el formulario de detalle
+  const limpiarFormularioDetalle = () => {
+    console.log("🧹 Limpiando formulario de detalle...")
+    setNuevoDetalle({
+      tipo_movimiento_id: "",
+      categoria_id: "",
+      cantidad: 0,
+      peso: 0,
+      tipo_peso: "TOTAL",
+    })
+    setEditandoDetalle(null)
+    setErroresDetalle([])
+    console.log("✅ Formulario de detalle limpiado")
+  }
+
+  // Obtener establecimiento_id y empresa_id actual del localStorage
+  useEffect(() => {
+    // Obtener establecimiento_id
+    // const establecimientoGuardado = localStorage.getItem("establecimiento_seleccionado")
+    // if (establecimientoGuardado) {
+    //   setEstablecimientoId(establecimientoGuardado)
+    //   console.log("Establecimiento obtenido del localStorage:", establecimientoGuardado)
+    // } else {
+    //   setEstablecimientoId("2")
+    //   console.log("No se encontró establecimiento en localStorage, usando valor por defecto: 2")
+    // }
+    // // Obtener empresa_id
+    // const empresaGuardada = localStorage.getItem("empresa_seleccionada")
+    // if (empresaGuardada) {
+    //   setEmpresaId(empresaGuardada)
+    //   console.log("Empresa obtenida del localStorage:", empresaGuardada)
+    // } else {
+    //   setEmpresaId("1")
+    //   console.log("No se encontró empresa en localStorage, usando valor por defecto: 1")
+    // }
+    // // Escuchar eventos de cambio
+    // const handleEstablishmentChange = (event: CustomEvent) => {
+    //   const nuevoEstablecimientoId = event.detail?.establecimientoId
+    //   if (nuevoEstablecimientoId) {
+    //     console.log("Evento de cambio de establecimiento detectado:", nuevoEstablecimientoId)
+    //     setEstablecimientoId(nuevoEstablecimientoId)
+    //   }
+    // }
+    // const handleCompanyChange = (event: CustomEvent) => {
+    //   const nuevaEmpresaId = event.detail?.empresaId
+    //   if (nuevaEmpresaId) {
+    //     console.log("Evento de cambio de empresa detectado:", nuevaEmpresaId)
+    //     setEmpresaId(nuevaEmpresaId)
+    //   }
+    // }
+    // window.addEventListener("establishmentChange", handleEstablishmentChange as EventListener)
+    // window.addEventListener("companyChange", handleCompanyChange as EventListener)
+    // return () => {
+    //   window.removeEventListener("establishmentChange", handleEstablishmentChange as EventListener)
+    //   window.removeEventListener("companyChange", handleCompanyChange as EventListener)
+    // }
+  }, [])
+
+  // Cargar perfil del usuario
+  // Eliminar el useEffect de cargar perfil del usuario.
 
   // Cargar datos del parte diario cuando se abre el drawer
   useEffect(() => {
@@ -158,13 +228,7 @@ export default function EditarSalidaAnimalesDrawer({
       setCategoriasExistentes([])
       setMovimientoOriginal(null)
       cargaInicialRef.current = true // Resetear bandera de carga inicial
-      setNuevoDetalle({
-        tipo_movimiento_id: "",
-        categoria_id: "",
-        cantidad: 0,
-        peso: 0,
-        tipo_peso: "TOTAL",
-      })
+      limpiarFormularioDetalle() // Usar la función de limpieza
       console.log("Formulario limpiado al cerrar el drawer")
     }
   }, [isOpen])
@@ -224,7 +288,7 @@ export default function EditarSalidaAnimalesDrawer({
       )
 
       const detallesActualizados = detalles.map((detalle, index) => {
-        console.log(`🔍 PROCESANDO DETALLE ${index + 1}:`)
+        console.log(`\n🔍 PROCESANDO DETALLE ${index + 1}:`)
         console.log(`   Tipo original: "${detalle.tipo_movimiento_nombre}"`)
         console.log(`   Categoría original: "${detalle.categoria_nombre}"`)
 
@@ -279,7 +343,7 @@ export default function EditarSalidaAnimalesDrawer({
         return detalleActualizado
       })
 
-      console.log("✅ MAPEO COMPLETADO")
+      console.log("\n✅ MAPEO COMPLETADO")
       console.log(
         "📋 Detalles finales:",
         detallesActualizados.map((d) => ({
@@ -294,6 +358,18 @@ export default function EditarSalidaAnimalesDrawer({
       setDetalles(detallesActualizados)
     }
   }, [tiposMovimiento, categoriasExistentes])
+
+  // Efecto para esperar a que el usuario se cargue antes de permitir acciones
+  useEffect(() => {
+    if (isOpen && !loadingUsuario && !usuario) {
+      console.log("⚠️ Drawer abierto pero no hay usuario disponible")
+      toast({
+        title: "Error de usuario",
+        description: "No se pudo cargar la información del usuario. Intente cerrar y abrir nuevamente.",
+        variant: "destructive",
+      })
+    }
+  }, [isOpen, loadingUsuario, usuario])
 
   const cargarDatosParteDiario = () => {
     if (!parte) return
@@ -399,11 +475,6 @@ export default function EditarSalidaAnimalesDrawer({
       }
     } catch (error) {
       console.error("Error cargando lotes:", error)
-      toast({
-        title: "Error cargando lotes",
-        description: error instanceof Error ? error.message : "Error desconocido",
-        variant: "destructive",
-      })
       setLotes([
         { id: "1", nombre: "Lote A" },
         { id: "2", nombre: "Lote B" },
@@ -427,68 +498,36 @@ export default function EditarSalidaAnimalesDrawer({
 
     setLoadingCategorias(true)
     try {
-      console.log("🔄 Cargando categorías existentes para lote_id:", loteSeleccionado)
-
-      // Intentar primera API
-      let response = await fetch(`/api/categorias-animales-existentes?lote_id=${loteSeleccionado}`)
-      let data
+      console.log("Cargando categorías existentes para lote_id:", loteSeleccionado)
+      const response = await fetch(`/api/categorias-animales-existentes?lote_id=${loteSeleccionado}`)
 
       if (!response.ok) {
-        console.log("⚠️ Primera API falló, intentando API alternativa...")
-
-        // Intentar API alternativa
-        response = await fetch(`/api/lote-stock-categoria?lote_id=${loteSeleccionado}`)
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || `HTTP ${response.status}`)
-        }
-
-        data = await response.json()
-        console.log("✅ Datos obtenidos de API alternativa:", data)
-      } else {
-        data = await response.json()
-        console.log("✅ Datos obtenidos de API principal:", data)
+        const errorData = await response.json()
+        throw new Error(errorData.error || `HTTP ${response.status}`)
       }
+
+      const data = await response.json()
+      console.log("Datos de categorías existentes recibidos:", data)
 
       console.log("📋 CATEGORÍAS EXISTENTES DETALLADAS:")
       if (data.categorias && data.categorias.length > 0) {
         data.categorias.forEach((cat: any, index: number) => {
           console.log(
-            `  ${index + 1}. ID: ${cat.categoria_animal_id} | Nombre: ${cat.nombre_categoria_animal} | Stock: ${cat.cantidad} | Sexo: ${cat.sexo || "N/A"} | Edad: ${cat.edad || "N/A"}`,
+            `  ${index + 1}. ID: ${cat.categoria_animal_id} | Nombre: ${cat.nombre_categoria_animal} | Stock: ${cat.cantidad} | Sexo: ${cat.sexo} | Edad: ${cat.edad}`,
           )
         })
       } else {
         console.log("❌ No se encontraron categorías existentes para el lote")
       }
 
-      // Mostrar información adicional si está disponible
-      if (data.fallback) {
-        console.log("⚠️ Se están usando datos de fallback")
-        toast({
-          title: "Usando datos de prueba",
-          description: "No se pudieron cargar las categorías reales. Se muestran datos de ejemplo.",
-          variant: "default",
-        })
-      }
-
       setCategoriasExistentes(data.categorias || [])
     } catch (error) {
-      console.error("💥 Error cargando categorías existentes:", error)
-      toast({
-        title: "Error cargando categorías",
-        description: error instanceof Error ? error.message : "Error desconocido",
-        variant: "destructive",
-      })
-
+      console.error("Error cargando categorías existentes:", error)
       // Datos de fallback para desarrollo
-      const fallbackData = [
+      setCategoriasExistentes([
         { categoria_animal_id: "1", nombre_categoria_animal: "Terneros", lote_id: loteSeleccionado, cantidad: 10 },
         { categoria_animal_id: "2", nombre_categoria_animal: "Vaquillonas", lote_id: loteSeleccionado, cantidad: 5 },
-      ]
-
-      console.log("🔄 Usando datos de fallback locales:", fallbackData)
-      setCategoriasExistentes(fallbackData)
+      ])
     } finally {
       setLoadingCategorias(false)
     }
@@ -513,11 +552,6 @@ export default function EditarSalidaAnimalesDrawer({
       setTiposMovimiento(data.tipos || [])
     } catch (error) {
       console.error("Error cargando tipos de movimiento:", error)
-      toast({
-        title: "Error cargando tipos de movimiento",
-        description: error instanceof Error ? error.message : "Error desconocido",
-        variant: "destructive",
-      })
       // Datos de fallback para desarrollo
       setTiposMovimiento([
         { id: "1", nombre: "Venta" },
@@ -647,7 +681,6 @@ export default function EditarSalidaAnimalesDrawer({
           : detalle,
       )
       setDetalles(detallesActualizados)
-      setEditandoDetalle(null)
       console.log("✅ Detalle actualizado exitosamente")
     } else {
       // Agregar nuevo detalle
@@ -666,13 +699,8 @@ export default function EditarSalidaAnimalesDrawer({
       console.log("✅ Nuevo detalle agregado exitosamente")
     }
 
-    setNuevoDetalle({
-      tipo_movimiento_id: "",
-      categoria_id: "",
-      cantidad: 0,
-      peso: 0,
-      tipo_peso: "TOTAL",
-    })
+    // Limpiar formulario y cerrar
+    limpiarFormularioDetalle()
     setMostrarFormDetalle(false)
   }
 
@@ -691,6 +719,13 @@ export default function EditarSalidaAnimalesDrawer({
       tipo_peso: detalle.tipo_peso,
     })
     setMostrarFormDetalle(true)
+  }
+
+  const cancelarFormularioDetalle = () => {
+    console.log("❌ Cancelando formulario de detalle...")
+    limpiarFormularioDetalle()
+    setMostrarFormDetalle(false)
+    console.log("✅ Formulario de detalle cancelado y limpiado")
   }
 
   const validarFormulario = () => {
@@ -1081,58 +1116,39 @@ export default function EditarSalidaAnimalesDrawer({
               </Alert>
             )}
 
-            {/* Mostrar errores de validación de detalle */}
-            {erroresDetalle.length > 0 && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <div className="font-medium mb-2">Errores en el detalle:</div>
-                  <ul className="list-disc list-inside space-y-1">
-                    {erroresDetalle.map((error, index) => (
-                      <li key={index} className="text-sm">
-                        {error}
-                      </li>
-                    ))}
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Formulario de detalle */}
+            {/* Formulario de nuevo detalle */}
             {mostrarFormDetalle && (
               <div className="border rounded-lg p-4 bg-gray-50 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-gray-900">{editandoDetalle ? "Editar Detalle" : "Nuevo Detalle"}</h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setMostrarFormDetalle(false)
-                      setEditandoDetalle(null)
-                      setNuevoDetalle({
-                        tipo_movimiento_id: "",
-                        categoria_id: "",
-                        cantidad: 0,
-                        peso: 0,
-                        tipo_peso: "TOTAL",
-                      })
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
+                <h4 className="font-medium text-gray-900">{editandoDetalle ? "Editar Detalle" : "Nuevo Detalle"}</h4>
+
+                {/* Mostrar errores de validación del detalle */}
+                {erroresDetalle.length > 0 && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="font-medium mb-2">Campos faltantes:</div>
+                      <ul className="list-disc list-inside space-y-1">
+                        {erroresDetalle.map((error, index) => (
+                          <li key={index} className="text-sm">
+                            {error}
+                          </li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo de Movimiento *</Label>
+                    <Label className="text-sm font-medium text-gray-700">Tipo de movimiento *</Label>
                     <div className="mt-1">
                       <CustomCombobox
                         options={opcionesTiposMovimiento}
                         value={nuevoDetalle.tipo_movimiento_id}
-                        onValueChange={(value) => setNuevoDetalle((prev) => ({ ...prev, tipo_movimiento_id: value }))}
-                        placeholder="Selecciona un tipo..."
-                        searchPlaceholder="Buscar tipo..."
-                        emptyMessage="No se encontraron tipos."
+                        onValueChange={(value) => setNuevoDetalle({ ...nuevoDetalle, tipo_movimiento_id: value })}
+                        placeholder="Selecciona tipo..."
+                        searchPlaceholder="Buscar tipo de movimiento..."
+                        emptyMessage="No se encontraron tipos de movimiento."
                         loading={loadingTipos}
                         disabled={loadingTipos}
                       />
@@ -1140,29 +1156,57 @@ export default function EditarSalidaAnimalesDrawer({
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium text-gray-700">Categoría Animal *</Label>
+                    <Label className="text-sm font-medium text-gray-700">
+                      Categoría Animal *
+                      {nuevoDetalle.categoria_id && (
+                        <span className="text-xs text-gray-500 ml-2">
+                          {(() => {
+                            const categoria = categoriasExistentes.find(
+                              (c) => c.categoria_animal_id === nuevoDetalle.categoria_id,
+                            )
+                            if (!categoria) return "(Stock: 0)"
+
+                            // Calcular stock disponible considerando edición
+                            const cantidadYaUtilizada = detalles
+                              .filter(
+                                (d) => d.categoria_id === nuevoDetalle.categoria_id && d.id !== editandoDetalle?.id,
+                              )
+                              .reduce((sum, d) => sum + d.cantidad, 0)
+
+                            const cantidadOriginal =
+                              editandoDetalle && editandoDetalle.categoria_id === nuevoDetalle.categoria_id
+                                ? editandoDetalle.cantidad
+                                : 0
+
+                            const stockDisponible = categoria.cantidad - cantidadYaUtilizada + cantidadOriginal
+
+                            return `(Stock disponible: ${stockDisponible})`
+                          })()}
+                        </span>
+                      )}
+                    </Label>
                     <div className="mt-1">
                       <CustomCombobox
                         options={opcionesCategorias}
                         value={nuevoDetalle.categoria_id}
-                        onValueChange={(value) => setNuevoDetalle((prev) => ({ ...prev, categoria_id: value }))}
-                        placeholder="Selecciona una categoría..."
+                        onValueChange={(value) => setNuevoDetalle({ ...nuevoDetalle, categoria_id: value })}
+                        placeholder="Selecciona categoría..."
                         searchPlaceholder="Buscar categoría..."
-                        emptyMessage="No se encontraron categorías."
+                        emptyMessage="No hay animales disponibles en este lote."
                         loading={loadingCategorias}
                         disabled={loadingCategorias || !loteSeleccionado}
                       />
                     </div>
                     {loadingCategorias && (
-                      <p className="text-xs text-gray-500 mt-1">Cargando categorías existentes...</p>
+                      <p className="text-xs text-gray-500 mt-1">Cargando categorías disponibles...</p>
                     )}
                     {!loadingCategorias && categoriasExistentes.length === 0 && loteSeleccionado && (
-                      <p className="text-xs text-amber-600 mt-1">No hay categorías con stock en el lote seleccionado</p>
+                      <p className="text-xs text-amber-600 mt-1">No hay animales disponibles en el lote seleccionado</p>
                     )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Cantidad *</Label>
                     <Input
@@ -1170,139 +1214,107 @@ export default function EditarSalidaAnimalesDrawer({
                       min="1"
                       value={nuevoDetalle.cantidad || ""}
                       onChange={(e) =>
-                        setNuevoDetalle((prev) => ({ ...prev, cantidad: Number.parseInt(e.target.value) || 0 }))
+                        setNuevoDetalle({ ...nuevoDetalle, cantidad: Number.parseInt(e.target.value) || 0 })
                       }
-                      placeholder="0"
                       className="mt-1"
+                      placeholder="Ej: 10"
+                      required
                     />
-                    {nuevoDetalle.categoria_id && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Stock disponible:{" "}
-                        {categoriasExistentes.find((c) => c.categoria_animal_id === nuevoDetalle.categoria_id)
-                          ?.cantidad || 0}
-                      </p>
-                    )}
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium text-gray-700">Peso *</Label>
+                    <Label className="text-sm font-medium text-gray-700">Peso (kg) *</Label>
                     <Input
                       type="number"
                       min="0"
-                      step="0.1"
+                      step="1"
                       value={nuevoDetalle.peso || ""}
-                      onChange={(e) =>
-                        setNuevoDetalle((prev) => ({ ...prev, peso: Number.parseFloat(e.target.value) || 0 }))
-                      }
-                      placeholder="0.0"
+                      onChange={(e) => setNuevoDetalle({ ...nuevoDetalle, peso: Number.parseInt(e.target.value) || 0 })}
                       className="mt-1"
+                      placeholder="Ej: 250"
+                      required
                     />
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo de Peso *</Label>
-                    <div className="mt-1">
-                      <RadioGroup
-                        value={nuevoDetalle.tipo_peso}
-                        onValueChange={(value) =>
-                          setNuevoDetalle((prev) => ({ ...prev, tipo_peso: value as "TOTAL" | "PROMEDIO" }))
-                        }
-                        className="flex space-x-4"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="TOTAL" id="total" />
-                          <Label htmlFor="total" className="text-sm">
-                            Total
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="PROMEDIO" id="promedio" />
-                          <Label htmlFor="promedio" className="text-sm">
-                            Promedio
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setMostrarFormDetalle(false)
-                      setEditandoDetalle(null)
-                      setNuevoDetalle({
-                        tipo_movimiento_id: "",
-                        categoria_id: "",
-                        cantidad: 0,
-                        peso: 0,
-                        tipo_peso: "TOTAL",
-                      })
-                    }}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Tipo de peso</Label>
+                  <RadioGroup
+                    value={nuevoDetalle.tipo_peso}
+                    onValueChange={(value: "TOTAL" | "PROMEDIO") =>
+                      setNuevoDetalle({ ...nuevoDetalle, tipo_peso: value })
+                    }
+                    className="flex gap-4 mt-2"
                   >
-                    Cancelar
-                  </Button>
-                  <Button onClick={agregarDetalle} className="bg-red-600 hover:bg-red-700">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="TOTAL" id="total" />
+                      <Label htmlFor="total" className="text-sm">
+                        Total
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="PROMEDIO" id="promedio" />
+                      <Label htmlFor="promedio" className="text-sm">
+                        Promedio
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={agregarDetalle} size="sm" className="bg-red-600 hover:bg-red-700">
                     {editandoDetalle ? "Actualizar" : "Agregar"}
+                  </Button>
+                  <Button onClick={cancelarFormularioDetalle} variant="outline" size="sm">
+                    Cancelar
                   </Button>
                 </div>
               </div>
             )}
 
             {/* Tabla de detalles */}
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-lg">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="font-medium text-gray-900">Tipo de movimiento</TableHead>
-                    <TableHead className="font-medium text-gray-900">Categoría Animal</TableHead>
-                    <TableHead className="font-medium text-gray-900">Cantidad</TableHead>
-                    <TableHead className="font-medium text-gray-900">Peso</TableHead>
-                    <TableHead className="font-medium text-gray-900">Tipo</TableHead>
-                    <TableHead className="font-medium text-gray-900">Acciones</TableHead>
+                  <TableRow>
+                    <TableHead>Tipo de movimiento</TableHead>
+                    <TableHead>Categoría Animal</TableHead>
+                    <TableHead>Cantidad</TableHead>
+                    <TableHead>Peso</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {detalles.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={6} className="text-center text-gray-500 py-8">
                         No hay detalles agregados
                       </TableCell>
                     </TableRow>
                   ) : (
                     detalles.map((detalle) => (
                       <TableRow key={detalle.id}>
-                        <TableCell className="font-medium">{detalle.tipo_movimiento_nombre}</TableCell>
+                        <TableCell>{detalle.tipo_movimiento_nombre}</TableCell>
                         <TableCell>{detalle.categoria_nombre}</TableCell>
                         <TableCell>{detalle.cantidad}</TableCell>
                         <TableCell>{detalle.peso} kg</TableCell>
+                        <TableCell>{detalle.tipo_peso}</TableCell>
                         <TableCell>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              detalle.tipo_peso === "TOTAL"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-green-100 text-green-800"
-                            }`}
-                          >
-                            {detalle.tipo_peso}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
+                          <div className="flex gap-1">
                             <Button
+                              onClick={() => editarDetalle(detalle)}
                               variant="ghost"
                               size="sm"
-                              onClick={() => editarDetalle(detalle)}
-                              className="h-8 w-8 p-0"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
+                              onClick={() => eliminarDetalle(detalle.id)}
                               variant="ghost"
                               size="sm"
-                              onClick={() => eliminarDetalle(detalle.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -1314,14 +1326,6 @@ export default function EditarSalidaAnimalesDrawer({
                 </TableBody>
               </Table>
             </div>
-
-            {detalles.length > 0 && (
-              <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                <div className="font-medium mb-1">Resumen:</div>
-                <div>Total de animales: {detalles.reduce((sum, d) => sum + d.cantidad, 0)}</div>
-                <div>Peso total: {detalles.reduce((sum, d) => sum + d.peso, 0)} kg</div>
-              </div>
-            )}
           </div>
 
           {/* Nota */}
@@ -1331,32 +1335,22 @@ export default function EditarSalidaAnimalesDrawer({
             </Label>
             <Textarea
               id="nota"
+              placeholder="Notas adicionales sobre el movimiento..."
               value={nota}
               onChange={(e) => setNota(e.target.value)}
-              placeholder="Observaciones adicionales..."
-              className="mt-1"
-              rows={3}
+              className="mt-1 min-h-[100px]"
             />
           </div>
         </div>
 
-        {/* Footer con botones */}
-        <div className="border-t p-6 bg-gray-50">
-          <div className="flex justify-end space-x-3">
-            <Button variant="outline" onClick={cancelar} disabled={loading}>
-              Cancelar
-            </Button>
-            <Button onClick={guardar} disabled={loading} className="bg-red-600 hover:bg-red-700">
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Actualizando...
-                </>
-              ) : (
-                "Actualizar"
-              )}
-            </Button>
-          </div>
+        {/* Footer */}
+        <div className="border-t p-6 flex gap-3 justify-end">
+          <Button onClick={cancelar} variant="outline">
+            Cancelar
+          </Button>
+          <Button onClick={guardar} disabled={loading} className="bg-red-600 hover:bg-red-700">
+            {loading ? "Actualizando..." : "Actualizar"}
+          </Button>
         </div>
       </DrawerContent>
     </Drawer>
