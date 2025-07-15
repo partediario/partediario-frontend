@@ -36,6 +36,29 @@ interface MovimientosRecientesProps {
   onRowClick?: (id: number) => void
 }
 
+// Función para formatear fecha sin problemas de zona horaria
+const formatDateSafe = (dateString: string): string => {
+  try {
+    // Si la fecha viene en formato YYYY-MM-DD, la tratamos como fecha local
+    if (dateString.includes("-") && dateString.length === 10) {
+      const [year, month, day] = dateString.split("-").map(Number)
+      const date = new Date(year, month - 1, day) // month - 1 porque los meses en JS van de 0-11
+      return date.toLocaleDateString("es-ES")
+    }
+
+    // Si viene en otro formato, intentamos parsearlo normalmente
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) {
+      return dateString // Si no se puede parsear, devolvemos el string original
+    }
+
+    return date.toLocaleDateString("es-ES")
+  } catch (error) {
+    console.error("Error formatting date:", error)
+    return dateString
+  }
+}
+
 export default function MovimientosRecientes({ onRowClick }: MovimientosRecientesProps) {
   const { establecimientoSeleccionado, getEstablecimientoNombre } = useEstablishment()
 
@@ -140,9 +163,9 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
         description: `Preparando archivo ${format.toUpperCase()}...`,
       })
 
-      // Datos para exportar
+      // Datos para exportar - usando la función de formateo segura
       const dataToExport = movimientos.map((mov) => ({
-        Fecha: new Date(mov.fecha).toLocaleDateString("es-ES"),
+        Fecha: formatDateSafe(mov.fecha),
         Categoría: mov.categoria_animal,
         Tipo: mov.tipo_movimiento === "ENTRADA" ? "Entrada" : "Salida",
         Movimiento: mov.movimiento,
@@ -593,7 +616,7 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
                       className="hover:bg-gray-50 cursor-pointer"
                       onClick={() => onRowClick && onRowClick(mov.movimiento_id)}
                     >
-                      <TableCell className="font-medium">{new Date(mov.fecha).toLocaleDateString("es-ES")}</TableCell>
+                      <TableCell className="font-medium">{formatDateSafe(mov.fecha)}</TableCell>
                       <TableCell>{mov.categoria_animal}</TableCell>
                       <TableCell>
                         <Badge
