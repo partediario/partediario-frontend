@@ -73,7 +73,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: Activity,
       label: "Actividades",
       key: "actividades",
-      visible: true, // Mantenido oculto como antes
+      visible: false, // Mantenido oculto como antes
       requiresAuth: true,
     },
     {
