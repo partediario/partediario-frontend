@@ -349,6 +349,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
           original &&
           (original.categoria_animal_id !== actual.categoria_animal_id ||
             original.cantidad !== actual.cantidad ||
+            original.peso_total !== actual.cantidad ||
             original.peso_total !== actual.peso_total)
         )
       })
@@ -783,7 +784,9 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900">{stockItem.cantidad}</td>
                           <td className="px-4 py-3 text-sm text-gray-900">
-                            {stockItem.peso_total ? `${stockItem.peso_total} kg` : "No especificado"}
+                            {stockItem.peso_total !== null && stockItem.peso_total !== undefined
+                              ? `${stockItem.peso_total} kg`
+                              : "No especificado"}
                           </td>
                           <td className="px-4 py-3 text-sm">
                             <div className="flex gap-2">
