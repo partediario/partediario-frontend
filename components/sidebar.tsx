@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import Image from "next/image"
 import {
   BarChart3,
@@ -143,12 +145,47 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
     console.log("🏢 Cambiando empresa a:", value)
     setEmpresaSeleccionada(value)
     onCompanyChange?.(value)
+
+    // Disparar evento global para actualizar todos los componentes
+    const event = new CustomEvent("empresaChanged", {
+      detail: {
+        empresaId: value,
+        empresaNombre: getEmpresaNombre(value),
+        timestamp: Date.now(),
+      },
+    })
+    window.dispatchEvent(event)
+
+    // También disparar evento genérico de actualización
+    window.dispatchEvent(
+      new CustomEvent("updateAllComponents", {
+        detail: { type: "empresa", value, timestamp: Date.now() },
+      }),
+    )
   }
 
   const handleEstablishmentChange = (value: string) => {
     console.log("🏭 Cambiando establecimiento a:", value)
     setEstablecimientoSeleccionado(value)
     onEstablishmentChange?.(value)
+
+    // Disparar evento global para actualizar todos los componentes
+    const event = new CustomEvent("establecimientoChanged", {
+      detail: {
+        establecimientoId: value,
+        establecimientoNombre: getEstablecimientoNombre(value),
+        empresaId: empresaSeleccionada,
+        timestamp: Date.now(),
+      },
+    })
+    window.dispatchEvent(event)
+
+    // También disparar evento genérico de actualización
+    window.dispatchEvent(
+      new CustomEvent("updateAllComponents", {
+        detail: { type: "establecimiento", value, timestamp: Date.now() },
+      }),
+    )
   }
 
   // Función para obtener el icono del rol
@@ -156,6 +193,13 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
     if (permissions.isAdmin) return <Crown className="h-4 w-4 text-yellow-500" />
     if (permissions.isConsultor) return <Eye className="h-4 w-4 text-blue-500" />
     return <Users className="h-4 w-4 text-gray-400" />
+  }
+
+  // Función para manejar click en dropdown cuando solo hay una opción
+  const handleSingleOptionClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    return false
   }
 
   // Mostrar loading mientras se carga el usuario
@@ -227,16 +271,18 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
         {/* Error message del establishment context */}
         {error && <div className="mb-4 p-2 bg-red-100 border border-red-300 rounded text-red-700 text-xs">{error}</div>}
 
-        {/* Selector de Empresa */}
+        {/* Selector de Empresa con título */}
         <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-300 mb-2">Empresa</label>
           <Select
             value={empresaSeleccionada}
-            onValueChange={handleCompanyChange}
+            onValueChange={empresas.length > 1 ? handleCompanyChange : undefined}
             disabled={loading || empresas.length === 0}
           >
             <SelectTrigger
-              className="w-full text-white border-gray-600 rounded-md"
+              className={`w-full text-white border-gray-600 rounded-md ${empresas.length <= 1 ? "[&>svg]:hidden" : ""}`}
               style={{ backgroundColor: "#2A2D2E" }}
+              onClick={empresas.length <= 1 ? handleSingleOptionClick : undefined}
             >
               <SelectValue>
                 {loading
@@ -248,26 +294,32 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
                       : "Seleccionar empresa"}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent>
-              {empresas.map((empresa) => (
-                <SelectItem key={empresa.empresa_id} value={empresa.empresa_id}>
-                  {empresa.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
+            {empresas.length > 1 && (
+              <SelectContent>
+                {empresas.map((empresa) => (
+                  <SelectItem key={empresa.empresa_id} value={empresa.empresa_id}>
+                    {empresa.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            )}
           </Select>
         </div>
 
-        {/* Selector de Establecimiento */}
+        {/* Selector de Establecimiento con título */}
         <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-300 mb-2">Establecimiento</label>
           <Select
             value={establecimientoSeleccionado}
-            onValueChange={handleEstablishmentChange}
+            onValueChange={establecimientos.length > 1 ? handleEstablishmentChange : undefined}
             disabled={!empresaSeleccionada || establecimientos.length === 0}
           >
             <SelectTrigger
-              className="w-full text-white border-gray-600 rounded-md"
+              className={`w-full text-white border-gray-600 rounded-md ${
+                establecimientos.length <= 1 ? "[&>svg]:hidden" : ""
+              }`}
               style={{ backgroundColor: "#2A2D2E" }}
+              onClick={establecimientos.length <= 1 ? handleSingleOptionClick : undefined}
             >
               <SelectValue>
                 {!empresaSeleccionada
@@ -279,13 +331,15 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
                       : "Seleccionar establecimiento"}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent>
-              {establecimientos.map((establecimiento) => (
-                <SelectItem key={establecimiento.establecimiento_id} value={establecimiento.establecimiento_id}>
-                  {establecimiento.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
+            {establecimientos.length > 1 && (
+              <SelectContent>
+                {establecimientos.map((establecimiento) => (
+                  <SelectItem key={establecimiento.establecimiento_id} value={establecimiento.establecimiento_id}>
+                    {establecimiento.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            )}
           </Select>
         </div>
 
