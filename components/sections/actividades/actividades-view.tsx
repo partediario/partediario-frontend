@@ -857,10 +857,6 @@ export default function ActividadesView() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Actividades del Personal</h1>
               <p className="text-sm text-gray-600 mt-1">Gestión completa de actividades de campo</p>
-              {/* Debug info */}
-              <p className="text-xs text-gray-400 mt-1">
-                Fecha local: {obtenerFechaLocal()} | Filtro: {rangoTiempo}
-              </p>
             </div>
 
             {/* Controles de tiempo y acciones */}
