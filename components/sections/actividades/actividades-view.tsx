@@ -110,6 +110,20 @@ const getTextoPeriodo = (periodo: string) => {
   }
 }
 
+// Función para obtener la fecha actual en zona horaria local
+const obtenerFechaLocal = () => {
+  const ahora = new Date()
+  // Ajustar a zona horaria local (UTC-3)
+  const offsetLocal = -3 * 60 // -3 horas en minutos
+  const fechaLocal = new Date(ahora.getTime() + offsetLocal * 60 * 1000)
+
+  const año = fechaLocal.getFullYear()
+  const mes = String(fechaLocal.getMonth() + 1).padStart(2, "0")
+  const dia = String(fechaLocal.getDate()).padStart(2, "0")
+
+  return `${año}-${mes}-${dia}`
+}
+
 export default function ActividadesView() {
   const [actividades, setActividades] = useState<Actividad[]>([])
   const [actividadesPorTipo, setActividadesPorTipo] = useState<CategoriaActividad[]>([])
@@ -197,7 +211,12 @@ export default function ActividadesView() {
         params.append("busqueda", busqueda.trim())
       }
 
-      console.log("Cargando actividades con establecimiento:", establecimientoId, "período:", rangoTiempo)
+      console.log("🔍 Cargando actividades:", {
+        establecimiento: establecimientoId,
+        periodo: rangoTiempo,
+        fechaLocal: obtenerFechaLocal(),
+      })
+
       const response = await fetch(`/api/actividades?${params.toString()}`)
 
       if (!response.ok) {
@@ -208,7 +227,19 @@ export default function ActividadesView() {
 
       if (data.success) {
         setActividades(data.actividades || [])
-        console.log("Actividades cargadas:", data.actividades?.length || 0)
+        console.log("✅ Actividades cargadas:", data.actividades?.length || 0, "para período:", rangoTiempo)
+
+        // Debug: mostrar fechas de las primeras actividades
+        if (data.actividades && data.actividades.length > 0) {
+          console.log(
+            "📅 Fechas de actividades encontradas:",
+            data.actividades.slice(0, 3).map((act: any) => ({
+              fecha: act.fecha,
+              fecha_formateada: act.fecha_formateada,
+              actividad: act.tipo_actividad_nombre,
+            })),
+          )
+        }
       } else {
         throw new Error(data.error || "Error desconocido")
       }
@@ -240,12 +271,12 @@ export default function ActividadesView() {
       params.append("establecimiento_id", establecimientoId.toString())
       params.append("periodo", rangoTiempo) // Agregar filtro de período
 
-      console.log(
-        "Cargando actividades por categoría para establecimiento:",
-        establecimientoId,
-        "período:",
-        rangoTiempo,
-      )
+      console.log("🔍 Cargando categorías:", {
+        establecimiento: establecimientoId,
+        periodo: rangoTiempo,
+        fechaLocal: obtenerFechaLocal(),
+      })
+
       const response = await fetch(`/api/actividades-por-categoria?${params.toString()}`)
 
       if (!response.ok) {
@@ -256,7 +287,7 @@ export default function ActividadesView() {
 
       if (data.success) {
         setActividadesPorTipo(data.categorias || [])
-        console.log("Categorías cargadas:", data.categorias?.length || 0)
+        console.log("✅ Categorías cargadas:", data.categorias?.length || 0, "para período:", rangoTiempo)
       } else {
         throw new Error(data.error || "Error desconocido")
       }
@@ -286,7 +317,12 @@ export default function ActividadesView() {
       params.append("establecimiento_id", establecimientoId.toString())
       params.append("periodo", rangoTiempo) // Agregar filtro de período
 
-      console.log("Cargando actividades de categoría:", categoriaId, "período:", rangoTiempo)
+      console.log("🔍 Cargando actividades de categoría:", {
+        categoria: categoriaId,
+        periodo: rangoTiempo,
+        fechaLocal: obtenerFechaLocal(),
+      })
+
       const response = await fetch(`/api/actividades-por-categoria/${categoriaId}?${params.toString()}`)
 
       if (!response.ok) {
@@ -297,7 +333,12 @@ export default function ActividadesView() {
 
       if (data.success) {
         setActividadesCategoriaSeleccionada(data.actividades || [])
-        console.log("Actividades de categoría cargadas:", data.actividades?.length || 0)
+        console.log(
+          "✅ Actividades de categoría cargadas:",
+          data.actividades?.length || 0,
+          "para período:",
+          rangoTiempo,
+        )
       } else {
         throw new Error(data.error || "Error desconocido")
       }
@@ -337,6 +378,12 @@ export default function ActividadesView() {
   // Cargar actividades cuando cambien los filtros (incluyendo rangoTiempo)
   useEffect(() => {
     if (establecimientoSeleccionado) {
+      console.log("🔄 Recargando datos por cambio de filtros:", {
+        rangoTiempo,
+        ubicacionFiltro,
+        empleadoFiltro,
+        busqueda: busqueda.substring(0, 20) + (busqueda.length > 20 ? "..." : ""),
+      })
       cargarActividades()
       cargarActividadesPorCategoria()
     }
@@ -371,6 +418,13 @@ export default function ActividadesView() {
       const params = new URLSearchParams()
       params.append("establecimiento_id", establecimientoId.toString())
       params.append("periodo", periodoInforme)
+
+      console.log("📊 Generando informe:", {
+        tipo: tipoInforme,
+        formato: formatoInforme,
+        periodo: periodoInforme,
+        fechaLocal: obtenerFechaLocal(),
+      })
 
       const response = await fetch(`/api/actividades?${params.toString()}`)
       const data = await response.json()
@@ -803,6 +857,10 @@ export default function ActividadesView() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Actividades del Personal</h1>
               <p className="text-sm text-gray-600 mt-1">Gestión completa de actividades de campo</p>
+              {/* Debug info */}
+              <p className="text-xs text-gray-400 mt-1">
+                Fecha local: {obtenerFechaLocal()} | Filtro: {rangoTiempo}
+              </p>
             </div>
 
             {/* Controles de tiempo y acciones */}
@@ -826,8 +884,6 @@ export default function ActividadesView() {
                 <FileText className="w-4 h-4 mr-2" />
                 Generar Informe
               </Button>
-
-              {/* Botón "Nueva Actividad" eliminado */}
             </div>
           </div>
         </div>
@@ -870,7 +926,7 @@ export default function ActividadesView() {
                 <div className="text-center py-8 text-gray-500">
                   {!establecimientoId
                     ? "Selecciona un establecimiento para ver las actividades por tipo."
-                    : "No se encontraron categorías de actividades."}
+                    : `No se encontraron categorías de actividades ${getTextoPeriodo(rangoTiempo)}.`}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -1020,7 +1076,7 @@ export default function ActividadesView() {
                           <TableCell colSpan={4} className="text-center py-8 text-gray-500">
                             {!establecimientoId
                               ? "Selecciona un establecimiento para ver las actividades."
-                              : "No se encontraron actividades con los filtros aplicados."}
+                              : `No se encontraron actividades ${getTextoPeriodo(rangoTiempo)} con los filtros aplicados.`}
                           </TableCell>
                         </TableRow>
                       ) : (

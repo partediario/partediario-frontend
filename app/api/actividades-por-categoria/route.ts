@@ -3,10 +3,22 @@ import { createClient } from "@supabase/supabase-js"
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-// Función para obtener rango de fechas
+// Función para obtener rango de fechas con zona horaria correcta
 const obtenerRangoFechas = (periodo: string) => {
-  const hoy = new Date()
-  const fechaHoy = hoy.toISOString().split("T")[0] // YYYY-MM-DD
+  // Obtener fecha actual en zona horaria local (Argentina/Paraguay - UTC-3)
+  const ahora = new Date()
+
+  // Ajustar a zona horaria local (UTC-3)
+  const offsetLocal = -3 * 60 // -3 horas en minutos
+  const fechaLocal = new Date(ahora.getTime() + offsetLocal * 60 * 1000)
+
+  // Obtener fecha de hoy en formato YYYY-MM-DD
+  const año = fechaLocal.getFullYear()
+  const mes = String(fechaLocal.getMonth() + 1).padStart(2, "0")
+  const dia = String(fechaLocal.getDate()).padStart(2, "0")
+  const fechaHoy = `${año}-${mes}-${dia}`
+
+  console.log("🕐 Fecha local calculada para categorías:", fechaHoy, "período:", periodo)
 
   switch (periodo) {
     case "hoy":
@@ -16,18 +28,32 @@ const obtenerRangoFechas = (periodo: string) => {
       }
 
     case "semana":
-      const inicioSemana = new Date(hoy)
-      inicioSemana.setDate(hoy.getDate() - 7)
+      // Calcular fecha de hace 7 días
+      const fechaInicioSemana = new Date(fechaLocal)
+      fechaInicioSemana.setDate(fechaLocal.getDate() - 6) // 7 días incluyendo hoy
+
+      const añoSemana = fechaInicioSemana.getFullYear()
+      const mesSemana = String(fechaInicioSemana.getMonth() + 1).padStart(2, "0")
+      const diaSemana = String(fechaInicioSemana.getDate()).padStart(2, "0")
+      const fechaInicioSemanaStr = `${añoSemana}-${mesSemana}-${diaSemana}`
+
       return {
-        fechaInicio: inicioSemana.toISOString().split("T")[0],
+        fechaInicio: fechaInicioSemanaStr,
         fechaFin: fechaHoy,
       }
 
     case "mes":
-      const inicioMes = new Date(hoy)
-      inicioMes.setDate(hoy.getDate() - 30)
+      // Calcular fecha de hace 30 días
+      const fechaInicioMes = new Date(fechaLocal)
+      fechaInicioMes.setDate(fechaLocal.getDate() - 29) // 30 días incluyendo hoy
+
+      const añoMes = fechaInicioMes.getFullYear()
+      const mesMes = String(fechaInicioMes.getMonth() + 1).padStart(2, "0")
+      const diaMes = String(fechaInicioMes.getDate()).padStart(2, "0")
+      const fechaInicioMesStr = `${añoMes}-${mesMes}-${diaMes}`
+
       return {
-        fechaInicio: inicioMes.toISOString().split("T")[0],
+        fechaInicio: fechaInicioMesStr,
         fechaFin: fechaHoy,
       }
 
@@ -69,8 +95,8 @@ export async function GET(request: NextRequest) {
     if (periodo && periodo !== "todos") {
       const rangoFechas = obtenerRangoFechas(periodo)
       if (rangoFechas) {
-        query = query.gte("fecha", rangoFechas.fechaInicio).lte("fecha", rangoFechas.fechaFin)
         console.log("📅 Filtrando categorías por fechas:", rangoFechas)
+        query = query.gte("fecha", rangoFechas.fechaInicio).lte("fecha", rangoFechas.fechaFin)
       }
     }
 
@@ -108,7 +134,7 @@ export async function GET(request: NextRequest) {
     // Convertir a array y ordenar por cantidad descendente
     const categorias = Array.from(categoriasMap.values()).sort((a, b) => b.cantidad - a.cantidad)
 
-    console.log("✅ Categorías encontradas:", categorias.length)
+    console.log("✅ Categorías encontradas:", categorias.length, "para período:", periodo)
 
     return NextResponse.json({
       success: true,
