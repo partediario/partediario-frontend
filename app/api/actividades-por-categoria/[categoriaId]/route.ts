@@ -7,7 +7,6 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SE
 const formatearFecha = (fechaStr: string) => {
   if (!fechaStr) return ""
 
-  // Si la fecha viene en formato YYYY-MM-DD, la parseamos directamente
   if (fechaStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
     const [year, month, day] = fechaStr.split("-")
     return `${day}/${month}/${year}`
@@ -36,7 +35,7 @@ const formatearUbicacion = (ubicacion: string) => {
 // Función para obtener rango de fechas
 const obtenerRangoFechas = (periodo: string) => {
   const hoy = new Date()
-  const fechaHoy = hoy.toISOString().split("T")[0] // YYYY-MM-DD
+  const fechaHoy = hoy.toISOString().split("T")[0]
 
   switch (periodo) {
     case "hoy":
@@ -62,19 +61,16 @@ const obtenerRangoFechas = (periodo: string) => {
       }
 
     default:
-      // Sin filtro de fecha
       return null
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest, { params }: { params: { categoriaId: string } }) {
   try {
     const { searchParams } = new URL(request.url)
     const establecimientoId = searchParams.get("establecimiento_id")
-    const ubicacion = searchParams.get("ubicacion")
-    const empleado = searchParams.get("empleado")
-    const busqueda = searchParams.get("busqueda")
-    const periodo = searchParams.get("periodo") // nuevo parámetro
+    const periodo = searchParams.get("periodo")
+    const categoriaId = params.categoriaId
 
     if (!establecimientoId) {
       return NextResponse.json(
@@ -86,31 +82,39 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log("🔍 Consultando actividades para establecimiento:", establecimientoId, "período:", periodo)
+    if (!categoriaId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "categoriaId es requerido",
+        },
+        { status: 400 },
+      )
+    }
+
+    console.log(
+      "🔍 Consultando actividades de categoría:",
+      categoriaId,
+      "establecimiento:",
+      establecimientoId,
+      "período:",
+      periodo,
+    )
 
     // Construir la consulta base
-    let query = supabase.from("pd_actividades_view").select("*").eq("establecimiento_id", establecimientoId)
+    let query = supabase
+      .from("pd_actividades_view")
+      .select("*")
+      .eq("establecimiento_id", establecimientoId)
+      .eq("categoria_actividad_id", categoriaId)
 
     // Aplicar filtro de fecha si se especifica un período
     if (periodo && periodo !== "todos") {
       const rangoFechas = obtenerRangoFechas(periodo)
       if (rangoFechas) {
         query = query.gte("fecha", rangoFechas.fechaInicio).lte("fecha", rangoFechas.fechaFin)
-        console.log("📅 Filtrando por fechas:", rangoFechas)
+        console.log("📅 Filtrando actividades de categoría por fechas:", rangoFechas)
       }
-    }
-
-    // Aplicar otros filtros
-    if (ubicacion && ubicacion !== "todos") {
-      query = query.eq("tipo_actividad_ubicacion", ubicacion.toUpperCase())
-    }
-
-    if (empleado && empleado !== "todos") {
-      query = query.eq("usuario", empleado)
-    }
-
-    if (busqueda && busqueda.trim()) {
-      query = query.or(`tipo_actividad_nombre.ilike.%${busqueda}%,usuario.ilike.%${busqueda}%`)
     }
 
     // Ordenar por fecha y hora descendente
@@ -119,7 +123,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query
 
     if (error) {
-      console.error("❌ Error fetching actividades:", error)
+      console.error("❌ Error fetching actividades de categoría:", error)
       return NextResponse.json(
         {
           success: false,
@@ -136,14 +140,14 @@ export async function GET(request: NextRequest) {
       tipo_actividad_ubicacion_formateada: formatearUbicacion(actividad.tipo_actividad_ubicacion),
     }))
 
-    console.log("✅ Actividades encontradas:", actividadesFormateadas.length)
+    console.log("✅ Actividades de categoría encontradas:", actividadesFormateadas.length)
 
     return NextResponse.json({
       success: true,
       actividades: actividadesFormateadas,
     })
   } catch (error) {
-    console.error("❌ Error in actividades API:", error)
+    console.error("❌ Error in actividades de categoría API:", error)
     return NextResponse.json(
       {
         success: false,
