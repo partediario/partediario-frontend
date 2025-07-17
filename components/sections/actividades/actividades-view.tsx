@@ -849,25 +849,25 @@ export default function ActividadesView() {
   const establecimientoId = obtenerEstablecimientoSeleccionado()
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      {/* Header mejorado */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center py-6 gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Actividades del Personal</h1>
-              <p className="text-sm text-gray-600 mt-1">Gestión completa de actividades de campo</p>
+    <div className="min-h-screen bg-gray-50/50 w-full">
+      {/* Header completamente responsivo */}
+      <div className="bg-white border-b border-gray-200 shadow-sm w-full">
+        <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 2xl:px-16">
+          <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center py-4 sm:py-6 gap-4">
+            <div className="w-full xl:w-auto">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Actividades del Personal</h1>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">Gestión completa de actividades de campo</p>
             </div>
 
-            {/* Controles de tiempo y acciones */}
-            <div className="flex flex-wrap gap-3">
+            {/* Controles de tiempo y acciones - completamente responsivos */}
+            <div className="flex flex-col sm:flex-row w-full xl:w-auto gap-3">
               {/* Toggle de rango de tiempo */}
-              <div className="flex bg-gray-100 rounded-lg p-1">
+              <div className="flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
                 {["hoy", "semana", "mes"].map((rango) => (
                   <button
                     key={rango}
                     onClick={() => setRangoTiempo(rango)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                       rangoTiempo === rango ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"
                     }`}
                   >
@@ -876,8 +876,13 @@ export default function ActividadesView() {
                 ))}
               </div>
 
-              <Button variant="outline" size="sm" onClick={() => setVistaGenerarInforme(true)}>
-                <FileText className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVistaGenerarInforme(true)}
+                className="w-full sm:w-auto text-xs sm:text-sm"
+              >
+                <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 Generar Informe
               </Button>
             </div>
@@ -885,69 +890,72 @@ export default function ActividadesView() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Panel de Resumen (KPI) - SOLO TOTAL ACTIVIDADES */}
-        <div className="grid grid-cols-1 gap-6 mb-8">
+      {/* Contenido principal - completamente fluido */}
+      <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 2xl:px-16 py-4 sm:py-6 lg:py-8">
+        {/* Panel de Resumen (KPI) - responsivo */}
+        <div className="w-full mb-6 sm:mb-8">
           <Card
-            className="hover:shadow-lg transition-all duration-200 border-0 shadow-md cursor-pointer hover:scale-105"
+            className="hover:shadow-lg transition-all duration-200 border-0 shadow-md cursor-pointer hover:scale-[1.02] w-full"
             onClick={() => setVistaTotalActividades(true)}
           >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-2">Total Actividades Registradas</p>
-                  <p className="text-3xl font-bold text-gray-900 mb-1">{totalActividades}</p>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1 w-full sm:w-auto">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 mb-2">Total Actividades Registradas</p>
+                  <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1">{totalActividades}</p>
                   <p className="text-xs text-gray-500 mb-2">{getTextoPeriodo(rangoTiempo)}</p>
                   <p className="text-xs font-medium text-blue-600">Click para ver detalles</p>
                 </div>
-                <div className="p-4 rounded-xl bg-blue-50">
-                  <CalendarDays className="w-8 h-8 text-blue-600" />
+                <div className="p-3 sm:p-4 rounded-xl bg-blue-50 self-center sm:self-auto">
+                  <CalendarDays className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Gráfico de actividades por tipo - DINÁMICO */}
-        <div className="grid grid-cols-1 gap-6 mb-8">
-          <Card className="shadow-md border-0">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
+        {/* Gráfico de actividades por tipo - completamente responsivo */}
+        <div className="w-full mb-6 sm:mb-8">
+          <Card className="shadow-md border-0 w-full">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
                 Actividades por Tipo
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0">
               {actividadesPorTipo.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 text-sm sm:text-base">
                   {!establecimientoId
                     ? "Selecciona un establecimiento para ver las actividades por tipo."
                     : `No se encontraron categorías de actividades ${getTextoPeriodo(rangoTiempo)}.`}
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {actividadesPorTipo.map((categoria, index) => (
                     <div
                       key={categoria.categoria_id}
-                      className="p-4 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-gray-100"
+                      className="p-3 sm:p-4 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-gray-100"
                       onClick={() => handleTipoClick(categoria)}
                     >
-                      {/* Header con nombre y cantidad */}
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{getIconoActividad(categoria.categoria_nombre)}</span>
-                          <h3 className="text-lg font-semibold text-gray-900">{categoria.categoria_nombre}</h3>
+                      {/* Header con nombre y cantidad - responsivo */}
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-2">
+                        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                          <span className="text-xl sm:text-2xl">{getIconoActividad(categoria.categoria_nombre)}</span>
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 break-words">
+                            {categoria.categoria_nombre}
+                          </h3>
                         </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-gray-900">{categoria.cantidad}</div>
-                          <div className="text-sm text-gray-500">actividades</div>
+                        <div className="text-left sm:text-right w-full sm:w-auto">
+                          <div className="text-xl sm:text-2xl font-bold text-gray-900">{categoria.cantidad}</div>
+                          <div className="text-xs sm:text-sm text-gray-500">actividades</div>
                         </div>
                       </div>
 
-                      {/* Barra de progreso separada */}
-                      <div className="w-full bg-gray-200 rounded-full h-4 relative overflow-hidden">
+                      {/* Barra de progreso - responsiva */}
+                      <div className="w-full bg-gray-200 rounded-full h-3 sm:h-4 relative overflow-hidden">
                         <div
-                          className={`${getCategoriaColor(index)} h-4 rounded-full transition-all duration-700 ease-out`}
+                          className={`${getCategoriaColor(index)} h-3 sm:h-4 rounded-full transition-all duration-700 ease-out`}
                           style={{
                             width: `${actividadesPorTipo.length > 0 ? (categoria.cantidad / Math.max(...actividadesPorTipo.map((c) => c.cantidad))) * 100 : 0}%`,
                           }}
@@ -966,7 +974,9 @@ export default function ActividadesView() {
                       </div>
 
                       {/* Información adicional */}
-                      <div className="mt-2 text-sm text-gray-600">Click para ver detalles de las actividades</div>
+                      <div className="mt-2 text-xs sm:text-sm text-gray-600">
+                        Click para ver detalles de las actividades
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -975,17 +985,22 @@ export default function ActividadesView() {
           </Card>
         </div>
 
-        {/* Lista de actividades con filtros integrados */}
-        <Card className="shadow-md border-0">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Lista de Actividades</CardTitle>
-            <div className="flex gap-2">
+        {/* Lista de actividades con filtros integrados - completamente responsiva */}
+        <Card className="shadow-md border-0 w-full">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 gap-4">
+            <CardTitle className="text-lg sm:text-xl">Lista de Actividades</CardTitle>
+            <div className="flex gap-2 w-full sm:w-auto">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" disabled={exportando}>
-                    <Download className="w-4 h-4 mr-2" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={exportando}
+                    className="w-full sm:w-auto text-xs sm:text-sm bg-transparent"
+                  >
+                    <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                     {exportando ? "Exportando..." : "Exportar"}
-                    <ChevronDown className="w-4 h-4 ml-2" />
+                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -1002,24 +1017,26 @@ export default function ActividadesView() {
             </div>
           </CardHeader>
 
-          {/* Filtros integrados */}
-          <CardContent className="p-6 pt-0">
-            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-              <div className="flex-1">
+          {/* Filtros integrados - completamente responsivos */}
+          <CardContent className="p-4 sm:p-6 pt-0">
+            <div className="flex flex-col gap-4">
+              {/* Barra de búsqueda - ancho completo */}
+              <div className="w-full">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     placeholder="Buscar actividades, empleados o lugares..."
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
-                    className="pl-10 h-11"
+                    className="pl-10 h-10 sm:h-11 w-full text-sm sm:text-base"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-3">
+              {/* Selectores - responsivos */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <Select value={empleadoFiltro} onValueChange={setEmpleadoFiltro}>
-                  <SelectTrigger className="w-[200px] h-11">
+                  <SelectTrigger className="w-full sm:w-[200px] lg:w-[250px] h-10 sm:h-11 text-sm sm:text-base">
                     <SelectValue placeholder="Todos los empleados" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1033,7 +1050,7 @@ export default function ActividadesView() {
                 </Select>
 
                 <Select value={ubicacionFiltro} onValueChange={setUbicacionFiltro}>
-                  <SelectTrigger className="w-[200px] h-11">
+                  <SelectTrigger className="w-full sm:w-[200px] lg:w-[250px] h-10 sm:h-11 text-sm sm:text-base">
                     <SelectValue placeholder="Todas las ubicaciones" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1049,129 +1066,199 @@ export default function ActividadesView() {
             </div>
           </CardContent>
 
-          <CardContent className="p-6 pt-0">
+          {/* Tabla responsiva */}
+          <CardContent className="p-4 sm:p-6 pt-0">
             {loading ? (
               <div className="flex justify-center items-center py-8">
-                <div className="text-gray-500">Cargando actividades...</div>
+                <div className="text-gray-500 text-sm sm:text-base">Cargando actividades...</div>
               </div>
             ) : (
-              <ScrollArea className="h-[600px]">
-                <div className="overflow-x-auto">
-                  <Table className="min-w-full">
-                    <TableHeader>
-                      <TableRow className="bg-gray-50">
-                        <TableHead>Actividad</TableHead>
-                        <TableHead>Empleado</TableHead>
-                        <TableHead>Ubicación</TableHead>
-                        <TableHead>Fecha</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+              <div className="w-full">
+                {/* Vista de tabla para pantallas medianas y grandes */}
+                <div className="hidden md:block">
+                  <ScrollArea className="h-[400px] lg:h-[600px] w-full">
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full">
+                        <TableHeader>
+                          <TableRow className="bg-gray-50">
+                            <TableHead className="text-xs lg:text-sm">Actividad</TableHead>
+                            <TableHead className="text-xs lg:text-sm">Empleado</TableHead>
+                            <TableHead className="text-xs lg:text-sm">Ubicación</TableHead>
+                            <TableHead className="text-xs lg:text-sm">Fecha</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {actividades.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center py-8 text-gray-500 text-sm">
+                                {!establecimientoId
+                                  ? "Selecciona un establecimiento para ver las actividades."
+                                  : `No se encontraron actividades ${getTextoPeriodo(rangoTiempo)} con los filtros aplicados.`}
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            actividades.map((actividad) => (
+                              <TableRow
+                                key={`${actividad.actividad_id}-${actividad.fecha}-${actividad.hora}`}
+                                className="hover:bg-gray-50 cursor-pointer"
+                                onClick={() => {
+                                  setActividadSeleccionada(actividad)
+                                  setVistaDetalle(true)
+                                }}
+                              >
+                                <TableCell className="py-3">
+                                  <div className="flex items-center gap-2 lg:gap-3">
+                                    <span className="text-lg lg:text-xl">
+                                      {getIconoActividad(actividad.tipo_actividad_nombre)}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-medium text-gray-900 text-xs lg:text-sm truncate">
+                                        {actividad.tipo_actividad_nombre}
+                                      </p>
+                                      {actividad.insumo_nombre && (
+                                        <p className="text-xs text-gray-500 truncate">
+                                          Insumo: {actividad.insumo_nombre} ({actividad.insumo_cantidad})
+                                        </p>
+                                      )}
+                                      {actividad.categoria_animal && (
+                                        <p className="text-xs text-gray-500 truncate">
+                                          Animal: {actividad.categoria_animal} ({actividad.animal_cantidad})
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="font-medium text-xs lg:text-sm">{actividad.usuario}</TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                                    {actividad.tipo_actividad_ubicacion_formateada}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="text-xs lg:text-sm font-medium">{actividad.fecha_formateada}</div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </ScrollArea>
+                </div>
+
+                {/* Vista de cards para pantallas pequeñas */}
+                <div className="md:hidden">
+                  <ScrollArea className="h-[500px] w-full">
+                    <div className="space-y-3">
                       {actividades.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                            {!establecimientoId
-                              ? "Selecciona un establecimiento para ver las actividades."
-                              : `No se encontraron actividades ${getTextoPeriodo(rangoTiempo)} con los filtros aplicados.`}
-                          </TableCell>
-                        </TableRow>
+                        <div className="text-center py-8 text-gray-500 text-sm">
+                          {!establecimientoId
+                            ? "Selecciona un establecimiento para ver las actividades."
+                            : `No se encontraron actividades ${getTextoPeriodo(rangoTiempo)} con los filtros aplicados.`}
+                        </div>
                       ) : (
                         actividades.map((actividad) => (
-                          <TableRow
+                          <Card
                             key={`${actividad.actividad_id}-${actividad.fecha}-${actividad.hora}`}
-                            className="hover:bg-gray-50 cursor-pointer"
+                            className="cursor-pointer hover:shadow-md transition-shadow"
                             onClick={() => {
                               setActividadSeleccionada(actividad)
                               setVistaDetalle(true)
                             }}
                           >
-                            <TableCell>
-                              <div className="flex items-center gap-3">
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3">
                                 <span className="text-xl">{getIconoActividad(actividad.tipo_actividad_nombre)}</span>
-                                <div>
-                                  <p className="font-medium text-gray-900">{actividad.tipo_actividad_nombre}</p>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-medium text-gray-900 text-sm mb-1 truncate">
+                                    {actividad.tipo_actividad_nombre}
+                                  </h4>
+                                  <p className="text-xs text-gray-600 mb-1">👤 {actividad.usuario}</p>
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                                      {actividad.tipo_actividad_ubicacion_formateada}
+                                    </Badge>
+                                    <span className="text-xs text-gray-500">{actividad.fecha_formateada}</span>
+                                  </div>
                                   {actividad.insumo_nombre && (
-                                    <p className="text-sm text-gray-500">
-                                      Insumo: {actividad.insumo_nombre} ({actividad.insumo_cantidad})
+                                    <p className="text-xs text-gray-500 truncate">
+                                      🧪 {actividad.insumo_nombre} ({actividad.insumo_cantidad})
                                     </p>
                                   )}
                                   {actividad.categoria_animal && (
-                                    <p className="text-sm text-gray-500">
-                                      Animal: {actividad.categoria_animal} ({actividad.animal_cantidad})
+                                    <p className="text-xs text-gray-500 truncate">
+                                      🐄 {actividad.categoria_animal} ({actividad.animal_cantidad})
                                     </p>
                                   )}
                                 </div>
                               </div>
-                            </TableCell>
-                            <TableCell className="font-medium">{actividad.usuario}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                                {actividad.tipo_actividad_ubicacion_formateada}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm font-medium">{actividad.fecha_formateada}</div>
-                            </TableCell>
-                          </TableRow>
+                            </CardContent>
+                          </Card>
                         ))
                       )}
-                    </TableBody>
-                  </Table>
+                    </div>
+                  </ScrollArea>
                 </div>
-              </ScrollArea>
+              </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Drawer de detalle de actividad */}
+        {/* Drawer de detalle de actividad - responsivo */}
         <Drawer open={vistaDetalle} onOpenChange={setVistaDetalle} direction="right">
-          <DrawerContent className="h-full w-[850px] ml-auto">
-            <DrawerHeader className="flex items-center justify-between border-b pb-4">
-              <DrawerTitle className="flex items-center gap-3">
-                <span className="text-2xl">
+          <DrawerContent className="h-full w-full sm:w-[90vw] md:w-[80vw] lg:w-[70vw] xl:w-[850px] ml-auto">
+            <DrawerHeader className="flex items-center justify-between border-b pb-4 p-4 sm:p-6">
+              <DrawerTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl">
+                <span className="text-xl sm:text-2xl">
                   {getIconoActividad(actividadSeleccionada?.tipo_actividad_nombre || "")}
                 </span>
-                {actividadSeleccionada?.tipo_actividad_nombre}
+                <span className="truncate">{actividadSeleccionada?.tipo_actividad_nombre}</span>
               </DrawerTitle>
               <button
                 onClick={() => setVistaDetalle(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
               >
-                <X className="h-5 w-5 text-gray-500" />
+                <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
               </button>
             </DrawerHeader>
-            <div className="max-h-[calc(100vh-80px)] overflow-y-auto p-6">
+            <div className="max-h-[calc(100vh-80px)] overflow-y-auto p-4 sm:p-6">
               {actividadSeleccionada && (
                 <>
-                  <div className="space-y-6">
-                    {/* Información principal */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4 sm:space-y-6">
+                    {/* Información principal - grid responsivo */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-sm font-medium text-gray-700">Empleado Responsable</Label>
-                        <p className="text-lg font-semibold">{actividadSeleccionada.usuario}</p>
+                        <Label className="text-xs sm:text-sm font-medium text-gray-700">Empleado Responsable</Label>
+                        <p className="text-base sm:text-lg font-semibold break-words">
+                          {actividadSeleccionada.usuario}
+                        </p>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-gray-700">Ubicación</Label>
-                        <p className="text-lg font-semibold">
+                        <Label className="text-xs sm:text-sm font-medium text-gray-700">Ubicación</Label>
+                        <p className="text-base sm:text-lg font-semibold break-words">
                           {actividadSeleccionada.tipo_actividad_ubicacion_formateada}
                         </p>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-gray-700">Fecha</Label>
-                        <p className="text-lg font-semibold">{actividadSeleccionada.fecha_formateada}</p>
+                        <Label className="text-xs sm:text-sm font-medium text-gray-700">Fecha</Label>
+                        <p className="text-base sm:text-lg font-semibold">{actividadSeleccionada.fecha_formateada}</p>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-gray-700">Hora</Label>
-                        <p className="text-lg font-semibold">{actividadSeleccionada.hora}</p>
+                        <Label className="text-xs sm:text-sm font-medium text-gray-700">Hora</Label>
+                        <p className="text-base sm:text-lg font-semibold">{actividadSeleccionada.hora}</p>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-gray-700">Empresa</Label>
-                        <p className="text-lg font-semibold">{actividadSeleccionada.empresa}</p>
+                        <Label className="text-xs sm:text-sm font-medium text-gray-700">Empresa</Label>
+                        <p className="text-base sm:text-lg font-semibold break-words">
+                          {actividadSeleccionada.empresa}
+                        </p>
                       </div>
                       {actividadSeleccionada.categoria_actividad_nombre && (
                         <div>
-                          <Label className="text-sm font-medium text-gray-700">Categoría de Actividad</Label>
-                          <p className="text-lg font-semibold">{actividadSeleccionada.categoria_actividad_nombre}</p>
+                          <Label className="text-xs sm:text-sm font-medium text-gray-700">Categoría de Actividad</Label>
+                          <p className="text-base sm:text-lg font-semibold break-words">
+                            {actividadSeleccionada.categoria_actividad_nombre}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -1179,8 +1266,8 @@ export default function ActividadesView() {
                     {/* Información de insumos */}
                     {actividadSeleccionada.insumo_nombre && (
                       <div>
-                        <Label className="text-sm font-medium text-gray-700">Insumos Utilizados</Label>
-                        <p className="text-gray-900 mt-1">
+                        <Label className="text-xs sm:text-sm font-medium text-gray-700">Insumos Utilizados</Label>
+                        <p className="text-gray-900 mt-1 text-sm sm:text-base break-words">
                           {actividadSeleccionada.insumo_nombre} - Cantidad: {actividadSeleccionada.insumo_cantidad}
                         </p>
                       </div>
@@ -1189,17 +1276,19 @@ export default function ActividadesView() {
                     {/* Información de animales */}
                     {actividadSeleccionada.categoria_animal && (
                       <div>
-                        <Label className="text-sm font-medium text-gray-700">Animales Involucrados</Label>
+                        <Label className="text-xs sm:text-sm font-medium text-gray-700">Animales Involucrados</Label>
                         <div className="mt-1 space-y-1">
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 text-sm sm:text-base break-words">
                             Categoría: {actividadSeleccionada.categoria_animal} - Cantidad:{" "}
                             {actividadSeleccionada.animal_cantidad}
                           </p>
                           {actividadSeleccionada.peso_total_animales && (
-                            <p className="text-gray-900">Peso Total: {actividadSeleccionada.peso_total_animales} kg</p>
+                            <p className="text-gray-900 text-sm sm:text-base">
+                              Peso Total: {actividadSeleccionada.peso_total_animales} kg
+                            </p>
                           )}
                           {actividadSeleccionada.peso_promedio_animales && (
-                            <p className="text-gray-900">
+                            <p className="text-gray-900 text-sm sm:text-base">
                               Peso Promedio: {actividadSeleccionada.peso_promedio_animales} kg
                             </p>
                           )}
@@ -1213,302 +1302,339 @@ export default function ActividadesView() {
           </DrawerContent>
         </Drawer>
 
-        {/* Drawer de generar informe */}
+        {/* Drawer de generar informe - responsivo */}
         <Drawer open={vistaGenerarInforme} onOpenChange={setVistaGenerarInforme} direction="right">
-          <DrawerContent className="h-full w-[500px] ml-auto">
-            <DrawerHeader className="flex items-center justify-between border-b pb-4">
-              <DrawerTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
-                Generar Informe de Actividades
+          <DrawerContent className="h-full w-full sm:w-[90vw] md:w-[500px] ml-auto">
+            <DrawerHeader className="flex items-center justify-between border-b pb-4 p-4 sm:p-6">
+              <DrawerTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                <span className="truncate">Generar Informe de Actividades</span>
               </DrawerTitle>
               <button
                 onClick={() => setVistaGenerarInforme(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
               >
-                <X className="h-5 w-5 text-gray-500" />
+                <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
               </button>
             </DrawerHeader>
-
-            <div className="max-h-[calc(100vh-80px)] overflow-y-auto p-6">
-              <div className="space-y-6">
-                {/* Período del informe */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">Período del informe</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      variant={tipoInforme === "semanal" ? "default" : "outline"}
-                      onClick={() => setTipoInforme("semanal")}
-                      className="flex flex-col items-center p-4 h-auto"
-                    >
-                      <CalendarDays className="w-5 h-5 mb-2" />
-                      <span className="text-sm">Semanal</span>
-                      <span className="text-xs text-gray-500">Últimos 7 días</span>
-                    </Button>
-                    <Button
-                      variant={tipoInforme === "mensual" ? "default" : "outline"}
-                      onClick={() => setTipoInforme("mensual")}
-                      className="flex flex-col items-center p-4 h-auto"
-                    >
-                      <CalendarDays className="w-5 h-5 mb-2" />
-                      <span className="text-sm">Mensual</span>
-                      <span className="text-xs text-gray-500">Últimos 30 días</span>
-                    </Button>
-                  </div>
+            <div className="max-h-[calc(100vh-80px)] overflow-y-auto p-4 sm:p-6">
+              <div className="space-y-4 sm:space-y-6">
+                <div>
+                  <Label className="text-xs sm:text-sm font-medium text-gray-700">Tipo de Informe</Label>
+                  <Select value={tipoInforme} onValueChange={setTipoInforme}>
+                    <SelectTrigger className="w-full mt-2 h-10 sm:h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="semanal">Informe Semanal</SelectItem>
+                      <SelectItem value="mensual">Informe Mensual</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Formato del informe */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">Formato del informe</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      variant={formatoInforme === "excel" ? "default" : "outline"}
-                      onClick={() => setFormatoInforme("excel")}
-                      className="flex flex-col items-center p-4 h-auto"
-                    >
-                      <Download className="w-5 h-5 mb-2" />
-                      <span className="text-sm">Excel</span>
-                      <span className="text-xs text-gray-500">Datos tabulares</span>
-                    </Button>
-                    <Button
-                      variant={formatoInforme === "pdf" ? "default" : "outline"}
-                      onClick={() => setFormatoInforme("pdf")}
-                      className="flex flex-col items-center p-4 h-auto"
-                    >
-                      <FileText className="w-5 h-5 mb-2" />
-                      <span className="text-sm">PDF</span>
-                      <span className="text-xs text-gray-500">Presentación</span>
-                    </Button>
-                  </div>
+                <div>
+                  <Label className="text-xs sm:text-sm font-medium text-gray-700">Formato</Label>
+                  <Select value={formatoInforme} onValueChange={setFormatoInforme}>
+                    <SelectTrigger className="w-full mt-2 h-10 sm:h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="excel">Excel (.xlsx)</SelectItem>
+                      <SelectItem value="pdf">PDF</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
 
-              {/* Botones de acción */}
-              <div className="flex gap-3 pt-4">
-                <Button variant="outline" onClick={() => setVistaGenerarInforme(false)} className="flex-1">
-                  Cancelar
-                </Button>
                 <Button
                   onClick={handleGenerarInforme}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
                   disabled={generandoInforme}
+                  className="w-full h-10 sm:h-11 text-sm sm:text-base"
                 >
-                  <FileText className="w-4 h-4 mr-2" />
-                  {generandoInforme ? "Generando..." : `Generar ${formatoInforme.toUpperCase()}`}
+                  {generandoInforme ? "Generando..." : "Generar Informe"}
                 </Button>
               </div>
             </div>
           </DrawerContent>
         </Drawer>
 
-        {/* Drawer de detalle por tipo de actividad */}
+        {/* Drawer de gráfico de tipos - responsivo */}
         <Drawer open={vistaGraficoTipos} onOpenChange={setVistaGraficoTipos} direction="right">
-          <DrawerContent className="h-full w-[900px] ml-auto">
-            <DrawerHeader className="flex items-center justify-between border-b pb-4">
-              <DrawerTitle className="flex items-center gap-2">
-                <span className="text-2xl">{getIconoActividad(categoriaSeleccionada?.categoria_nombre || "")}</span>
-                Actividades de {categoriaSeleccionada?.categoria_nombre}
+          <DrawerContent className="h-full w-full sm:w-[90vw] md:w-[80vw] lg:w-[70vw] xl:w-[900px] ml-auto">
+            <DrawerHeader className="flex items-center justify-between border-b pb-4 p-4 sm:p-6">
+              <DrawerTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl">
+                <span className="text-xl sm:text-2xl">
+                  {getIconoActividad(categoriaSeleccionada?.categoria_nombre || "")}
+                </span>
+                <span className="truncate">
+                  {categoriaSeleccionada?.categoria_nombre} ({categoriaSeleccionada?.cantidad} actividades)
+                </span>
               </DrawerTitle>
               <button
                 onClick={() => setVistaGraficoTipos(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
               >
-                <X className="h-5 w-5 text-gray-500" />
+                <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
               </button>
             </DrawerHeader>
-
-            <div className="max-h-[calc(100vh-80px)] overflow-y-auto p-6">
-              <div className="space-y-6">
-                {/* Estadísticas del tipo */}
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                  <Card className="p-4">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-blue-600">{categoriaSeleccionada?.cantidad || 0}</p>
-                      <p className="text-sm text-gray-600">Total de Actividades {getTextoPeriodo(rangoTiempo)}</p>
-                    </div>
-                  </Card>
+            <div className="max-h-[calc(100vh-80px)] overflow-y-auto p-4 sm:p-6">
+              {loadingCategoria ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="text-gray-500 text-sm sm:text-base">Cargando actividades...</div>
                 </div>
-
-                {/* Lista de actividades del tipo */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Lista de Actividades</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {loadingCategoria ? (
-                      <div className="flex justify-center items-center py-8">
-                        <div className="text-gray-500">Cargando actividades...</div>
+              ) : (
+                <div className="w-full">
+                  {/* Vista de tabla para pantallas medianas y grandes */}
+                  <div className="hidden md:block">
+                    <ScrollArea className="h-[500px] lg:h-[600px] w-full">
+                      <div className="overflow-x-auto">
+                        <Table className="min-w-full">
+                          <TableHeader>
+                            <TableRow className="bg-gray-50">
+                              <TableHead className="text-xs lg:text-sm">Actividad</TableHead>
+                              <TableHead className="text-xs lg:text-sm">Empleado</TableHead>
+                              <TableHead className="text-xs lg:text-sm">Ubicación</TableHead>
+                              <TableHead className="text-xs lg:text-sm">Fecha</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {actividadesCategoriaSeleccionada.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={4} className="text-center py-8 text-gray-500 text-sm">
+                                  No se encontraron actividades para esta categoría.
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              actividadesCategoriaSeleccionada.map((actividad) => (
+                                <TableRow
+                                  key={`${actividad.actividad_id}-${actividad.fecha}-${actividad.hora}`}
+                                  className="hover:bg-gray-50"
+                                >
+                                  <TableCell className="py-3">
+                                    <div className="flex items-center gap-2 lg:gap-3">
+                                      <span className="text-lg lg:text-xl">
+                                        {getIconoActividad(actividad.tipo_actividad_nombre)}
+                                      </span>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-medium text-gray-900 text-xs lg:text-sm truncate">
+                                          {actividad.tipo_actividad_nombre}
+                                        </p>
+                                        {actividad.insumo_nombre && (
+                                          <p className="text-xs text-gray-500 truncate">
+                                            Insumo: {actividad.insumo_nombre} ({actividad.insumo_cantidad})
+                                          </p>
+                                        )}
+                                        {actividad.categoria_animal && (
+                                          <p className="text-xs text-gray-500 truncate">
+                                            Animal: {actividad.categoria_animal} ({actividad.animal_cantidad})
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="font-medium text-xs lg:text-sm">{actividad.usuario}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                                      {actividad.tipo_actividad_ubicacion_formateada}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="text-xs lg:text-sm font-medium">{actividad.fecha_formateada}</div>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            )}
+                          </TableBody>
+                        </Table>
                       </div>
-                    ) : (
+                    </ScrollArea>
+                  </div>
+
+                  {/* Vista de cards para pantallas pequeñas */}
+                  <div className="md:hidden">
+                    <ScrollArea className="h-[500px] w-full">
                       <div className="space-y-3">
                         {actividadesCategoriaSeleccionada.length === 0 ? (
-                          <div className="text-center py-8 text-gray-500">
-                            No se encontraron actividades para esta categoría {getTextoPeriodo(rangoTiempo)}.
+                          <div className="text-center py-8 text-gray-500 text-sm">
+                            No se encontraron actividades para esta categoría.
                           </div>
                         ) : (
                           actividadesCategoriaSeleccionada.map((actividad) => (
-                            <div
-                              key={actividad.actividad_id}
-                              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                            <Card
+                              key={`${actividad.actividad_id}-${actividad.fecha}-${actividad.hora}`}
+                              className="hover:shadow-md transition-shadow"
                             >
-                              <div className="flex items-center gap-3">
+                              <CardContent className="p-4">
+                                <div className="flex items-start gap-3">
+                                  <span className="text-xl">{getIconoActividad(actividad.tipo_actividad_nombre)}</span>
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-medium text-gray-900 text-sm mb-1 truncate">
+                                      {actividad.tipo_actividad_nombre}
+                                    </h4>
+                                    <p className="text-xs text-gray-600 mb-1">👤 {actividad.usuario}</p>
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                                        {actividad.tipo_actividad_ubicacion_formateada}
+                                      </Badge>
+                                      <span className="text-xs text-gray-500">{actividad.fecha_formateada}</span>
+                                    </div>
+                                    {actividad.insumo_nombre && (
+                                      <p className="text-xs text-gray-500 truncate">
+                                        🧪 {actividad.insumo_nombre} ({actividad.insumo_cantidad})
+                                      </p>
+                                    )}
+                                    {actividad.categoria_animal && (
+                                      <p className="text-xs text-gray-500 truncate">
+                                        🐄 {actividad.categoria_animal} ({actividad.animal_cantidad})
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                </div>
+              )}
+            </div>
+          </DrawerContent>
+        </Drawer>
+
+        {/* Drawer de total actividades - responsivo */}
+        <Drawer open={vistaTotalActividades} onOpenChange={setVistaTotalActividades} direction="right">
+          <DrawerContent className="h-full w-full sm:w-[90vw] md:w-[80vw] lg:w-[70vw] xl:w-[900px] ml-auto">
+            <DrawerHeader className="flex items-center justify-between border-b pb-4 p-4 sm:p-6">
+              <DrawerTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl">
+                <CalendarDays className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                <span className="truncate">Total Actividades Registradas ({totalActividades})</span>
+              </DrawerTitle>
+              <button
+                onClick={() => setVistaTotalActividades(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
+              >
+                <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
+              </button>
+            </DrawerHeader>
+            <div className="max-h-[calc(100vh-80px)] overflow-y-auto p-4 sm:p-6">
+              <div className="w-full">
+                {/* Vista de tabla para pantallas medianas y grandes */}
+                <div className="hidden md:block">
+                  <ScrollArea className="h-[500px] lg:h-[600px] w-full">
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full">
+                        <TableHeader>
+                          <TableRow className="bg-gray-50">
+                            <TableHead className="text-xs lg:text-sm">Actividad</TableHead>
+                            <TableHead className="text-xs lg:text-sm">Empleado</TableHead>
+                            <TableHead className="text-xs lg:text-sm">Ubicación</TableHead>
+                            <TableHead className="text-xs lg:text-sm">Fecha</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {actividades.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center py-8 text-gray-500 text-sm">
+                                {!establecimientoId
+                                  ? "Selecciona un establecimiento para ver las actividades."
+                                  : `No se encontraron actividades ${getTextoPeriodo(rangoTiempo)}.`}
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            actividades.map((actividad) => (
+                              <TableRow
+                                key={`${actividad.actividad_id}-${actividad.fecha}-${actividad.hora}`}
+                                className="hover:bg-gray-50"
+                              >
+                                <TableCell className="py-3">
+                                  <div className="flex items-center gap-2 lg:gap-3">
+                                    <span className="text-lg lg:text-xl">
+                                      {getIconoActividad(actividad.tipo_actividad_nombre)}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-medium text-gray-900 text-xs lg:text-sm truncate">
+                                        {actividad.tipo_actividad_nombre}
+                                      </p>
+                                      {actividad.insumo_nombre && (
+                                        <p className="text-xs text-gray-500 truncate">
+                                          Insumo: {actividad.insumo_nombre} ({actividad.insumo_cantidad})
+                                        </p>
+                                      )}
+                                      {actividad.categoria_animal && (
+                                        <p className="text-xs text-gray-500 truncate">
+                                          Animal: {actividad.categoria_animal} ({actividad.animal_cantidad})
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="font-medium text-xs lg:text-sm">{actividad.usuario}</TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                                    {actividad.tipo_actividad_ubicacion_formateada}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="text-xs lg:text-sm font-medium">{actividad.fecha_formateada}</div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </ScrollArea>
+                </div>
+
+                {/* Vista de cards para pantallas pequeñas */}
+                <div className="md:hidden">
+                  <ScrollArea className="h-[500px] w-full">
+                    <div className="space-y-3">
+                      {actividades.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500 text-sm">
+                          {!establecimientoId
+                            ? "Selecciona un establecimiento para ver las actividades."
+                            : `No se encontraron actividades ${getTextoPeriodo(rangoTiempo)}.`}
+                        </div>
+                      ) : (
+                        actividades.map((actividad) => (
+                          <Card
+                            key={`${actividad.actividad_id}-${actividad.fecha}-${actividad.hora}`}
+                            className="hover:shadow-md transition-shadow"
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3">
                                 <span className="text-xl">{getIconoActividad(actividad.tipo_actividad_nombre)}</span>
-                                <div>
-                                  <h4 className="font-medium">{actividad.tipo_actividad_nombre}</h4>
-                                  <p className="text-sm text-gray-600">
-                                    {actividad.usuario} - {actividad.tipo_actividad_ubicacion_formateada} -{" "}
-                                    {actividad.fecha_formateada}
-                                  </p>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-medium text-gray-900 text-sm mb-1 truncate">
+                                    {actividad.tipo_actividad_nombre}
+                                  </h4>
+                                  <p className="text-xs text-gray-600 mb-1">👤 {actividad.usuario}</p>
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                                      {actividad.tipo_actividad_ubicacion_formateada}
+                                    </Badge>
+                                    <span className="text-xs text-gray-500">{actividad.fecha_formateada}</span>
+                                  </div>
                                   {actividad.insumo_nombre && (
-                                    <p className="text-sm text-gray-500">
-                                      Insumo: {actividad.insumo_nombre} ({actividad.insumo_cantidad})
+                                    <p className="text-xs text-gray-500 truncate">
+                                      🧪 {actividad.insumo_nombre} ({actividad.insumo_cantidad})
                                     </p>
                                   )}
                                   {actividad.categoria_animal && (
-                                    <p className="text-sm text-gray-500">
-                                      Animal: {actividad.categoria_animal} ({actividad.animal_cantidad})
+                                    <p className="text-xs text-gray-500 truncate">
+                                      🐄 {actividad.categoria_animal} ({actividad.animal_cantidad})
                                     </p>
                                   )}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setActividadSeleccionada(actividad)
-                                    setVistaDetalle(true)
-                                    setVistaGraficoTipos(false)
-                                  }}
-                                >
-                                  Ver detalle
-                                </Button>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </DrawerContent>
-        </Drawer>
-
-        {/* Drawer de total de actividades */}
-        <Drawer open={vistaTotalActividades} onOpenChange={setVistaTotalActividades} direction="right">
-          <DrawerContent className="h-full w-[1000px] ml-auto">
-            <DrawerHeader className="flex items-center justify-between border-b pb-4">
-              <DrawerTitle className="flex items-center gap-2">
-                <CalendarDays className="w-5 h-5 text-blue-600" />
-                Resumen Total de Actividades
-              </DrawerTitle>
-              <button
-                onClick={() => setVistaTotalActividades(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
-            </DrawerHeader>
-
-            <div className="max-h-[calc(100vh-80px)] overflow-y-auto p-6">
-              <div className="space-y-6">
-                <p className="text-sm text-gray-600">
-                  Vista completa de todas las actividades registradas {getTextoPeriodo(rangoTiempo)}
-                </p>
-
-                {/* Resumen por empleado */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Actividades por Empleado</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {Object.entries(
-                        actividades.reduce(
-                          (acc, act) => {
-                            acc[act.usuario] = (acc[act.usuario] || 0) + 1
-                            return acc
-                          },
-                          {} as Record<string, number>,
-                        ),
-                      )
-                        .sort(([, a], [, b]) => b - a)
-                        .map(([empleado, cantidad]) => (
-                          <div key={empleado} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                <span className="text-sm font-medium text-blue-700">
-                                  {empleado
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")}
-                                </span>
-                              </div>
-                              <span className="font-medium">{empleado}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="w-32 bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-blue-500 h-2 rounded-full"
-                                  style={{
-                                    width: `${
-                                      (cantidad /
-                                        Math.max(
-                                          ...Object.values(
-                                            actividades.reduce(
-                                              (acc, act) => {
-                                                acc[act.usuario] = (acc[act.usuario] || 0) + 1
-                                                return acc
-                                              },
-                                              {} as Record<string, number>,
-                                            ),
-                                          ),
-                                        )) *
-                                      100
-                                    }%`,
-                                  }}
-                                />
-                              </div>
-                              <span className="text-sm font-bold w-8">{cantidad}</span>
-                            </div>
-                          </div>
-                        ))}
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-
-                {/* Resumen por tipo - USANDO DATOS REALES */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Actividades por Tipo</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {actividadesPorTipo.map((categoria, index) => (
-                        <div key={categoria.categoria_id} className="p-4 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="text-xl">{getIconoActividad(categoria.categoria_nombre)}</span>
-                            <h4 className="font-medium">{categoria.categoria_nombre}</h4>
-                          </div>
-                          <p className="text-2xl font-bold text-gray-900">{categoria.cantidad}</p>
-                          <p className="text-sm text-gray-600">actividades registradas</p>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Botones de acción */}
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setVistaGenerarInforme(true)}>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Generar Informe
-                  </Button>
-                  <Button onClick={() => handleExport("xlsx")}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Exportar Datos
-                  </Button>
+                  </ScrollArea>
                 </div>
               </div>
             </div>
