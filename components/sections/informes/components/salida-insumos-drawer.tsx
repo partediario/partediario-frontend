@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, AlertCircle, CheckCircle } from "lucide-react"
+import { X, AlertCircle, CheckCircle, Package } from "lucide-react"
 
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"
@@ -216,7 +216,10 @@ export default function SalidaInsumosDrawer({ isOpen, onClose, onSuccess }: Sali
       <DrawerContent className="h-full w-[850px] ml-auto">
         {/* ----- header ----- */}
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900">Salida de Insumos</DrawerTitle>
+          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <Package className="w-6 h-6 text-red-600" />
+            Salida de Insumos
+          </DrawerTitle>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
             <X className="h-5 w-5 text-gray-500" />
           </button>

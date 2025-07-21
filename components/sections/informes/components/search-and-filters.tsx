@@ -25,6 +25,7 @@ export default function SearchAndFilters({
     { value: "CLIMA", label: "Clima" },
     { value: "ACTIVIDAD", label: "Actividad" },
     { value: "RECLASIFICACION", label: "Reclasificación" },
+    { value: "INSUMOS", label: "Insumos" },
   ]
 
   return (
