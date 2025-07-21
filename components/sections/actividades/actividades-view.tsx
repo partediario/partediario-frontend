@@ -137,7 +137,6 @@ export default function ActividadesView() {
   const [actividadSeleccionada, setActividadSeleccionada] = useState<Actividad | null>(null)
   const [vistaDetalle, setVistaDetalle] = useState(false)
   const [exportando, setExportando] = useState(false)
-  const [establecimientoSeleccionado, setEstablecimientoSeleccionado] = useState<string>("")
 
   // Estados para los modales
   const [vistaGenerarInforme, setVistaGenerarInforme] = useState(false)
@@ -191,7 +190,7 @@ export default function ActividadesView() {
       const establecimientoId = obtenerEstablecimientoSeleccionado()
 
       if (!establecimientoId) {
-        console.log("No hay establecimiento seleccionado")
+        console.log("🔍 [Actividades] No hay establecimiento seleccionado")
         setActividades([])
         return
       }
@@ -211,7 +210,7 @@ export default function ActividadesView() {
         params.append("busqueda", busqueda.trim())
       }
 
-      console.log("🔍 Cargando actividades:", {
+      console.log("🔍 [Actividades] Cargando actividades:", {
         establecimiento: establecimientoId,
         periodo: rangoTiempo,
         fechaLocal: obtenerFechaLocal(),
@@ -227,12 +226,17 @@ export default function ActividadesView() {
 
       if (data.success) {
         setActividades(data.actividades || [])
-        console.log("✅ Actividades cargadas:", data.actividades?.length || 0, "para período:", rangoTiempo)
+        console.log(
+          "✅ [Actividades] Actividades cargadas:",
+          data.actividades?.length || 0,
+          "para período:",
+          rangoTiempo,
+        )
 
         // Debug: mostrar fechas de las primeras actividades
         if (data.actividades && data.actividades.length > 0) {
           console.log(
-            "📅 Fechas de actividades encontradas:",
+            "📅 [Actividades] Fechas de actividades encontradas:",
             data.actividades.slice(0, 3).map((act: any) => ({
               fecha: act.fecha,
               fecha_formateada: act.fecha_formateada,
@@ -244,7 +248,7 @@ export default function ActividadesView() {
         throw new Error(data.error || "Error desconocido")
       }
     } catch (error) {
-      console.error("Error cargando actividades:", error)
+      console.error("❌ [Actividades] Error cargando actividades:", error)
       toast({
         title: "Error",
         description: "No se pudieron cargar las actividades. Por favor, intenta de nuevo.",
@@ -262,7 +266,7 @@ export default function ActividadesView() {
       const establecimientoId = obtenerEstablecimientoSeleccionado()
 
       if (!establecimientoId) {
-        console.log("No hay establecimiento seleccionado para categorías")
+        console.log("🔍 [Actividades] No hay establecimiento seleccionado para categorías")
         setActividadesPorTipo([])
         return
       }
@@ -271,7 +275,7 @@ export default function ActividadesView() {
       params.append("establecimiento_id", establecimientoId.toString())
       params.append("periodo", rangoTiempo) // Agregar filtro de período
 
-      console.log("🔍 Cargando categorías:", {
+      console.log("🔍 [Actividades] Cargando categorías:", {
         establecimiento: establecimientoId,
         periodo: rangoTiempo,
         fechaLocal: obtenerFechaLocal(),
@@ -287,12 +291,12 @@ export default function ActividadesView() {
 
       if (data.success) {
         setActividadesPorTipo(data.categorias || [])
-        console.log("✅ Categorías cargadas:", data.categorias?.length || 0, "para período:", rangoTiempo)
+        console.log("✅ [Actividades] Categorías cargadas:", data.categorias?.length || 0, "para período:", rangoTiempo)
       } else {
         throw new Error(data.error || "Error desconocido")
       }
     } catch (error) {
-      console.error("Error cargando actividades por categoría:", error)
+      console.error("❌ [Actividades] Error cargando actividades por categoría:", error)
       toast({
         title: "Error",
         description: "No se pudieron cargar las categorías de actividades.",
@@ -309,7 +313,7 @@ export default function ActividadesView() {
       const establecimientoId = obtenerEstablecimientoSeleccionado()
 
       if (!establecimientoId) {
-        console.log("No hay establecimiento seleccionado")
+        console.log("🔍 [Actividades] No hay establecimiento seleccionado")
         return
       }
 
@@ -317,7 +321,7 @@ export default function ActividadesView() {
       params.append("establecimiento_id", establecimientoId.toString())
       params.append("periodo", rangoTiempo) // Agregar filtro de período
 
-      console.log("🔍 Cargando actividades de categoría:", {
+      console.log("🔍 [Actividades] Cargando actividades de categoría:", {
         categoria: categoriaId,
         periodo: rangoTiempo,
         fechaLocal: obtenerFechaLocal(),
@@ -334,7 +338,7 @@ export default function ActividadesView() {
       if (data.success) {
         setActividadesCategoriaSeleccionada(data.actividades || [])
         console.log(
-          "✅ Actividades de categoría cargadas:",
+          "✅ [Actividades] Actividades de categoría cargadas:",
           data.actividades?.length || 0,
           "para período:",
           rangoTiempo,
@@ -343,7 +347,7 @@ export default function ActividadesView() {
         throw new Error(data.error || "Error desconocido")
       }
     } catch (error) {
-      console.error("Error cargando actividades de categoría:", error)
+      console.error("❌ [Actividades] Error cargando actividades de categoría:", error)
       toast({
         title: "Error",
         description: "No se pudieron cargar las actividades de la categoría.",
@@ -355,37 +359,86 @@ export default function ActividadesView() {
     }
   }
 
-  // Escuchar cambios en el establecimiento seleccionado
+  // Función para recargar todos los datos
+  const recargarTodosLosDatos = async () => {
+    console.log("🔄 [Actividades] Recargando todos los datos...")
+    await Promise.all([cargarActividades(), cargarActividadesPorCategoria()])
+    console.log("✅ [Actividades] Todos los datos recargados")
+  }
+
+  // Escuchar cambios en el establecimiento seleccionado desde el contexto
+  useEffect(() => {
+    console.log("🔄 [Actividades] Establecimiento del contexto cambió:", contextEstablecimiento)
+
+    if (contextEstablecimiento) {
+      // Hay un establecimiento seleccionado, recargar datos
+      recargarTodosLosDatos()
+    } else {
+      // No hay establecimiento, limpiar datos
+      console.log("🧹 [Actividades] Limpiando datos - no hay establecimiento")
+      setActividades([])
+      setActividadesPorTipo([])
+      setActividadesCategoriaSeleccionada([])
+    }
+  }, [contextEstablecimiento]) // Dependencia directa del contexto
+
+  // Escuchar eventos adicionales de cambio de establecimiento
   useEffect(() => {
     const handleEstablishmentChange = () => {
+      console.log("📡 [Actividades] Evento de cambio de establecimiento recibido")
       const establecimientoId = obtenerEstablecimientoSeleccionado()
-      setEstablecimientoSeleccionado(establecimientoId || "")
-      cargarActividades()
-      cargarActividadesPorCategoria()
+
+      if (establecimientoId) {
+        console.log("🔄 [Actividades] Recargando por evento - establecimiento:", establecimientoId)
+        recargarTodosLosDatos()
+      } else {
+        console.log("🧹 [Actividades] Limpiando por evento - no hay establecimiento")
+        setActividades([])
+        setActividadesPorTipo([])
+        setActividadesCategoriaSeleccionada([])
+      }
     }
 
-    // Cargar inicialmente
-    handleEstablishmentChange()
+    // Escuchar múltiples eventos posibles
+    const eventos = ["establishmentChange", "establecimientoChanged", "updateAllComponents", "reloadActividades"]
 
-    // Escuchar eventos de cambio de establecimiento
-    window.addEventListener("establishmentChange", handleEstablishmentChange)
+    eventos.forEach((evento) => {
+      window.addEventListener(evento, handleEstablishmentChange)
+    })
 
     return () => {
-      window.removeEventListener("establishmentChange", handleEstablishmentChange)
+      eventos.forEach((evento) => {
+        window.removeEventListener(evento, handleEstablishmentChange)
+      })
     }
-  }, [])
+  }, []) // Sin dependencias para que solo se ejecute una vez al montar
+
+  // Cargar datos iniciales al montar el componente
+  useEffect(() => {
+    console.log("🚀 [Actividades] Componente montado, cargando datos iniciales")
+    const establecimientoId = obtenerEstablecimientoSeleccionado()
+
+    if (establecimientoId) {
+      console.log("📊 [Actividades] Establecimiento inicial encontrado:", establecimientoId)
+      recargarTodosLosDatos()
+    } else {
+      console.log("⚠️ [Actividades] No hay establecimiento inicial")
+      setLoading(false)
+    }
+  }, []) // Solo al montar
 
   // Cargar actividades cuando cambien los filtros (incluyendo rangoTiempo)
   useEffect(() => {
-    if (establecimientoSeleccionado) {
-      console.log("🔄 Recargando datos por cambio de filtros:", {
+    const establecimientoId = obtenerEstablecimientoSeleccionado()
+
+    if (establecimientoId) {
+      console.log("🔄 [Actividades] Recargando datos por cambio de filtros:", {
         rangoTiempo,
         ubicacionFiltro,
         empleadoFiltro,
         busqueda: busqueda.substring(0, 20) + (busqueda.length > 20 ? "..." : ""),
       })
-      cargarActividades()
-      cargarActividadesPorCategoria()
+      recargarTodosLosDatos()
     }
   }, [ubicacionFiltro, empleadoFiltro, busqueda, rangoTiempo])
 
@@ -1285,48 +1338,66 @@ export default function ActividadesView() {
                       onClick={() => setFormatoInforme("excel")}
                       className="flex flex-col items-center p-4 h-auto"
                     >
-                      <Download className="w-5 h-5 mb-2" />
+                      <span className="text-2xl mb-2">📊</span>
                       <span className="text-sm">Excel</span>
-                      <span className="text-xs text-gray-500">Datos tabulares</span>
+                      <span className="text-xs text-gray-500">Archivo .xlsx</span>
                     </Button>
                     <Button
                       variant={formatoInforme === "pdf" ? "default" : "outline"}
                       onClick={() => setFormatoInforme("pdf")}
                       className="flex flex-col items-center p-4 h-auto"
                     >
-                      <FileText className="w-5 h-5 mb-2" />
+                      <span className="text-2xl mb-2">📄</span>
                       <span className="text-sm">PDF</span>
-                      <span className="text-xs text-gray-500">Presentación</span>
+                      <span className="text-xs text-gray-500">Archivo .pdf</span>
                     </Button>
                   </div>
                 </div>
-              </div>
 
-              {/* Botones de acción */}
-              <div className="flex gap-3 pt-4">
-                <Button variant="outline" onClick={() => setVistaGenerarInforme(false)} className="flex-1">
-                  Cancelar
-                </Button>
+                {/* Botón de generar */}
                 <Button
                   onClick={handleGenerarInforme}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
                   disabled={generandoInforme}
+                  className="w-full h-12 text-base font-medium"
                 >
-                  <FileText className="w-4 h-4 mr-2" />
-                  {generandoInforme ? "Generando..." : `Generar ${formatoInforme.toUpperCase()}`}
+                  {generandoInforme ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Generando informe...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 mr-2" />
+                      Generar Informe {tipoInforme.charAt(0).toUpperCase() + tipoInforme.slice(1)}
+                    </>
+                  )}
                 </Button>
+
+                {/* Información adicional */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">Información del informe</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Incluye todas las actividades del período seleccionado</li>
+                    <li>• Datos de empleados, ubicaciones e insumos</li>
+                    <li>• Información detallada de animales involucrados</li>
+                    <li>• Formato profesional listo para presentar</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </DrawerContent>
         </Drawer>
 
-        {/* Drawer de detalle por tipo de actividad - DISEÑO ORIGINAL */}
+        {/* Drawer de gráfico de tipos - DISEÑO ORIGINAL */}
         <Drawer open={vistaGraficoTipos} onOpenChange={setVistaGraficoTipos} direction="right">
           <DrawerContent className="h-full w-[900px] ml-auto">
             <DrawerHeader className="flex items-center justify-between border-b pb-4">
-              <DrawerTitle className="flex items-center gap-2">
+              <DrawerTitle className="flex items-center gap-3">
                 <span className="text-2xl">{getIconoActividad(categoriaSeleccionada?.categoria_nombre || "")}</span>
-                Actividades de {categoriaSeleccionada?.categoria_nombre}
+                {categoriaSeleccionada?.categoria_nombre}
+                <Badge variant="secondary" className="ml-2">
+                  {categoriaSeleccionada?.cantidad} actividades
+                </Badge>
               </DrawerTitle>
               <button
                 onClick={() => setVistaGraficoTipos(false)}
@@ -1335,93 +1406,68 @@ export default function ActividadesView() {
                 <X className="h-5 w-5 text-gray-500" />
               </button>
             </DrawerHeader>
-
             <div className="max-h-[calc(100vh-80px)] overflow-y-auto p-6">
-              <div className="space-y-6">
-                {/* Estadísticas del tipo */}
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                  <Card className="p-4">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-blue-600">{categoriaSeleccionada?.cantidad || 0}</p>
-                      <p className="text-sm text-gray-600">Total de Actividades {getTextoPeriodo(rangoTiempo)}</p>
-                    </div>
-                  </Card>
+              {loadingCategoria ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="text-gray-500">Cargando actividades...</div>
                 </div>
-
-                {/* Lista de actividades del tipo */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Lista de Actividades</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {loadingCategoria ? (
-                      <div className="flex justify-center items-center py-8">
-                        <div className="text-gray-500">Cargando actividades...</div>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {actividadesCategoriaSeleccionada.length === 0 ? (
-                          <div className="text-center py-8 text-gray-500">
-                            No se encontraron actividades para esta categoría {getTextoPeriodo(rangoTiempo)}.
-                          </div>
-                        ) : (
-                          actividadesCategoriaSeleccionada.map((actividad) => (
-                            <div
-                              key={actividad.actividad_id}
-                              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="text-xl">{getIconoActividad(actividad.tipo_actividad_nombre)}</span>
+              ) : (
+                <ScrollArea className="h-[600px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Actividad</TableHead>
+                        <TableHead>Empleado</TableHead>
+                        <TableHead>Ubicación</TableHead>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead>Detalles</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {actividadesCategoriaSeleccionada.map((actividad) => (
+                        <TableRow key={`${actividad.actividad_id}-${actividad.fecha}-${actividad.hora}`}>
+                          <TableCell className="font-medium">{actividad.tipo_actividad_nombre}</TableCell>
+                          <TableCell>{actividad.usuario}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                              {actividad.tipo_actividad_ubicacion_formateada}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{actividad.fecha_formateada}</TableCell>
+                          <TableCell>
+                            <div className="text-sm text-gray-600">
+                              {actividad.insumo_nombre && (
                                 <div>
-                                  <h4 className="font-medium">{actividad.tipo_actividad_nombre}</h4>
-                                  <p className="text-sm text-gray-600">
-                                    {actividad.usuario} - {actividad.tipo_actividad_ubicacion_formateada} -{" "}
-                                    {actividad.fecha_formateada}
-                                  </p>
-                                  {actividad.insumo_nombre && (
-                                    <p className="text-sm text-gray-500">
-                                      Insumo: {actividad.insumo_nombre} ({actividad.insumo_cantidad})
-                                    </p>
-                                  )}
-                                  {actividad.categoria_animal && (
-                                    <p className="text-sm text-gray-500">
-                                      Animal: {actividad.categoria_animal} ({actividad.animal_cantidad})
-                                    </p>
-                                  )}
+                                  Insumo: {actividad.insumo_nombre} ({actividad.insumo_cantidad})
                                 </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setActividadSeleccionada(actividad)
-                                    setVistaDetalle(true)
-                                    setVistaGraficoTipos(false)
-                                  }}
-                                >
-                                  Ver detalle
-                                </Button>
-                              </div>
+                              )}
+                              {actividad.categoria_animal && (
+                                <div>
+                                  Animal: {actividad.categoria_animal} ({actividad.animal_cantidad})
+                                </div>
+                              )}
                             </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              )}
             </div>
           </DrawerContent>
         </Drawer>
 
-        {/* Drawer de total de actividades - DISEÑO ORIGINAL */}
+        {/* Drawer de total actividades - DISEÑO ORIGINAL */}
         <Drawer open={vistaTotalActividades} onOpenChange={setVistaTotalActividades} direction="right">
-          <DrawerContent className="h-full w-[1000px] ml-auto">
+          <DrawerContent className="h-full w-[900px] ml-auto">
             <DrawerHeader className="flex items-center justify-between border-b pb-4">
-              <DrawerTitle className="flex items-center gap-2">
-                <CalendarDays className="w-5 h-5 text-blue-600" />
-                Resumen Total de Actividades
+              <DrawerTitle className="flex items-center gap-3">
+                <CalendarDays className="w-6 h-6 text-blue-600" />
+                Total de Actividades Registradas
+                <Badge variant="secondary" className="ml-2">
+                  {totalActividades} actividades {getTextoPeriodo(rangoTiempo)}
+                </Badge>
               </DrawerTitle>
               <button
                 onClick={() => setVistaTotalActividades(false)}
@@ -1430,107 +1476,53 @@ export default function ActividadesView() {
                 <X className="h-5 w-5 text-gray-500" />
               </button>
             </DrawerHeader>
-
             <div className="max-h-[calc(100vh-80px)] overflow-y-auto p-6">
-              <div className="space-y-6">
-                <p className="text-sm text-gray-600">
-                  Vista completa de todas las actividades registradas {getTextoPeriodo(rangoTiempo)}
-                </p>
-
-                {/* Resumen por empleado */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Actividades por Empleado</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {Object.entries(
-                        actividades.reduce(
-                          (acc, act) => {
-                            acc[act.usuario] = (acc[act.usuario] || 0) + 1
-                            return acc
-                          },
-                          {} as Record<string, number>,
-                        ),
-                      )
-                        .sort(([, a], [, b]) => b - a)
-                        .map(([empleado, cantidad]) => (
-                          <div key={empleado} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                <span className="text-sm font-medium text-blue-700">
-                                  {empleado
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")}
-                                </span>
-                              </div>
-                              <span className="font-medium">{empleado}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="w-32 bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-blue-500 h-2 rounded-full"
-                                  style={{
-                                    width: `${
-                                      (cantidad /
-                                        Math.max(
-                                          ...Object.values(
-                                            actividades.reduce(
-                                              (acc, act) => {
-                                                acc[act.usuario] = (acc[act.usuario] || 0) + 1
-                                                return acc
-                                              },
-                                              {} as Record<string, number>,
-                                            ),
-                                          ),
-                                        )) *
-                                      100
-                                    }%`,
-                                  }}
-                                />
-                              </div>
-                              <span className="text-sm font-bold w-8">{cantidad}</span>
-                            </div>
+              <ScrollArea className="h-[600px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Actividad</TableHead>
+                      <TableHead>Empleado</TableHead>
+                      <TableHead>Ubicación</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Detalles</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {actividades.map((actividad) => (
+                      <TableRow key={`${actividad.actividad_id}-${actividad.fecha}-${actividad.hora}`}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{getIconoActividad(actividad.tipo_actividad_nombre)}</span>
+                            <span className="font-medium">{actividad.tipo_actividad_nombre}</span>
                           </div>
-                        ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Resumen por tipo - USANDO DATOS REALES */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Actividades por Tipo</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {actividadesPorTipo.map((categoria, index) => (
-                        <div key={categoria.categoria_id} className="p-4 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="text-xl">{getIconoActividad(categoria.categoria_nombre)}</span>
-                            <h4 className="font-medium">{categoria.categoria_nombre}</h4>
+                        </TableCell>
+                        <TableCell>{actividad.usuario}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                            {actividad.tipo_actividad_ubicacion_formateada}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{actividad.fecha_formateada}</TableCell>
+                        <TableCell>
+                          <div className="text-sm text-gray-600">
+                            {actividad.insumo_nombre && (
+                              <div>
+                                Insumo: {actividad.insumo_nombre} ({actividad.insumo_cantidad})
+                              </div>
+                            )}
+                            {actividad.categoria_animal && (
+                              <div>
+                                Animal: {actividad.categoria_animal} ({actividad.animal_cantidad})
+                              </div>
+                            )}
                           </div>
-                          <p className="text-2xl font-bold text-gray-900">{categoria.cantidad}</p>
-                          <p className="text-sm text-gray-600">actividades registradas</p>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Botones de acción */}
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setVistaGenerarInforme(true)}>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Generar Informe
-                  </Button>
-                  <Button onClick={() => handleExport("xlsx")}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Exportar Datos
-                  </Button>
-                </div>
-              </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
             </div>
           </DrawerContent>
         </Drawer>

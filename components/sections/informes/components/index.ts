@@ -26,3 +26,7 @@ export { default as EditarActividadInsumosDrawer } from "./editar-actividad-insu
 export { default as VerActividadMixtaDrawer } from "./ver-actividad-mixta-drawer"
 export { default as EditarActividadMixtaDrawer } from "./editar-actividad-mixta-drawer"
 export { default as VerReclasificacionDrawer } from "./ver-reclasificacion-drawer"
+export { default as VerEntradaInsumosDrawer } from "./ver-entrada-insumos-drawer"
+export { default as EditarEntradaInsumosDrawer } from "./editar-entrada-insumos-drawer"
+export { default as VerSalidaInsumosDrawer } from "./ver-salida-insumos-drawer"
+export { default as EditarSalidaInsumosDrawer } from "./editar-salida-insumos-drawer"

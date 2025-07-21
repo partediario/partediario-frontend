@@ -11,6 +11,7 @@ import {
   Home,
   Building,
   FileText,
+  Package,
 } from "lucide-react"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Separator } from "@/components/ui/separator"
@@ -25,6 +26,8 @@ import ActividadInsumosDrawer from "../../actividades/components/actividad-insum
 import ActividadMixtaDrawer from "../../actividades/components/actividad-mixta-drawer"
 import ReclasificacionDrawer from "../../actividades/components/reclasificacion-drawer"
 import ReclasificacionLoteDrawer from "../../actividades/components/reclasificacion-lote-drawer"
+import EntradaInsumosDrawer from "./entrada-insumos-drawer"
+import SalidaInsumosDrawer from "./salida-insumos-drawer"
 
 interface TipoActividad {
   id: number
@@ -49,6 +52,8 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   const [expandedSections, setExpandedSections] = useState<string[]>([])
   const [entradaAnimalesOpen, setEntradaAnimalesOpen] = useState(false)
   const [salidaAnimalesOpen, setSalidaAnimalesOpen] = useState(false)
+  const [entradaInsumosOpen, setEntradaInsumosOpen] = useState(false)
+  const [salidaInsumosOpen, setSalidaInsumosOpen] = useState(false)
   const [lluviaDrawerOpen, setLluviaDrawerOpen] = useState(false)
   const [actividadAnimalesOpen, setActividadAnimalesOpen] = useState(false)
   const [actividadInsumosOpen, setActividadInsumosOpen] = useState(false)
@@ -120,6 +125,18 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
 
     if (option === "Salida de Animales") {
       setSalidaAnimalesOpen(true)
+      onClose()
+      return
+    }
+
+    if (option === "Entrada de Insumos") {
+      setEntradaInsumosOpen(true)
+      onClose()
+      return
+    }
+
+    if (option === "Salida de Insumos") {
+      setSalidaInsumosOpen(true)
       onClose()
       return
     }
@@ -314,6 +331,40 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
 
             <Separator />
 
+            {/* Movimiento de Insumos */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Movimiento de Insumos</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleOptionClick("Entrada de Insumos")}
+                  className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors group"
+                >
+                  <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                    <Package className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Entrada de Insumos</p>
+                    <p className="text-sm text-gray-500">Registrar ingreso de insumos</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleOptionClick("Salida de Insumos")}
+                  className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors group"
+                >
+                  <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                    <Package className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Salida de Insumos</p>
+                    <p className="text-sm text-gray-500">Registrar salida de insumos</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <Separator />
+
             {/* Clima */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Clima</h3>
@@ -416,6 +467,26 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         onClose={() => setSalidaAnimalesOpen(false)}
         onSuccess={() => {
           console.log("Salida de animales guardada exitosamente")
+          onRefresh?.()
+        }}
+      />
+
+      {/* Drawer de Entrada de Insumos */}
+      <EntradaInsumosDrawer
+        isOpen={entradaInsumosOpen}
+        onClose={() => setEntradaInsumosOpen(false)}
+        onSuccess={() => {
+          console.log("Entrada de insumos guardada exitosamente")
+          onRefresh?.()
+        }}
+      />
+
+      {/* Drawer de Salida de Insumos */}
+      <SalidaInsumosDrawer
+        isOpen={salidaInsumosOpen}
+        onClose={() => setSalidaInsumosOpen(false)}
+        onSuccess={() => {
+          console.log("Salida de insumos guardada exitosamente")
           onRefresh?.()
         }}
       />

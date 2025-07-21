@@ -164,7 +164,7 @@ export function createPermissions(usuario: any): UserPermissions {
     // OPERATIVO: NO puede acceder a configuración
     if (isOperativo) return false
 
-    // Para otros roles, verificar privilegios específicos
+    // Para otros roles, verificar privilegios espec��ficos
     return (
       hasPrivilege(PRIVILEGIOS.CONF) ||
       hasPrivilege(PRIVILEGIOS.CONF_VER_EMPRESA) ||

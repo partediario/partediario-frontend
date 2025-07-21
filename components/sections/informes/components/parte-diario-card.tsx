@@ -18,6 +18,10 @@ import EditarActividadInsumosDrawer from "./editar-actividad-insumos-drawer"
 import VerActividadMixtaDrawer from "./ver-actividad-mixta-drawer"
 import EditarActividadMixtaDrawer from "./editar-actividad-mixta-drawer"
 import VerReclasificacionDrawer from "./ver-reclasificacion-drawer"
+import VerEntradaInsumosDrawer from "./ver-entrada-insumos-drawer"
+import EditarEntradaInsumosDrawer from "./editar-entrada-insumos-drawer"
+import VerSalidaInsumosDrawer from "./ver-salida-insumos-drawer"
+import EditarSalidaInsumosDrawer from "./editar-salida-insumos-drawer"
 import { PermissionWrapper } from "@/components/permission-wrapper"
 
 interface ParteDiarioCardProps {
@@ -37,6 +41,13 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
   const [isVerActividadMixtaDrawerOpen, setIsVerActividadMixtaDrawerOpen] = useState(false)
   const [isEditarActividadMixtaDrawerOpen, setIsEditarActividadMixtaDrawerOpen] = useState(false)
   const [isVerReclasificacionDrawerOpen, setIsVerReclasificacionDrawerOpen] = useState(false)
+
+  // Nuevos estados para drawers de insumos
+  const [isVerEntradaInsumosDrawerOpen, setIsVerEntradaInsumosDrawerOpen] = useState(false)
+  const [isEditarEntradaInsumosDrawerOpen, setIsEditarEntradaInsumosDrawerOpen] = useState(false)
+  const [isVerSalidaInsumosDrawerOpen, setIsVerSalidaInsumosDrawerOpen] = useState(false)
+  const [isEditarSalidaInsumosDrawerOpen, setIsEditarSalidaInsumosDrawerOpen] = useState(false)
+
   const [tipoActividad, setTipoActividad] = useState<{ animales: string; insumos: string } | null>(null)
 
   const formatDate = (dateStr: string) => {
@@ -80,6 +91,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "bg-purple-100 text-purple-800 hover:bg-purple-200 border-purple-200"
       case "RECLASIFICACION":
         return "bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200"
+      case "INSUMOS":
+        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200"
       default:
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
     }
@@ -99,6 +112,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "Actividad"
       case "RECLASIFICACION":
         return "Reclasificación"
+      case "INSUMOS":
+        return "Insumos"
       default:
         return tipo
     }
@@ -137,6 +152,17 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
 
     if (parte.pd_tipo === "CLIMA") {
       setIsVerLluviaDrawerOpen(true)
+    } else if (parte.pd_tipo === "INSUMOS") {
+      // Determinar si es entrada o salida basándose en detalle_direccion
+      const direccion = parte.pd_detalles?.detalle_direccion
+      if (direccion === "ENTRADA") {
+        setIsVerEntradaInsumosDrawerOpen(true)
+      } else if (direccion === "SALIDA") {
+        setIsVerSalidaInsumosDrawerOpen(true)
+      } else {
+        // Fallback: usar el primer drawer de entrada si no hay dirección
+        setIsVerEntradaInsumosDrawerOpen(true)
+      }
     } else if (parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id) {
       const tipo = await fetchTipoActividad(parte.pd_detalles.detalle_tipo_id)
       if (tipo) {
@@ -172,11 +198,13 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       parte.pd_tipo !== "ENTRADA" &&
       parte.pd_tipo !== "SALIDA" &&
       parte.pd_tipo !== "CLIMA" &&
-      parte.pd_tipo !== "ACTIVIDAD"
+      parte.pd_tipo !== "ACTIVIDAD" &&
+      parte.pd_tipo !== "INSUMOS"
     ) {
       toast({
         title: "Función no disponible",
-        description: "La edición solo está disponible para partes diarios de tipo ENTRADA, SALIDA, CLIMA y ACTIVIDAD",
+        description:
+          "La edición solo está disponible para partes diarios de tipo ENTRADA, SALIDA, CLIMA, ACTIVIDAD e INSUMOS",
         variant: "destructive",
       })
       return
@@ -190,6 +218,20 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       setIsEditSalidaDrawerOpen(true)
     } else if (parte.pd_tipo === "CLIMA") {
       setIsEditLluviaDrawerOpen(true)
+    } else if (parte.pd_tipo === "INSUMOS") {
+      // Determinar si es entrada o salida basándose en detalle_direccion
+      const direccion = parte.pd_detalles?.detalle_direccion
+      if (direccion === "ENTRADA") {
+        setIsEditarEntradaInsumosDrawerOpen(true)
+      } else if (direccion === "SALIDA") {
+        setIsEditarSalidaInsumosDrawerOpen(true)
+      } else {
+        toast({
+          title: "Error",
+          description: "No se pudo determinar el tipo de movimiento de insumo",
+          variant: "destructive",
+        })
+      }
     } else if (parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id) {
       const tipo = await fetchTipoActividad(parte.pd_detalles.detalle_tipo_id)
       if (tipo) {
@@ -246,7 +288,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
               {(parte.pd_tipo === "ENTRADA" ||
                 parte.pd_tipo === "SALIDA" ||
                 parte.pd_tipo === "CLIMA" ||
-                parte.pd_tipo === "ACTIVIDAD") && (
+                parte.pd_tipo === "ACTIVIDAD" ||
+                parte.pd_tipo === "INSUMOS") && (
                 <button
                   onClick={() => handleEdit(parte)}
                   className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
@@ -306,7 +349,7 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       {/* Drawer específico para ver lluvia */}
       <VerLluviaDrawer isOpen={isVerLluviaDrawerOpen} onClose={() => setIsVerLluviaDrawerOpen(false)} parte={parte} />
 
-      {/* Nuevos drawers de actividad */}
+      {/* Drawers de actividad */}
       <VerActividadDrawer
         isOpen={isVerActividadDrawerOpen}
         onClose={() => setIsVerActividadDrawerOpen(false)}
@@ -321,7 +364,7 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         }}
       />
 
-      {/* Nuevos drawers de actividad insumos */}
+      {/* Drawers de actividad insumos */}
       <VerActividadInsumosDrawer
         isOpen={isVerActividadInsumosDrawerOpen}
         onClose={() => setIsVerActividadInsumosDrawerOpen(false)}
@@ -335,7 +378,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
           window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
         }}
       />
-      {/* Nuevos drawers de actividad mixta */}
+
+      {/* Drawers de actividad mixta */}
       <VerActividadMixtaDrawer
         isOpen={isVerActividadMixtaDrawerOpen}
         onClose={() => setIsVerActividadMixtaDrawerOpen(false)}
@@ -349,11 +393,44 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
           window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
         }}
       />
+
       {/* Drawer de reclasificación */}
       <VerReclasificacionDrawer
         isOpen={isVerReclasificacionDrawerOpen}
         onClose={() => setIsVerReclasificacionDrawerOpen(false)}
         parte={parte}
+      />
+
+      {/* NUEVOS DRAWERS DE INSUMOS */}
+
+      {/* Drawers para VER insumos */}
+      <VerEntradaInsumosDrawer
+        isOpen={isVerEntradaInsumosDrawerOpen}
+        onClose={() => setIsVerEntradaInsumosDrawerOpen(false)}
+        parte={parte}
+      />
+      <VerSalidaInsumosDrawer
+        isOpen={isVerSalidaInsumosDrawerOpen}
+        onClose={() => setIsVerSalidaInsumosDrawerOpen(false)}
+        parte={parte}
+      />
+
+      {/* Drawers para EDITAR insumos */}
+      <EditarEntradaInsumosDrawer
+        isOpen={isEditarEntradaInsumosDrawerOpen}
+        onClose={() => setIsEditarEntradaInsumosDrawerOpen(false)}
+        parte={parte}
+        onSuccess={() => {
+          window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+        }}
+      />
+      <EditarSalidaInsumosDrawer
+        isOpen={isEditarSalidaInsumosDrawerOpen}
+        onClose={() => setIsEditarSalidaInsumosDrawerOpen(false)}
+        parte={parte}
+        onSuccess={() => {
+          window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+        }}
       />
     </Card>
   )
