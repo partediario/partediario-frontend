@@ -42,6 +42,14 @@ interface Insumo {
   }
 }
 
+interface InsumoExistente {
+  insumo_id: string
+  nombre_insumo: string
+  cantidad_disponible: number
+  unidad_medida: string
+  unidad_medida_uso_id: number
+}
+
 interface DetalleAnimal {
   lote_id: number
   lote_nombre: string
@@ -73,6 +81,7 @@ export default function EditarActividadMixtaDrawer({
   const [categoriasExistentes, setCategorias] = useState<CategoriaExistente[]>([])
   const [loadingCategorias, setLoadingCategorias] = useState(false)
   const [insumos, setInsumos] = useState<Insumo[]>([])
+  const [insumosExistentes, setInsumosExistentes] = useState<InsumoExistente[]>([])
 
   // Formulario principal
   const [fecha, setFecha] = useState<Date>(new Date())
@@ -100,6 +109,7 @@ export default function EditarActividadMixtaDrawer({
   const [insumoId, setInsumoId] = useState<string>("")
   const [cantidadInsumo, setCantidadInsumo] = useState<string>("")
   const [unidadMedidaActual, setUnidadMedidaActual] = useState<string>("")
+  const [stockDisponible, setStockDisponible] = useState<number>(0)
 
   // Errores
   const [errores, setErrores] = useState<string[]>([])
@@ -123,17 +133,19 @@ export default function EditarActividadMixtaDrawer({
     }
   }, [loteId])
 
-  // Actualizar unidad de medida cuando cambia el insumo seleccionado
+  // Actualizar unidad de medida y stock cuando cambia el insumo seleccionado
   useEffect(() => {
     if (insumoId) {
-      const insumoSeleccionado = insumos.find((i) => i.id.toString() === insumoId)
-      if (insumoSeleccionado?.pd_unidad_medida_insumos) {
-        setUnidadMedidaActual(insumoSeleccionado.pd_unidad_medida_insumos.nombre)
+      const insumoSeleccionado = insumosExistentes.find((i) => i.insumo_id === insumoId)
+      if (insumoSeleccionado) {
+        setUnidadMedidaActual(insumoSeleccionado.unidad_medida)
+        setStockDisponible(insumoSeleccionado.cantidad_disponible)
       }
     } else {
       setUnidadMedidaActual("")
+      setStockDisponible(0)
     }
-  }, [insumoId, insumos])
+  }, [insumoId, insumosExistentes])
 
   const cargarDatosIniciales = async () => {
     setLoading(true)
@@ -144,44 +156,70 @@ export default function EditarActividadMixtaDrawer({
       setNota(parte.pd_nota || "")
 
       // Cargar datos para formularios primero
-      await Promise.all([fetchLotes(), fetchInsumos()])
+      await Promise.all([fetchLotes(), fetchInsumosExistentes()])
 
-      // Luego cargar detalles existentes desde la vista
-      const animales = (parte.pd_detalles?.detalles_animales || []).map((animal: any) => {
-        // Intentar obtener los IDs correctos desde diferentes fuentes
-        let loteId = animal.detalle_lote_id || animal.lote_id || 0
-        const categoriaId = animal.detalle_categoria_animal_id || animal.categoria_animal_id || 0
+      // Luego cargar detalles existentes desde la API
+      const response = await fetch(`/api/actividades-mixtas/${parte.pd_id}`)
+      if (response.ok) {
+        const actividadData = await response.json()
 
-        // Si no tenemos IDs, intentar buscar por nombre
-        if (!loteId && animal.lote) {
-          const loteEncontrado = lotes.find((l) => l.nombre === animal.lote)
-          if (loteEncontrado) loteId = loteEncontrado.id
+        // Mapear detalles de animales (mantener como está)
+        const animales = (actividadData.pd_actividades_animales_detalle || []).map((animal: any) => ({
+          lote_id: animal.lote_id || 0,
+          lote_nombre: animal.pd_lotes?.nombre || "",
+          categoria_animal_id: animal.categoria_animal_id || 0,
+          categoria_animal_nombre: animal.pd_categoria_animales?.nombre || "",
+          cantidad: animal.cantidad || 0,
+          peso: animal.peso || 0,
+          tipo: animal.tipo_peso || "TOTAL",
+        }))
+
+        // Mapear detalles de insumos - USAR pd_detalles para unidad_medida si está disponible
+        let insumosData = []
+
+        if (parte.pd_detalles?.detalles_insumos && parte.pd_detalles.detalles_insumos.length > 0) {
+          // ✅ Usar datos de pd_detalles que ya incluyen unidad_medida
+          console.log("📋 Usando unidades de medida desde pd_detalles:", parte.pd_detalles.detalles_insumos)
+
+          insumosData = parte.pd_detalles.detalles_insumos.map((insumo: any) => ({
+            insumo_id: insumo.insumo_id || 0,
+            insumo_nombre: insumo.insumo || "",
+            cantidad: insumo.cantidad || 0,
+            unidad_medida: insumo.unidad_medida || "", // ✅ Ya viene en pd_detalles
+          }))
+        } else {
+          // Fallback: usar datos de la API
+          insumosData = (actividadData.pd_actividades_insumos_detalle || []).map((insumo: any) => ({
+            insumo_id: insumo.insumo_id || 0,
+            insumo_nombre: insumo.pd_insumos?.nombre || "",
+            cantidad: insumo.cantidad || 0,
+            unidad_medida: insumo.pd_insumos?.pd_unidad_medida_insumos?.nombre || "",
+          }))
         }
 
-        return {
-          lote_id: loteId,
-          lote_nombre: animal.detalle_lote || animal.lote || "",
-          categoria_animal_id: categoriaId,
-          categoria_animal_nombre: animal.detalle_categoria_animal || animal.categoria_animal || "",
-          cantidad: animal.detalle_cantidad || animal.cantidad || 0,
-          peso: animal.detalle_peso || animal.peso || 0,
-          tipo: animal.detalle_tipo_peso || animal.tipo || "TOTAL",
-        }
-      })
+        setDetallesAnimales(animales)
+        setDetallesInsumos(insumosData)
 
-      const insumos = (parte.pd_detalles?.detalles_insumos || []).map((insumo: any) => ({
-        insumo_id: insumo.insumo_id || 0,
-        insumo_nombre: insumo.insumo || "",
-        cantidad: insumo.cantidad || 0,
-        unidad_medida: insumo.unidad_medida || "",
-      }))
-
-      setDetallesAnimales(animales)
-      setDetallesInsumos(insumos)
+        console.log("✅ Datos cargados desde API:", {
+          animales: animales.length,
+          insumos: insumosData.length,
+          insumosConUnidades: insumosData.map((i) => ({
+            nombre: i.insumo_nombre,
+            unidad: i.unidad_medida,
+          })),
+        })
+      } else {
+        console.error("❌ Error cargando datos desde API")
+        toast({
+          title: "Error",
+          description: "No se pudo cargar la información desde el servidor",
+          variant: "destructive",
+        })
+      }
 
       console.log("✅ Datos cargados para edición:", {
-        animales: animales.length,
-        insumos: insumos.length,
+        animales: detallesAnimales.length,
+        insumos: detallesInsumos.length,
         lotesCargados: lotes.length,
       })
     } catch (error) {
@@ -243,24 +281,24 @@ export default function EditarActividadMixtaDrawer({
     }
   }
 
-  const fetchInsumos = async () => {
-    if (!empresaSeleccionada) {
-      console.log("❌ No hay empresa seleccionada para cargar insumos")
+  const fetchInsumosExistentes = async () => {
+    if (!establecimientoSeleccionado) {
+      console.log("❌ No hay establecimiento seleccionado para cargar insumos")
       return
     }
 
     try {
-      console.log("🔄 Fetching insumos para empresa:", empresaSeleccionada)
-      const response = await fetch(`/api/insumos?empresa_id=${empresaSeleccionada}`)
+      console.log("🔄 Fetching insumos existentes para establecimiento:", establecimientoSeleccionado)
+      const response = await fetch(`/api/insumos-existentes?establecimiento_id=${establecimientoSeleccionado}`)
       if (!response.ok) throw new Error("Error al cargar insumos")
       const data = await response.json()
-      setInsumos(data.insumos || [])
-      console.log("✅ Insumos cargados:", data.insumos?.length || 0)
+      setInsumosExistentes(data.insumos || [])
+      console.log("✅ Insumos existentes cargados:", data.insumos?.length || 0)
     } catch (error) {
-      console.error("❌ Error fetching insumos:", error)
+      console.error("❌ Error fetching insumos existentes:", error)
       toast({
         title: "Error",
-        description: "No se pudieron cargar los insumos",
+        description: "No se pudieron cargar los insumos disponibles",
         variant: "destructive",
       })
     }
@@ -270,7 +308,7 @@ export default function EditarActividadMixtaDrawer({
     if (!loteId || !categoriaAnimalId || !cantidadAnimal || !peso) {
       toast({
         title: "Error",
-        description: "Todos los campos son requeridos",
+        description: "Lote, categoría animal, cantidad y peso son requeridos",
         variant: "destructive",
       })
       return
@@ -281,7 +319,14 @@ export default function EditarActividadMixtaDrawer({
       (c) => c.categoria_animal_id.toString() === categoriaAnimalId,
     )
 
-    if (!loteSeleccionado || !categoriaSeleccionada) return
+    if (!loteSeleccionado || !categoriaSeleccionada) {
+      toast({
+        title: "Error",
+        description: "Lote o categoría animal no válidos",
+        variant: "destructive",
+      })
+      return
+    }
 
     const nuevoDetalle: DetalleAnimal = {
       lote_id: Number.parseInt(loteId),
@@ -305,24 +350,57 @@ export default function EditarActividadMixtaDrawer({
     limpiarFormularioAnimal()
   }
 
+  const validarDetalleInsumos = (): string[] => {
+    const errores: string[] = []
+
+    if (!insumoId) errores.push("Debe seleccionar un insumo")
+    if (!cantidadInsumo || Number.parseInt(cantidadInsumo) <= 0) errores.push("La cantidad debe ser mayor a 0")
+
+    // Calcular cantidad ya usada del mismo insumo (excluyendo el que se está editando)
+    const cantidadYaUsada = detallesInsumos
+      .filter((d, index) => d.insumo_id.toString() === insumoId && index !== editandoInsumo)
+      .reduce((sum, d) => sum + d.cantidad, 0)
+
+    // Calcular stock disponible real considerando lo ya usado
+    const stockDisponibleReal = stockDisponible - cantidadYaUsada
+
+    // Validar cantidad ingresada
+    const cantidadNumerica = Number.parseInt(cantidadInsumo) || 0
+    if (cantidadNumerica > stockDisponibleReal) {
+      if (cantidadYaUsada > 0) {
+        errores.push(
+          `La cantidad no puede ser mayor a ${stockDisponibleReal} (ya se usaron ${cantidadYaUsada} de ${stockDisponible} disponibles)`,
+        )
+      } else {
+        errores.push(`La cantidad no puede ser mayor al stock disponible (${stockDisponible})`)
+      }
+    }
+
+    return errores
+  }
+
   const agregarInsumo = () => {
-    if (!insumoId || !cantidadInsumo) {
+    const erroresInsumo = validarDetalleInsumos()
+    if (erroresInsumo.length > 0) {
+      setErrores(erroresInsumo)
+      return
+    }
+
+    const insumoSeleccionado = insumosExistentes.find((i) => i.insumo_id === insumoId)
+    if (!insumoSeleccionado) {
       toast({
         title: "Error",
-        description: "Todos los campos son requeridos",
+        description: "Insumo no válido",
         variant: "destructive",
       })
       return
     }
 
-    const insumoSeleccionado = insumos.find((i) => i.id.toString() === insumoId)
-    if (!insumoSeleccionado) return
-
     const nuevoDetalle: DetalleInsumo = {
       insumo_id: Number.parseInt(insumoId),
-      insumo_nombre: insumoSeleccionado.nombre,
+      insumo_nombre: insumoSeleccionado.nombre_insumo,
       cantidad: Number.parseInt(cantidadInsumo),
-      unidad_medida: insumoSeleccionado.pd_unidad_medida_insumos?.nombre || "",
+      unidad_medida: insumoSeleccionado.unidad_medida,
     }
 
     if (editandoInsumo !== null) {
@@ -351,6 +429,7 @@ export default function EditarActividadMixtaDrawer({
     setInsumoId("")
     setCantidadInsumo("")
     setUnidadMedidaActual("")
+    setStockDisponible(0)
     setMostrarFormInsumos(false)
     setEditandoInsumo(null)
   }
@@ -427,6 +506,23 @@ export default function EditarActividadMixtaDrawer({
       erroresValidacion.push("Debe agregar al menos un detalle de animal o insumo")
     }
 
+    // Validar que todos los animales tengan lote_id
+    detallesAnimales.forEach((animal, index) => {
+      if (!animal.lote_id || animal.lote_id === 0) {
+        erroresValidacion.push(`Animal en línea ${index + 1}: Lote es requerido`)
+      }
+      if (!animal.categoria_animal_id || animal.categoria_animal_id === 0) {
+        erroresValidacion.push(`Animal en línea ${index + 1}: Categoría animal es requerida`)
+      }
+    })
+
+    // Validar que todos los insumos tengan insumo_id
+    detallesInsumos.forEach((insumo, index) => {
+      if (!insumo.insumo_id || insumo.insumo_id === 0) {
+        erroresValidacion.push(`Insumo en línea ${index + 1}: Insumo es requerido`)
+      }
+    })
+
     if (erroresValidacion.length > 0) {
       setErrores(erroresValidacion)
       return
@@ -441,8 +537,17 @@ export default function EditarActividadMixtaDrawer({
           fecha: fecha.toISOString().split("T")[0],
           hora,
           nota: nota || null,
-          detalles_animales: detallesAnimales,
-          detalles_insumos: detallesInsumos,
+          detalles_animales: detallesAnimales.map((animal) => ({
+            lote_id: animal.lote_id,
+            categoria_animal_id: animal.categoria_animal_id,
+            cantidad: animal.cantidad,
+            peso: animal.peso,
+            tipo: animal.tipo,
+          })),
+          detalles_insumos: detallesInsumos.map((insumo) => ({
+            insumo_id: insumo.insumo_id,
+            cantidad: insumo.cantidad,
+          })),
         }),
       })
 
@@ -493,10 +598,17 @@ export default function EditarActividadMixtaDrawer({
     label: cat.nombre_categoria_animal,
   }))
 
-  const opcionesInsumos = insumos.map((insumo) => ({
-    value: insumo.id.toString(),
-    label: insumo.nombre,
+  const opcionesInsumos = insumosExistentes.map((insumo) => ({
+    value: insumo.insumo_id,
+    label: insumo.nombre_insumo,
   }))
+
+  // Calcular stock disponible real para mostrar en insumos
+  const cantidadYaUsadaEnFormularioInsumos = detallesInsumos
+    .filter((d, index) => d.insumo_id.toString() === insumoId && index !== editandoInsumo)
+    .reduce((sum, d) => sum + d.cantidad, 0)
+
+  const stockDisponibleRealInsumos = stockDisponible - cantidadYaUsadaEnFormularioInsumos
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
@@ -576,7 +688,7 @@ export default function EditarActividadMixtaDrawer({
 
               {/* Detalles con Pestañas */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Detalles *</h3>
+                <h3 className="text-lg font-semibold mb-4">Detal les *</h3>
 
                 <Tabs defaultValue="animales" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
@@ -590,272 +702,264 @@ export default function EditarActividadMixtaDrawer({
                     </TabsTrigger>
                   </TabsList>
 
-                  {/* Pestaña Animales */}
-                  <TabsContent value="animales" className="mt-4">
-                    <div className="space-y-4">
-                      <div className="flex justify-end">
-                        <Button onClick={() => setMostrarFormAnimales(true)} className="bg-blue-600 hover:bg-blue-700">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Agregar línea
-                        </Button>
+                  <TabsContent value="animales" className="space-y-4">
+                    <div className="flex justify-end">
+                      <Button onClick={() => setMostrarFormAnimales(true)} className="bg-green-600 hover:bg-green-700">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Agregar animal
+                      </Button>
+                    </div>
+
+                    {/* Formulario de animales */}
+                    {mostrarFormAnimales && (
+                      <div className="bg-gray-50 border rounded-lg p-6">
+                        <h4 className="font-medium mb-4">
+                          {editandoAnimal !== null ? "Editar Animal" : "Nuevo Animal"}
+                        </h4>
+
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Lote *</Label>
+                              <CustomCombobox
+                                options={opcionesLotes}
+                                value={loteId}
+                                onValueChange={setLoteId}
+                                placeholder="Selecciona lote..."
+                                searchPlaceholder="Buscar lote..."
+                                emptyMessage="No se encontraron lotes."
+                              />
+                            </div>
+
+                            <div>
+                              <Label>Categoría Animal *</Label>
+                              <CustomCombobox
+                                options={opcionesCategorias}
+                                value={categoriaAnimalId}
+                                onValueChange={setCategoriaAnimalId}
+                                placeholder={loteId ? "Selecciona categoría..." : "Primero selecciona un lote"}
+                                searchPlaceholder="Buscar categoría..."
+                                emptyMessage="No se encontraron categorías con stock."
+                                disabled={!loteId}
+                                loading={loadingCategorias}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Cantidad *</Label>
+                              <Input
+                                type="number"
+                                value={cantidadAnimal}
+                                onChange={(e) => setCantidadAnimal(e.target.value)}
+                                placeholder="Ej: 10"
+                                min="1"
+                              />
+                            </div>
+
+                            <div>
+                              <Label>Peso (kg) *</Label>
+                              <Input
+                                type="number"
+                                value={peso}
+                                onChange={(e) => setPeso(e.target.value)}
+                                placeholder="Ej: 250"
+                                min="1"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label>Tipo de peso</Label>
+                            <RadioGroup value={tipoAnimal} onValueChange={setTipoAnimal} className="flex gap-6 mt-2">
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="TOTAL" id="total" />
+                                <Label htmlFor="total">Total</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="PROMEDIO" id="promedio" />
+                                <Label htmlFor="promedio">Promedio</Label>
+                              </div>
+                            </RadioGroup>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 mt-6">
+                          <Button onClick={agregarAnimal} className="bg-green-600 hover:bg-green-700">
+                            {editandoAnimal !== null ? "Actualizar" : "Agregar"}
+                          </Button>
+                          <Button variant="outline" onClick={limpiarFormularioAnimal}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tabla de animales */}
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="bg-gray-50 border-b">
+                        <div className="grid grid-cols-12 gap-2 p-3 text-sm font-medium text-gray-700">
+                          <div className="col-span-2">Lote</div>
+                          <div className="col-span-3">Categoría</div>
+                          <div className="col-span-2 text-center">Cantidad</div>
+                          <div className="col-span-2 text-center">Peso</div>
+                          <div className="col-span-2 text-center">Tipo</div>
+                          <div className="col-span-1 text-center">Acciones</div>
+                        </div>
                       </div>
 
-                      {/* Formulario de animal expandido */}
-                      {mostrarFormAnimales && (
-                        <div className="bg-gray-50 border rounded-lg p-6">
-                          <h4 className="font-medium mb-4">
-                            {editandoAnimal !== null ? "Editar Animal" : "Nuevo Detalle Animal"}
-                          </h4>
-
-                          <div className="space-y-4">
-                            {/* Primera fila: Lote y Categoría Animal */}
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Lote *</Label>
-                                <CustomCombobox
-                                  options={opcionesLotes}
-                                  value={loteId}
-                                  onValueChange={setLoteId}
-                                  placeholder="Selecciona lote..."
-                                  searchPlaceholder="Buscar lote..."
-                                  emptyMessage="No se encontraron lotes."
-                                />
-                              </div>
-
-                              <div>
-                                <Label>Categoría Animal *</Label>
-                                <CustomCombobox
-                                  options={opcionesCategorias}
-                                  value={categoriaAnimalId}
-                                  onValueChange={setCategoriaAnimalId}
-                                  placeholder={loteId ? "Selecciona categoría..." : "Primero selecciona un lote"}
-                                  searchPlaceholder="Buscar categoría..."
-                                  emptyMessage="No se encontraron categorías con stock."
-                                  disabled={!loteId}
-                                  loading={loadingCategorias}
-                                />
-                              </div>
-                            </div>
-
-                            {/* Segunda fila: Cantidad y Peso */}
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Cantidad *</Label>
-                                <Input
-                                  type="number"
-                                  value={cantidadAnimal}
-                                  onChange={(e) => setCantidadAnimal(e.target.value)}
-                                  placeholder="Ej: 10"
-                                  min="1"
-                                />
-                              </div>
-
-                              <div>
-                                <Label>Peso (kg) *</Label>
-                                <Input
-                                  type="number"
-                                  value={peso}
-                                  onChange={(e) => setPeso(e.target.value)}
-                                  placeholder="Ej: 250"
-                                  min="0"
-                                  step="0.1"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Tercera fila: Tipo de peso con radio buttons */}
-                            <div>
-                              <Label>Tipo de peso</Label>
-                              <RadioGroup
-                                value={tipoAnimal}
-                                onValueChange={setTipoAnimal}
-                                className="flex items-center space-x-6 mt-2"
+                      <div className="min-h-[100px]">
+                        {detallesAnimales.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">No hay animales agregados</div>
+                        ) : (
+                          <div className="divide-y">
+                            {detallesAnimales.map((detalle, index) => (
+                              <div
+                                key={index}
+                                className="grid grid-cols-12 gap-2 p-3 text-sm hover:bg-gray-50 items-center"
                               >
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem value="TOTAL" id="total" />
-                                  <Label htmlFor="total">Total</Label>
+                                <div className="col-span-2 font-medium truncate">{detalle.lote_nombre}</div>
+                                <div className="col-span-3 truncate">{detalle.categoria_animal_nombre}</div>
+                                <div className="col-span-2 text-center">{detalle.cantidad}</div>
+                                <div className="col-span-2 text-center">{detalle.peso} kg</div>
+                                <div className="col-span-2 text-center">{detalle.tipo}</div>
+                                <div className="col-span-1 flex justify-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => editarAnimal(index)}
+                                    className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setDetallesAnimales(detallesAnimales.filter((_, i) => i !== index))}
+                                    className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem value="PROMEDIO" id="promedio" />
-                                  <Label htmlFor="promedio">Promedio</Label>
-                                </div>
-                              </RadioGroup>
-                            </div>
+                              </div>
+                            ))}
                           </div>
-
-                          <div className="flex gap-2 mt-6">
-                            <Button onClick={agregarAnimal} className="bg-green-600 hover:bg-green-700">
-                              {editandoAnimal !== null ? "Actualizar" : "Agregar"}
-                            </Button>
-                            <Button variant="outline" onClick={limpiarFormularioAnimal}>
-                              Cancelar
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Tabla de animales */}
-                      <div className="border rounded-lg overflow-hidden">
-                        <div className="bg-gray-50 border-b">
-                          <div className="grid grid-cols-12 gap-2 p-3 text-sm font-medium text-gray-700">
-                            <div className="col-span-2">Lote</div>
-                            <div className="col-span-3">Categoría Animal</div>
-                            <div className="col-span-2 text-center">Cantidad</div>
-                            <div className="col-span-2 text-center">Peso</div>
-                            <div className="col-span-2 text-center">Tipo</div>
-                            <div className="col-span-1 text-center">Acciones</div>
-                          </div>
-                        </div>
-                        <div className="min-h-[100px]">
-                          {detallesAnimales.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500">No hay detalles de animales agregados</div>
-                          ) : (
-                            <div className="divide-y">
-                              {detallesAnimales.map((detalle, index) => (
-                                <div
-                                  key={index}
-                                  className="grid grid-cols-12 gap-2 p-3 text-sm hover:bg-gray-50 items-center"
-                                >
-                                  <div className="col-span-2 font-medium truncate">{detalle.lote_nombre}</div>
-                                  <div className="col-span-3 truncate">{detalle.categoria_animal_nombre}</div>
-                                  <div className="col-span-2 text-center">{detalle.cantidad}</div>
-                                  <div className="col-span-2 text-center">{detalle.peso} kg</div>
-                                  <div className="col-span-2 text-center">{detalle.tipo}</div>
-                                  <div className="col-span-1 flex justify-center gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => editarAnimal(index)}
-                                      className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    >
-                                      <Edit className="w-3 h-3" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() =>
-                                        setDetallesAnimales(detallesAnimales.filter((_, i) => i !== index))
-                                      }
-                                      className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </div>
                   </TabsContent>
 
-                  {/* Pestaña Insumos */}
-                  <TabsContent value="insumos" className="mt-4">
-                    <div className="space-y-4">
-                      <div className="flex justify-end">
-                        <Button onClick={() => setMostrarFormInsumos(true)} className="bg-blue-600 hover:bg-blue-700">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Agregar línea
-                        </Button>
+                  <TabsContent value="insumos" className="space-y-4">
+                    <div className="flex justify-end">
+                      <Button onClick={() => setMostrarFormInsumos(true)} className="bg-blue-600 hover:bg-blue-700">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Agregar insumo
+                      </Button>
+                    </div>
+
+                    {/* Formulario de insumos */}
+                    {mostrarFormInsumos && (
+                      <div className="bg-gray-50 border rounded-lg p-6">
+                        <h4 className="font-medium mb-4">
+                          {editandoInsumo !== null ? "Editar Insumo" : "Nuevo Insumo"}
+                        </h4>
+
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Insumo *</Label>
+                              <CustomCombobox
+                                options={opcionesInsumos}
+                                value={insumoId}
+                                onValueChange={setInsumoId}
+                                placeholder="Selecciona insumo..."
+                                searchPlaceholder="Buscar insumo..."
+                                emptyMessage="No se encontraron insumos disponibles."
+                              />
+                            </div>
+
+                            <div>
+                              <Label>
+                                Cantidad *{" "}
+                                {insumoId &&
+                                  stockDisponibleRealInsumos >= 0 &&
+                                  `(Disponible: ${stockDisponibleRealInsumos})`}
+                              </Label>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="number"
+                                  value={cantidadInsumo}
+                                  onChange={(e) => setCantidadInsumo(e.target.value)}
+                                  placeholder="Ej: 5"
+                                  min="1"
+                                  max={stockDisponibleRealInsumos}
+                                  className="flex-1"
+                                />
+                                {unidadMedidaActual && (
+                                  <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-2 rounded border min-w-[80px] text-center">
+                                    {unidadMedidaActual}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 mt-6">
+                          <Button onClick={agregarInsumo} className="bg-blue-600 hover:bg-blue-700">
+                            {editandoInsumo !== null ? "Actualizar" : "Agregar"}
+                          </Button>
+                          <Button variant="outline" onClick={limpiarFormularioInsumo}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tabla de insumos */}
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="bg-gray-50 border-b">
+                        <div className="grid grid-cols-10 gap-4 p-4 text-sm font-medium text-gray-700">
+                          <div className="col-span-4">Insumo</div>
+                          <div className="col-span-2">Cantidad</div>
+                          <div className="col-span-2">Unidad Medida</div>
+                          <div className="col-span-2 text-center">Acciones</div>
+                        </div>
                       </div>
 
-                      {/* Formulario de insumo expandido */}
-                      {mostrarFormInsumos && (
-                        <div className="bg-gray-50 border rounded-lg p-6">
-                          <h4 className="font-medium mb-4">
-                            {editandoInsumo !== null ? "Editar Insumo" : "Nuevo Insumo"}
-                          </h4>
-
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Insumo *</Label>
-                                <CustomCombobox
-                                  options={opcionesInsumos}
-                                  value={insumoId}
-                                  onValueChange={setInsumoId}
-                                  placeholder="Selecciona insumo..."
-                                  searchPlaceholder="Buscar insumo..."
-                                  emptyMessage="No se encontraron insumos."
-                                />
-                              </div>
-
-                              <div>
-                                <Label>Cantidad *</Label>
-                                <div className="flex items-center gap-2">
-                                  <Input
-                                    type="number"
-                                    value={cantidadInsumo}
-                                    onChange={(e) => setCantidadInsumo(e.target.value)}
-                                    placeholder="Ej: 5"
-                                    min="1"
-                                    className="flex-1"
-                                  />
-                                  {unidadMedidaActual && (
-                                    <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-2 rounded border min-w-[80px] text-center">
-                                      {unidadMedidaActual}
-                                    </span>
-                                  )}
+                      <div className="min-h-[100px]">
+                        {detallesInsumos.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">No hay insumos agregados</div>
+                        ) : (
+                          <div className="divide-y">
+                            {detallesInsumos.map((detalle, index) => (
+                              <div key={index} className="grid grid-cols-10 gap-4 p-4 text-sm hover:bg-gray-50">
+                                <div className="col-span-4 font-medium">{detalle.insumo_nombre}</div>
+                                <div className="col-span-2">{detalle.cantidad}</div>
+                                <div className="col-span-2 text-gray-600">{detalle.unidad_medida}</div>
+                                <div className="col-span-2 flex justify-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => editarInsumo(index)}
+                                    className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setDetallesInsumos(detallesInsumos.filter((_, i) => i !== index))}
+                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
                                 </div>
                               </div>
-                            </div>
+                            ))}
                           </div>
-
-                          <div className="flex gap-2 mt-6">
-                            <Button onClick={agregarInsumo} className="bg-blue-600 hover:bg-blue-700">
-                              {editandoInsumo !== null ? "Actualizar" : "Agregar"}
-                            </Button>
-                            <Button variant="outline" onClick={limpiarFormularioInsumo}>
-                              Cancelar
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Tabla de insumos */}
-                      <div className="border rounded-lg overflow-hidden">
-                        <div className="bg-gray-50 border-b">
-                          <div className="grid grid-cols-4 gap-4 p-4 text-sm font-medium text-gray-700">
-                            <div>Insumo</div>
-                            <div>Cantidad</div>
-                            <div>Unidad Medida</div>
-                            <div className="text-center">Acciones</div>
-                          </div>
-                        </div>
-                        <div className="min-h-[100px]">
-                          {detallesInsumos.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500">No hay detalles de insumos agregados</div>
-                          ) : (
-                            <div className="divide-y">
-                              {detallesInsumos.map((detalle, index) => (
-                                <div key={index} className="grid grid-cols-4 gap-4 p-4 text-sm hover:bg-gray-50">
-                                  <div className="font-medium">{detalle.insumo_nombre}</div>
-                                  <div>{detalle.cantidad}</div>
-                                  <div className="text-gray-600">{detalle.unidad_medida}</div>
-                                  <div className="flex justify-center gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => editarInsumo(index)}
-                                      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    >
-                                      <Edit className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setDetallesInsumos(detallesInsumos.filter((_, i) => i !== index))}
-                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </div>
                   </TabsContent>

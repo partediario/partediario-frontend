@@ -12,13 +12,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Se requiere establecimiento_id" }, { status: 400 })
     }
 
-    // Usar la vista insumos_existentes_view y filtrar directamente por establecimiento_id
+    // Usar la nueva vista insumos_existentes_view
     const { data: insumosExistentes, error: insumosError } = await supabase
       .from("insumos_existentes_view")
       .select("insumo_id, nombre_insumo, establecimiento_id, cantidad_disponible, unidad_medida_uso")
-      .eq("establecimiento_id", establecimientoId) // Filtrar directamente por establecimiento_id
-      .gte("cantidad_disponible", 0) // Insumos con stock >= 0 (incluye stock 0)
-      .order("insumo_id", { ascending: true }) // Ordenar por insumo_id ascendente
+      .eq("establecimiento_id", establecimientoId)
+      .gte("cantidad_disponible", 0)
+      .order("insumo_id", { ascending: true })
 
     if (insumosError) {
       console.error("Error obteniendo insumos existentes:", insumosError)
@@ -28,18 +28,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Obtener todas las unidades de medida en consulta separada
+    // Obtener unidades de medida
     const { data: unidades, error: unidadesError } = await supabase
       .from("pd_unidad_medida_insumos")
       .select("id, nombre")
-      .order("id", { ascending: true }) // Ordenar unidades por id ascendente
+      .order("id", { ascending: true })
 
     if (unidadesError) {
       console.error("Error obteniendo unidades:", unidadesError)
       return NextResponse.json({ error: "Error al obtener unidades", details: unidadesError.message }, { status: 500 })
     }
 
-    // Mapear unidades por ID para fácil acceso
     const unidadesMap = new Map(unidades?.map((u) => [u.id, u.nombre]) || [])
 
     const insumosFormateados = (insumosExistentes || []).map((insumo) => ({

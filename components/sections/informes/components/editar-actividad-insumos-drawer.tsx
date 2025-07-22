@@ -11,6 +11,7 @@ import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Plus, Trash2, Edit, Package, AlertCircle, X } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { useEstablishment } from "@/contexts/establishment-context"
 import type { ParteDiario } from "@/lib/types"
 
 interface EditarActividadInsumosDrawerProps {
@@ -51,12 +52,12 @@ interface ActividadInsumos {
   }
 }
 
-interface Insumo {
-  id: number
-  nombre: string
-  pd_unidad_medida_insumos?: {
-    nombre: string
-  }
+interface InsumoExistente {
+  insumo_id: string
+  nombre_insumo: string
+  cantidad_disponible: number
+  unidad_medida: string
+  unidad_medida_uso_id: number
 }
 
 interface DetalleInsumo {
@@ -64,6 +65,7 @@ interface DetalleInsumo {
   insumo_nombre: string
   cantidad: number
   unidad_medida: string
+  cantidad_disponible: number
 }
 
 export default function EditarActividadInsumosDrawer({
@@ -73,7 +75,7 @@ export default function EditarActividadInsumosDrawer({
   onSuccess,
 }: EditarActividadInsumosDrawerProps) {
   const [actividad, setActividad] = useState<ActividadInsumos | null>(null)
-  const [insumos, setInsumos] = useState<Insumo[]>([])
+  const [insumosExistentes, setInsumosExistentes] = useState<InsumoExistente[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingInsumos, setLoadingInsumos] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -89,6 +91,7 @@ export default function EditarActividadInsumosDrawer({
   const [insumoId, setInsumoId] = useState<string>("")
   const [cantidad, setCantidad] = useState<string>("")
   const [unidadMedidaActual, setUnidadMedidaActual] = useState<string>("")
+  const [stockDisponible, setStockDisponible] = useState<number>(0)
 
   // Detalles agregados
   const [detalles, setDetalles] = useState<DetalleInsumo[]>([])
@@ -97,12 +100,28 @@ export default function EditarActividadInsumosDrawer({
   const [errores, setErrores] = useState<string[]>([])
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
 
+  const { establecimientoSeleccionado } = useEstablishment()
+
   useEffect(() => {
     if (isOpen && parte.pd_detalles?.detalle_id) {
       console.log("🔄 Cargando datos de actividad para edición, parte ID:", parte.pd_detalles.detalle_id)
       fetchActividadInsumos()
     }
   }, [isOpen, parte.pd_detalles?.detalle_id])
+
+  // Actualizar unidad de medida y stock cuando cambia el insumo seleccionado
+  useEffect(() => {
+    if (insumoId) {
+      const insumoSeleccionado = insumosExistentes.find((i) => i.insumo_id === insumoId)
+      if (insumoSeleccionado) {
+        setUnidadMedidaActual(insumoSeleccionado.unidad_medida)
+        setStockDisponible(insumoSeleccionado.cantidad_disponible)
+      }
+    } else {
+      setUnidadMedidaActual("")
+      setStockDisponible(0)
+    }
+  }, [insumoId, insumosExistentes])
 
   const fetchActividadInsumos = async () => {
     if (!parte.pd_detalles?.detalle_id) return
@@ -129,10 +148,10 @@ export default function EditarActividadInsumosDrawer({
         // Mapear los insumos desde pd_detalles.detalles_insumos
         pd_actividades_insumos_detalle: (parte.pd_detalles?.detalles_insumos || []).map((insumo: any) => ({
           id: insumo.id,
-          insumo_id: insumo.insumo_id, // ✅ Usar insumo_id correcto
+          insumo_id: insumo.insumo_id,
           cantidad: insumo.cantidad,
           pd_insumos: {
-            id: insumo.insumo_id, // ✅ Usar insumo_id correcto
+            id: insumo.insumo_id,
             nombre: insumo.insumo,
             pd_unidad_medida_insumos: {
               nombre: insumo.unidad_medida || "",
@@ -149,17 +168,22 @@ export default function EditarActividadInsumosDrawer({
       setHora(actividadData.hora.slice(0, 5))
       setNota(actividadData.nota || "")
 
-      // Mapear los detalles de insumos
+      // Cargar insumos existentes primero
+      await fetchInsumosExistentes()
+
+      // Mapear los detalles de insumos con información de stock
       const detallesMap = actividadData.pd_actividades_insumos_detalle.map((detalle: any) => ({
         insumo_id: detalle.insumo_id,
         cantidad: detalle.cantidad,
         insumo_nombre: detalle.pd_insumos.nombre,
         unidad_medida: detalle.pd_insumos.pd_unidad_medida_insumos?.nombre || "",
+        cantidad_disponible: 0, // Se actualizará después de cargar insumos existentes
       }))
       setDetalles(detallesMap)
 
-      // Cargar lista de insumos disponibles
-      await fetchInsumos()
+      console.log("✅ Datos cargados para edición:", {
+        insumos: detallesMap.length,
+      })
     } catch (error) {
       console.error("❌ Error:", error)
       toast({
@@ -172,31 +196,36 @@ export default function EditarActividadInsumosDrawer({
     }
   }
 
-  // Actualizar unidad de medida cuando cambia el insumo seleccionado
-  useEffect(() => {
-    if (insumoId) {
-      const insumoSeleccionado = insumos.find((i) => i.id.toString() === insumoId)
-      if (insumoSeleccionado?.pd_unidad_medida_insumos) {
-        setUnidadMedidaActual(insumoSeleccionado.pd_unidad_medida_insumos.nombre)
-      }
-    } else {
-      setUnidadMedidaActual("")
-    }
-  }, [insumoId, insumos])
+  const fetchInsumosExistentes = async () => {
+    if (!establecimientoSeleccionado) return
 
-  const fetchInsumos = async () => {
     setLoadingInsumos(true)
     try {
-      const response = await fetch("/api/insumos")
+      const response = await fetch(`/api/insumos-existentes?establecimiento_id=${establecimientoSeleccionado}`)
       if (!response.ok) throw new Error("Error al cargar insumos")
 
       const data = await response.json()
-      setInsumos(data.insumos || [])
+      setInsumosExistentes(data.insumos || [])
+
+      // Actualizar cantidad disponible en detalles existentes
+      setDetalles((prevDetalles) =>
+        prevDetalles.map((detalle) => {
+          const insumoExistente = data.insumos?.find(
+            (i: InsumoExistente) => i.insumo_id === detalle.insumo_id.toString(),
+          )
+          return {
+            ...detalle,
+            cantidad_disponible: insumoExistente
+              ? insumoExistente.cantidad_disponible + detalle.cantidad
+              : detalle.cantidad,
+          }
+        }),
+      )
     } catch (error) {
-      console.error("Error fetching insumos:", error)
+      console.error("Error fetching insumos existentes:", error)
       toast({
         title: "❌ Error",
-        description: "Error al cargar insumos",
+        description: "Error al cargar insumos disponibles",
         variant: "destructive",
       })
     } finally {
@@ -221,6 +250,26 @@ export default function EditarActividadInsumosDrawer({
     if (!insumoId) errores.push("Debe seleccionar un insumo")
     if (!cantidad || Number.parseInt(cantidad) <= 0) errores.push("La cantidad debe ser mayor a 0")
 
+    // Calcular cantidad ya usada del mismo insumo (excluyendo el que se está editando)
+    const cantidadYaUsada = detalles
+      .filter((d, index) => d.insumo_id.toString() === insumoId && index !== editandoDetalle)
+      .reduce((sum, d) => sum + d.cantidad, 0)
+
+    // Calcular stock disponible real considerando lo ya usado
+    const stockDisponibleReal = stockDisponible - cantidadYaUsada
+
+    // Validar cantidad ingresada
+    const cantidadNumerica = Number.parseInt(cantidad) || 0
+    if (cantidadNumerica > stockDisponibleReal) {
+      if (cantidadYaUsada > 0) {
+        errores.push(
+          `La cantidad no puede ser mayor a ${stockDisponibleReal} (ya se usaron ${cantidadYaUsada} de ${stockDisponible} disponibles)`,
+        )
+      } else {
+        errores.push(`La cantidad no puede ser mayor al stock disponible (${stockDisponible})`)
+      }
+    }
+
     return errores
   }
 
@@ -231,15 +280,16 @@ export default function EditarActividadInsumosDrawer({
       return
     }
 
-    const insumoSeleccionado = insumos.find((i) => i.id.toString() === insumoId)
+    const insumoSeleccionado = insumosExistentes.find((i) => i.insumo_id === insumoId)
 
     if (!insumoSeleccionado) return
 
     const nuevoDetalle: DetalleInsumo = {
       insumo_id: Number.parseInt(insumoId),
-      insumo_nombre: insumoSeleccionado.nombre,
+      insumo_nombre: insumoSeleccionado.nombre_insumo,
       cantidad: Number.parseInt(cantidad),
-      unidad_medida: insumoSeleccionado.pd_unidad_medida_insumos?.nombre || "",
+      unidad_medida: insumoSeleccionado.unidad_medida,
+      cantidad_disponible: insumoSeleccionado.cantidad_disponible,
     }
 
     if (editandoDetalle !== null) {
@@ -271,6 +321,7 @@ export default function EditarActividadInsumosDrawer({
     setInsumoId("")
     setCantidad("")
     setUnidadMedidaActual("")
+    setStockDisponible(0)
     setMostrarFormDetalle(false)
     setEditandoDetalle(null)
     setErroresDetalle([])
@@ -330,12 +381,19 @@ export default function EditarActividadInsumosDrawer({
     setErrores([])
   }
 
-  const opcionesInsumos = insumos.map((insumo) => ({
-    value: insumo.id.toString(),
-    label: insumo.nombre,
+  const opcionesInsumos = insumosExistentes.map((insumo) => ({
+    value: insumo.insumo_id,
+    label: insumo.nombre_insumo,
   }))
 
   const nombreCompleto = actividad ? `${actividad.pd_usuarios.nombres} ${actividad.pd_usuarios.apellidos}`.trim() : ""
+
+  // Calcular stock disponible real para mostrar
+  const cantidadYaUsadaEnFormulario = detalles
+    .filter((d, index) => d.insumo_id.toString() === insumoId && index !== editandoDetalle)
+    .reduce((sum, d) => sum + d.cantidad, 0)
+
+  const stockDisponibleReal = stockDisponible - cantidadYaUsadaEnFormulario
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
@@ -459,13 +517,15 @@ export default function EditarActividadInsumosDrawer({
                             onValueChange={setInsumoId}
                             placeholder="Selecciona insumo..."
                             searchPlaceholder="Buscar insumo..."
-                            emptyMessage="No se encontraron insumos."
+                            emptyMessage="No se encontraron insumos disponibles."
                             loading={loadingInsumos}
                           />
                         </div>
 
                         <div>
-                          <Label>Cantidad *</Label>
+                          <Label>
+                            Cantidad * {insumoId && stockDisponibleReal >= 0 && `(Disponible: ${stockDisponibleReal})`}
+                          </Label>
                           <div className="flex items-center gap-2">
                             <Input
                               type="number"
@@ -473,6 +533,7 @@ export default function EditarActividadInsumosDrawer({
                               onChange={(e) => setCantidad(e.target.value)}
                               placeholder="Ej: 5"
                               min="1"
+                              max={stockDisponibleReal}
                               className="flex-1"
                             />
                             {unidadMedidaActual && (
@@ -500,11 +561,11 @@ export default function EditarActividadInsumosDrawer({
                 <div className="border rounded-lg overflow-hidden">
                   {/* Headers de la tabla */}
                   <div className="bg-gray-50 border-b">
-                    <div className="grid grid-cols-12 gap-4 p-4 text-sm font-medium text-gray-700">
+                    <div className="grid grid-cols-10 gap-4 p-4 text-sm font-medium text-gray-700">
                       <div className="col-span-4">Insumo</div>
                       <div className="col-span-2">Cantidad</div>
-                      <div className="col-span-3">Unidad Medida</div>
-                      <div className="col-span-3 text-center">Acciones</div>
+                      <div className="col-span-2">Unidad Medida</div>
+                      <div className="col-span-2 text-center">Acciones</div>
                     </div>
                   </div>
 
@@ -515,11 +576,11 @@ export default function EditarActividadInsumosDrawer({
                     ) : (
                       <div className="divide-y">
                         {detalles.map((detalle, index) => (
-                          <div key={index} className="grid grid-cols-12 gap-4 p-4 text-sm hover:bg-gray-50">
+                          <div key={index} className="grid grid-cols-10 gap-4 p-4 text-sm hover:bg-gray-50">
                             <div className="col-span-4 font-medium">{detalle.insumo_nombre}</div>
                             <div className="col-span-2">{detalle.cantidad}</div>
-                            <div className="col-span-3 text-gray-600">{detalle.unidad_medida}</div>
-                            <div className="col-span-3 flex justify-center gap-2">
+                            <div className="col-span-2 text-gray-600">{detalle.unidad_medida}</div>
+                            <div className="col-span-2 flex justify-center gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
