@@ -66,6 +66,8 @@ interface DetalleInsumo {
   cantidad: number
   unidad_medida: string
   cantidad_disponible: number
+  es_original: boolean // Nueva propiedad para distinguir detalles originales de nuevos
+  cantidad_original?: number // Cantidad original para detalles que fueron editados
 }
 
 export default function EditarActividadInsumosDrawer({
@@ -115,13 +117,89 @@ export default function EditarActividadInsumosDrawer({
       const insumoSeleccionado = insumosExistentes.find((i) => i.insumo_id === insumoId)
       if (insumoSeleccionado) {
         setUnidadMedidaActual(insumoSeleccionado.unidad_medida)
-        setStockDisponible(insumoSeleccionado.cantidad_disponible)
+
+        // Calcular stock disponible considerando todos los casos
+        const stockCalculado = calcularStockDisponible(insumoId, editandoDetalle)
+        setStockDisponible(stockCalculado)
+
+        console.log(`📊 Stock calculado para insumo ${insumoId}:`, {
+          stockBase: insumoSeleccionado.cantidad_disponible,
+          stockCalculado,
+          editandoDetalle,
+          detallesActuales: detalles.length,
+        })
       }
     } else {
       setUnidadMedidaActual("")
       setStockDisponible(0)
     }
-  }, [insumoId, insumosExistentes])
+  }, [insumoId, insumosExistentes, editandoDetalle, detalles])
+
+  const calcularStockDisponible = (insumoIdSeleccionado: string, indexEditando: number | null): number => {
+    const insumoSeleccionado = insumosExistentes.find((i) => i.insumo_id === insumoIdSeleccionado)
+    if (!insumoSeleccionado) return 0
+
+    const stockBase = insumoSeleccionado.cantidad_disponible
+
+    // Si estamos editando una línea original, devolver stock base + cantidad original de esa línea
+    if (indexEditando !== null && detalles[indexEditando]?.es_original) {
+      const detalleEditado = detalles[indexEditando]
+      if (detalleEditado.insumo_id.toString() === insumoIdSeleccionado) {
+        const cantidadOriginal = detalleEditado.cantidad_original || detalleEditado.cantidad
+        const stockDisponible = stockBase + cantidadOriginal
+
+        console.log(`📊 Editando línea original - insumo ${insumoIdSeleccionado}:`, {
+          stockBase,
+          cantidadOriginal,
+          stockDisponible,
+        })
+
+        return Math.max(0, stockDisponible)
+      }
+    }
+
+    // Para agregar nueva línea o editar línea nueva: calcular stock considerando uso actual
+    // Obtener detalles originales iniciales desde parte.pd_detalles
+    const detallesOriginalesIniciales = parte.pd_detalles?.detalles_insumos || []
+
+    // Calcular cantidad total descontada originalmente para este insumo
+    const cantidadDescontadaOriginalmente = detallesOriginalesIniciales
+      .filter((detalle: any) => detalle.insumo_id?.toString() === insumoIdSeleccionado)
+      .reduce((total: number, detalle: any) => total + (detalle.cantidad || 0), 0)
+
+    // Calcular cantidad original aún presente en detalles actuales
+    const cantidadOriginalPresente = detalles
+      .filter(
+        (detalle, index) =>
+          detalle.es_original && detalle.insumo_id.toString() === insumoIdSeleccionado && index !== indexEditando,
+      )
+      .reduce((total, detalle) => total + (detalle.cantidad_original || detalle.cantidad), 0)
+
+    // Calcular cantidad liberada (descontada originalmente - aún presente)
+    const cantidadLiberada = cantidadDescontadaOriginalmente - cantidadOriginalPresente
+
+    // Calcular cantidad usada por líneas nuevas (no originales)
+    const cantidadNuevosUsada = detalles
+      .filter(
+        (detalle, index) =>
+          !detalle.es_original && detalle.insumo_id.toString() === insumoIdSeleccionado && index !== indexEditando,
+      )
+      .reduce((total, detalle) => total + detalle.cantidad, 0)
+
+    // Stock disponible = stock base + cantidad liberada - cantidad usada por nuevos
+    const stockDisponible = stockBase + cantidadLiberada - cantidadNuevosUsada
+
+    console.log(`📊 Cálculo para nueva línea - insumo ${insumoIdSeleccionado}:`, {
+      stockBase,
+      cantidadDescontadaOriginalmente,
+      cantidadOriginalPresente,
+      cantidadLiberada,
+      cantidadNuevosUsada,
+      stockDisponible,
+    })
+
+    return Math.max(0, stockDisponible)
+  }
 
   const fetchActividadInsumos = async () => {
     if (!parte.pd_detalles?.detalle_id) return
@@ -171,18 +249,21 @@ export default function EditarActividadInsumosDrawer({
       // Cargar insumos existentes primero
       await fetchInsumosExistentes()
 
-      // Mapear los detalles de insumos con información de stock
+      // Mapear los detalles de insumos marcándolos como originales
       const detallesMap = actividadData.pd_actividades_insumos_detalle.map((detalle: any) => ({
         insumo_id: detalle.insumo_id,
         cantidad: detalle.cantidad,
         insumo_nombre: detalle.pd_insumos.nombre,
         unidad_medida: detalle.pd_insumos.pd_unidad_medida_insumos?.nombre || "",
         cantidad_disponible: 0, // Se actualizará después de cargar insumos existentes
+        es_original: true, // Marcar como detalle original
+        cantidad_original: detalle.cantidad, // Guardar cantidad original
       }))
       setDetalles(detallesMap)
 
       console.log("✅ Datos cargados para edición:", {
         insumos: detallesMap.length,
+        detallesOriginales: detallesMap.filter((d) => d.es_original).length,
       })
     } catch (error) {
       console.error("❌ Error:", error)
@@ -215,9 +296,7 @@ export default function EditarActividadInsumosDrawer({
           )
           return {
             ...detalle,
-            cantidad_disponible: insumoExistente
-              ? insumoExistente.cantidad_disponible + detalle.cantidad
-              : detalle.cantidad,
+            cantidad_disponible: insumoExistente ? insumoExistente.cantidad_disponible : 0,
           }
         }),
       )
@@ -250,24 +329,12 @@ export default function EditarActividadInsumosDrawer({
     if (!insumoId) errores.push("Debe seleccionar un insumo")
     if (!cantidad || Number.parseInt(cantidad) <= 0) errores.push("La cantidad debe ser mayor a 0")
 
-    // Calcular cantidad ya usada del mismo insumo (excluyendo el que se está editando)
-    const cantidadYaUsada = detalles
-      .filter((d, index) => d.insumo_id.toString() === insumoId && index !== editandoDetalle)
-      .reduce((sum, d) => sum + d.cantidad, 0)
-
-    // Calcular stock disponible real considerando lo ya usado
-    const stockDisponibleReal = stockDisponible - cantidadYaUsada
-
-    // Validar cantidad ingresada
+    // Validar cantidad ingresada contra stock disponible calculado
     const cantidadNumerica = Number.parseInt(cantidad) || 0
-    if (cantidadNumerica > stockDisponibleReal) {
-      if (cantidadYaUsada > 0) {
-        errores.push(
-          `La cantidad no puede ser mayor a ${stockDisponibleReal} (ya se usaron ${cantidadYaUsada} de ${stockDisponible} disponibles)`,
-        )
-      } else {
-        errores.push(`La cantidad no puede ser mayor al stock disponible (${stockDisponible})`)
-      }
+    const stockDisponibleCalculado = calcularStockDisponible(insumoId, editandoDetalle)
+
+    if (cantidadNumerica > stockDisponibleCalculado) {
+      errores.push(`La cantidad no puede ser mayor al stock disponible (${stockDisponibleCalculado})`)
     }
 
     return errores
@@ -290,10 +357,19 @@ export default function EditarActividadInsumosDrawer({
       cantidad: Number.parseInt(cantidad),
       unidad_medida: insumoSeleccionado.unidad_medida,
       cantidad_disponible: insumoSeleccionado.cantidad_disponible,
+      es_original: false, // Los nuevos detalles no son originales
     }
 
     if (editandoDetalle !== null) {
       const nuevosDetalles = [...detalles]
+      const detalleAnterior = nuevosDetalles[editandoDetalle]
+
+      // Si estamos editando un detalle original, mantener la cantidad original
+      if (detalleAnterior.es_original) {
+        nuevoDetalle.es_original = true
+        nuevoDetalle.cantidad_original = detalleAnterior.cantidad_original
+      }
+
       nuevosDetalles[editandoDetalle] = nuevoDetalle
       setDetalles(nuevosDetalles)
       setEditandoDetalle(null)
@@ -389,11 +465,7 @@ export default function EditarActividadInsumosDrawer({
   const nombreCompleto = actividad ? `${actividad.pd_usuarios.nombres} ${actividad.pd_usuarios.apellidos}`.trim() : ""
 
   // Calcular stock disponible real para mostrar
-  const cantidadYaUsadaEnFormulario = detalles
-    .filter((d, index) => d.insumo_id.toString() === insumoId && index !== editandoDetalle)
-    .reduce((sum, d) => sum + d.cantidad, 0)
-
-  const stockDisponibleReal = stockDisponible - cantidadYaUsadaEnFormulario
+  const stockDisponibleReal = insumoId ? calcularStockDisponible(insumoId, editandoDetalle) : 0
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">

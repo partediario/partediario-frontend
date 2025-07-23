@@ -34,6 +34,8 @@ interface DetalleItem {
   cantidad: number
   peso: number
   tipo_peso: "TOTAL" | "PROMEDIO"
+  es_original: boolean // Nueva propiedad para distinguir detalles originales
+  cantidad_original: number // Nueva propiedad para guardar cantidad original
 }
 
 interface Lote {
@@ -47,7 +49,7 @@ interface CategoriaExistente {
   sexo?: string
   edad?: string
   lote_id: string
-  cantidad: number // Agregar este campo
+  cantidad: number
 }
 
 interface TipoMovimiento {
@@ -131,8 +133,7 @@ export default function EditarSalidaAnimalesDrawer({
   // Estado para editar detalle existente
   const [editandoDetalle, setEditandoDetalle] = useState<DetalleItem | null>(null)
 
-  // Datos del usuario desde la vista
-  // Usar el contexto de usuario en lugar de carga individual
+  // Usar el contexto de usuario
   const { usuario, loading: loadingUsuario } = useUser()
 
   // Datos del movimiento original
@@ -140,6 +141,105 @@ export default function EditarSalidaAnimalesDrawer({
 
   // Estado para controlar si estamos en carga inicial
   const cargaInicialRef = useRef(true)
+
+  // Función para calcular stock disponible
+  const calcularStockDisponible = (categoriaId: string): number => {
+    console.log("🧮 CALCULANDO STOCK DISPONIBLE PARA ANIMALES")
+    console.log("   Categoría ID:", categoriaId)
+    console.log("   Editando detalle:", editandoDetalle?.id)
+
+    // Obtener la categoría seleccionada
+    const categoria = categoriasExistentes.find((c) => c.categoria_animal_id === categoriaId)
+    if (!categoria) {
+      console.log("❌ Categoría no encontrada")
+      return 0
+    }
+
+    console.log(`   Stock base de ${categoria.nombre_categoria_animal}: ${categoria.cantidad}`)
+    const stockBase = Number(categoria.cantidad)
+
+    // CASO 1: Editando una línea original
+    if (editandoDetalle && editandoDetalle.es_original && editandoDetalle.categoria_id === categoriaId) {
+      console.log("📝 EDITANDO LÍNEA ORIGINAL")
+      console.log(`   Cantidad original de la línea: ${editandoDetalle.cantidad_original}`)
+
+      // Para editar una línea original, el stock disponible es:
+      // stock base + cantidad original de esa línea específica
+      const stockParaEdicion = stockBase + editandoDetalle.cantidad_original
+      console.log(`   Stock disponible para edición: ${stockParaEdicion}`)
+      return Math.max(0, stockParaEdicion)
+    }
+
+    // CASO 2: Agregando nueva línea o editando línea nueva
+    console.log("➕ AGREGANDO NUEVA LÍNEA O EDITANDO LÍNEA NUEVA")
+
+    // Obtener los detalles originales iniciales para saber qué se había descontado
+    const parseDetalles = () => {
+      try {
+        if (typeof parte.pd_detalles === "string") {
+          return JSON.parse(parte.pd_detalles)
+        }
+        return parte.pd_detalles || []
+      } catch {
+        return []
+      }
+    }
+
+    const detallesOriginalesIniciales = parseDetalles()
+
+    // Calcular cuánto se había descontado originalmente para esta categoría
+    let cantidadOriginalTotalDescontada = 0
+    if (Array.isArray(detallesOriginalesIniciales)) {
+      detallesOriginalesIniciales.forEach((detalle: any) => {
+        const categoriaDetalle = categoriasExistentes.find(
+          (c) =>
+            c.nombre_categoria_animal.toLowerCase().trim() ===
+            (detalle.detalle_categoria_animal || "").toLowerCase().trim(),
+        )
+        if (categoriaDetalle && categoriaDetalle.categoria_animal_id === categoriaId) {
+          cantidadOriginalTotalDescontada += detalle.detalle_cantidad || 0
+          console.log(`   Cantidad original descontada: ${detalle.detalle_cantidad}`)
+        }
+      })
+    }
+
+    console.log(`   Total cantidad original descontada: ${cantidadOriginalTotalDescontada}`)
+
+    // Calcular cuánto de esa cantidad original aún está presente en los detalles actuales
+    let cantidadOriginalAunPresente = 0
+    detalles.forEach((detalle) => {
+      if (detalle.categoria_id === categoriaId && detalle.es_original) {
+        cantidadOriginalAunPresente += detalle.cantidad_original
+        console.log(`   Cantidad original aún presente: ${detalle.cantidad_original} (detalle ${detalle.id})`)
+      }
+    })
+
+    console.log(`   Total cantidad original aún presente: ${cantidadOriginalAunPresente}`)
+
+    // La cantidad liberada es la diferencia entre lo que se había descontado y lo que aún está presente
+    const cantidadLiberada = cantidadOriginalTotalDescontada - cantidadOriginalAunPresente
+    console.log(`   Cantidad liberada: ${cantidadLiberada}`)
+
+    // Stock ajustado = stock base + cantidad liberada
+    const stockAjustado = stockBase + cantidadLiberada
+    console.log(`   Stock ajustado: ${stockAjustado}`)
+
+    // Restar cantidades usadas por detalles nuevos (no originales) y excluyendo el que estamos editando
+    let cantidadUsadaPorNuevos = 0
+    detalles.forEach((detalle) => {
+      if (detalle.categoria_id === categoriaId && !detalle.es_original && detalle.id !== editandoDetalle?.id) {
+        cantidadUsadaPorNuevos += detalle.cantidad
+        console.log(`   - Cantidad usada por detalle nuevo ${detalle.id}: ${detalle.cantidad}`)
+      }
+    })
+
+    console.log(`   Total cantidad usada por nuevos: ${cantidadUsadaPorNuevos}`)
+
+    const stockFinal = stockAjustado - cantidadUsadaPorNuevos
+    console.log(`   = Stock disponible final: ${stockFinal}`)
+
+    return Math.max(0, stockFinal)
+  }
 
   // Función para limpiar el formulario de detalle
   const limpiarFormularioDetalle = () => {
@@ -267,7 +367,7 @@ export default function EditarSalidaAnimalesDrawer({
   // Efecto para mapear IDs cuando se cargan tipos de movimiento y categorías
   useEffect(() => {
     if (tiposMovimiento.length > 0 && categoriasExistentes.length > 0 && detalles.length > 0) {
-      console.log("🔄 INICIANDO MAPEO DE IDs")
+      console.log("🔄 INICIANDO MAPEO DE IDs PARA ANIMALES")
       console.log(
         "📋 Tipos disponibles:",
         tiposMovimiento.map((t) => ({ id: t.id, nombre: t.nombre })),
@@ -284,6 +384,7 @@ export default function EditarSalidaAnimalesDrawer({
           categoria_nombre: d.categoria_nombre,
           tipo_id_actual: d.tipo_movimiento_id,
           categoria_id_actual: d.categoria_id,
+          es_original: d.es_original,
         })),
       )
 
@@ -291,6 +392,7 @@ export default function EditarSalidaAnimalesDrawer({
         console.log(`\n🔍 PROCESANDO DETALLE ${index + 1}:`)
         console.log(`   Tipo original: "${detalle.tipo_movimiento_nombre}"`)
         console.log(`   Categoría original: "${detalle.categoria_nombre}"`)
+        console.log(`   Es original: ${detalle.es_original}`)
 
         // Buscar tipo de movimiento
         const tipoMovimiento = tiposMovimiento.find((tipo) => {
@@ -316,18 +418,10 @@ export default function EditarSalidaAnimalesDrawer({
 
         if (!tipoMovimiento) {
           console.log(`   ❌ Tipo NO encontrado para: "${detalle.tipo_movimiento_nombre}"`)
-          console.log(
-            `   📝 Tipos disponibles:`,
-            tiposMovimiento.map((t) => t.nombre),
-          )
         }
 
         if (!categoria) {
           console.log(`   ❌ Categoría NO encontrada para: "${detalle.categoria_nombre}"`)
-          console.log(
-            `   📝 Categorías disponibles:`,
-            categoriasExistentes.map((c) => c.nombre_categoria_animal),
-          )
         }
 
         const detalleActualizado = {
@@ -343,18 +437,7 @@ export default function EditarSalidaAnimalesDrawer({
         return detalleActualizado
       })
 
-      console.log("\n✅ MAPEO COMPLETADO")
-      console.log(
-        "📋 Detalles finales:",
-        detallesActualizados.map((d) => ({
-          id: d.id,
-          tipo_id: d.tipo_movimiento_id,
-          categoria_id: d.categoria_id,
-          tipo_nombre: d.tipo_movimiento_nombre,
-          categoria_nombre: d.categoria_nombre,
-        })),
-      )
-
+      console.log("\n✅ MAPEO COMPLETADO PARA ANIMALES")
       setDetalles(detallesActualizados)
     }
   }, [tiposMovimiento, categoriasExistentes])
@@ -414,13 +497,25 @@ export default function EditarSalidaAnimalesDrawer({
           cantidad: detalle.detalle_cantidad || 0,
           peso: detalle.detalle_peso || 0,
           tipo_peso: (detalle.detalle_tipo_peso as "TOTAL" | "PROMEDIO") || "TOTAL",
+          es_original: true, // Marcar como original
+          cantidad_original: detalle.detalle_cantidad || 0, // Guardar cantidad original
         }))
+
+        console.log(
+          "📋 Detalles formateados con flags:",
+          detallesFormateados.map((d) => ({
+            id: d.id,
+            categoria: d.categoria_nombre,
+            cantidad: d.cantidad,
+            es_original: d.es_original,
+            cantidad_original: d.cantidad_original,
+          })),
+        )
 
         setDetalles(detallesFormateados)
 
         // Obtener el lote del primer detalle
         if (detallesOriginales[0]?.detalle_lote) {
-          // Se establecerá cuando se carguen los lotes
           console.log("🏷️ Lote a establecer:", detallesOriginales[0].detalle_lote)
         }
       }
@@ -565,7 +660,7 @@ export default function EditarSalidaAnimalesDrawer({
   }
 
   const agregarDetalle = () => {
-    console.log("🔍 Iniciando validación de detalle...")
+    console.log("🔍 Iniciando validación de detalle de animales...")
     console.log("Datos del nuevo detalle:", nuevoDetalle)
 
     const errores: string[] = []
@@ -587,57 +682,31 @@ export default function EditarSalidaAnimalesDrawer({
       errores.push("El peso debe ser mayor a 0")
     }
 
-    // NUEVA VALIDACIÓN DE STOCK PARA EDICIÓN
+    // VALIDACIÓN DE STOCK PARA ANIMALES
     if (nuevoDetalle.categoria_id && nuevoDetalle.cantidad > 0) {
-      console.log("🔍 INICIANDO VALIDACIÓN DE STOCK PARA EDICIÓN")
+      console.log("🔍 INICIANDO VALIDACIÓN DE STOCK PARA ANIMALES")
       console.log("   Categoría seleccionada ID:", nuevoDetalle.categoria_id)
       console.log("   Cantidad solicitada:", nuevoDetalle.cantidad)
       console.log("   Editando detalle:", editandoDetalle?.id)
 
+      const stockDisponible = calcularStockDisponible(nuevoDetalle.categoria_id)
       const categoriaSeleccionada = categoriasExistentes.find(
         (c) => c.categoria_animal_id === nuevoDetalle.categoria_id,
       )
 
-      console.log("   Categoría encontrada:", categoriaSeleccionada)
+      console.log(`📊 Validación de stock para ${categoriaSeleccionada?.nombre_categoria_animal}:`)
+      console.log(`   Stock disponible calculado: ${stockDisponible}`)
+      console.log(`   Cantidad solicitada: ${nuevoDetalle.cantidad}`)
+      console.log(`   ¿Supera el stock?: ${nuevoDetalle.cantidad > stockDisponible}`)
 
-      if (categoriaSeleccionada) {
-        // Calcular cantidad ya utilizada en otros detalles de la misma categoría
-        const cantidadYaUtilizada = detalles
-          .filter((d) => d.categoria_id === nuevoDetalle.categoria_id && d.id !== editandoDetalle?.id)
-          .reduce((sum, d) => sum + d.cantidad, 0)
-
-        // Si estamos editando, considerar la cantidad original
-        let cantidadOriginal = 0
-        if (editandoDetalle && editandoDetalle.categoria_id === nuevoDetalle.categoria_id) {
-          cantidadOriginal = editandoDetalle.cantidad
-          console.log(`📝 Editando detalle existente. Cantidad original: ${cantidadOriginal}`)
-        }
-
-        // El stock disponible incluye la cantidad original si estamos editando la misma categoría
-        const stockDisponible = Number(categoriaSeleccionada.cantidad) - cantidadYaUtilizada + cantidadOriginal
-
-        console.log(`📊 Validación de stock para ${categoriaSeleccionada.nombre_categoria_animal}:`)
-        console.log(
-          `   Stock total: ${categoriaSeleccionada.cantidad} (tipo: ${typeof categoriaSeleccionada.cantidad})`,
-        )
-        console.log(`   Ya utilizado en otros detalles: ${cantidadYaUtilizada}`)
-        console.log(`   Cantidad original (si editando): ${cantidadOriginal}`)
-        console.log(`   Stock disponible: ${stockDisponible}`)
-        console.log(`   Cantidad solicitada: ${nuevoDetalle.cantidad}`)
-        console.log(`   ¿Supera el stock?: ${nuevoDetalle.cantidad > stockDisponible}`)
-
-        if (nuevoDetalle.cantidad > stockDisponible) {
-          const errorMsg =
-            `Stock insuficiente para ${categoriaSeleccionada.nombre_categoria_animal}. ` +
-            `Disponible: ${stockDisponible}, solicitado: ${nuevoDetalle.cantidad}`
-          console.log("❌ ERROR DE STOCK:", errorMsg)
-          errores.push(errorMsg)
-        } else {
-          console.log("✅ Stock suficiente")
-        }
+      if (nuevoDetalle.cantidad > stockDisponible) {
+        const errorMsg =
+          `Stock insuficiente para ${categoriaSeleccionada?.nombre_categoria_animal}. ` +
+          `Disponible: ${stockDisponible}, solicitado: ${nuevoDetalle.cantidad}`
+        console.log("❌ ERROR DE STOCK:", errorMsg)
+        errores.push(errorMsg)
       } else {
-        console.log("❌ No se encontró la categoría seleccionada en las categorías existentes")
-        errores.push("No se pudo validar el stock para la categoría seleccionada")
+        console.log("✅ Stock suficiente")
       }
     }
 
@@ -677,6 +746,7 @@ export default function EditarSalidaAnimalesDrawer({
               cantidad: nuevoDetalle.cantidad,
               peso: nuevoDetalle.peso,
               tipo_peso: nuevoDetalle.tipo_peso,
+              // Mantener es_original y cantidad_original
             }
           : detalle,
       )
@@ -694,6 +764,8 @@ export default function EditarSalidaAnimalesDrawer({
         cantidad: nuevoDetalle.cantidad,
         peso: nuevoDetalle.peso,
         tipo_peso: nuevoDetalle.tipo_peso,
+        es_original: false, // Marcar como nuevo
+        cantidad_original: 0, // No tiene cantidad original
       }
       setDetalles([...detalles, detalle])
       console.log("✅ Nuevo detalle agregado exitosamente")
@@ -1160,28 +1232,7 @@ export default function EditarSalidaAnimalesDrawer({
                       Categoría Animal *
                       {nuevoDetalle.categoria_id && (
                         <span className="text-xs text-gray-500 ml-2">
-                          {(() => {
-                            const categoria = categoriasExistentes.find(
-                              (c) => c.categoria_animal_id === nuevoDetalle.categoria_id,
-                            )
-                            if (!categoria) return "(Stock: 0)"
-
-                            // Calcular stock disponible considerando edición
-                            const cantidadYaUtilizada = detalles
-                              .filter(
-                                (d) => d.categoria_id === nuevoDetalle.categoria_id && d.id !== editandoDetalle?.id,
-                              )
-                              .reduce((sum, d) => sum + d.cantidad, 0)
-
-                            const cantidadOriginal =
-                              editandoDetalle && editandoDetalle.categoria_id === nuevoDetalle.categoria_id
-                                ? editandoDetalle.cantidad
-                                : 0
-
-                            const stockDisponible = categoria.cantidad - cantidadYaUtilizada + cantidadOriginal
-
-                            return `(Stock disponible: ${stockDisponible})`
-                          })()}
+                          (Stock disponible: {calcularStockDisponible(nuevoDetalle.categoria_id)})
                         </span>
                       )}
                     </Label>
