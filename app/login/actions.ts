@@ -1,6 +1,5 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
 import { supabaseServer } from "@/lib/supabase-server"
 
 export async function login(email: string, password: string) {
@@ -12,24 +11,36 @@ export async function login(email: string, password: string) {
       throw new Error("Faltan variables de entorno de Supabase")
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
     console.log("🔐 [LOGIN] Intentando login para:", email)
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    // Usar la API REST directamente
+    const authResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseAnonKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
     })
 
-    if (error) {
-      console.log("❌ [LOGIN] Error de Supabase:", error.message)
+    if (!authResponse.ok) {
+      const errorData = await authResponse.json()
+      console.log("❌ [LOGIN] Error de autenticación:", errorData)
       return {
         success: false,
-        message: error.message === "Invalid login credentials" ? "Credenciales inválidas" : error.message,
+        message:
+          errorData.error_description === "Invalid login credentials"
+            ? "Credenciales inválidas"
+            : errorData.error_description || "Error de autenticación",
       }
     }
 
-    if (!data.user || !data.session) {
+    const authData = await authResponse.json()
+
+    if (!authData.user || !authData.access_token) {
       return {
         success: false,
         message: "No se pudo obtener los datos del usuario",
@@ -42,7 +53,7 @@ export async function login(email: string, password: string) {
     const { data: userData, error: userError } = await supabaseServer
       .from("pd_usuarios")
       .select("nombres, apellidos")
-      .eq("id", data.user.id)
+      .eq("id", authData.user.id)
       .single()
 
     if (userError) {
@@ -52,10 +63,10 @@ export async function login(email: string, password: string) {
     // Fetch comprehensive user profile data from pd_user_profile_view
     console.log("🔍 [LOGIN] Obteniendo perfil completo del usuario...")
 
-    const { data: profileData, error: profileError } = await supabase
+    const { data: profileData, error: profileError } = await supabaseServer
       .from("pd_user_profile_view")
       .select("*")
-      .eq("id", data.user.id)
+      .eq("id", authData.user.id)
       .single()
 
     if (profileError) {
@@ -104,17 +115,26 @@ export async function login(email: string, password: string) {
 
     // Combine all user data including profile information
     const completeUserData = {
-      ...data.user,
+      ...authData.user,
       user_metadata: {
-        ...data.user.user_metadata,
-        nombres: profileData?.nombres || userData?.nombres || data.user.user_metadata?.nombres || "",
-        apellidos: profileData?.apellidos || userData?.apellidos || data.user.user_metadata?.apellidos || "",
+        ...authData.user.user_metadata,
+        nombres: profileData?.nombres || userData?.nombres || authData.user.user_metadata?.nombres || "",
+        apellidos: profileData?.apellidos || userData?.apellidos || authData.user.user_metadata?.apellidos || "",
       },
       // Add profile data for later use
       profile: profileData || null,
       roles: profileData?.roles || [],
       empresas: profileData?.empresas || [],
       phone: profileData?.phone || null,
+    }
+
+    // Crear objeto de sesión compatible
+    const session = {
+      access_token: authData.access_token,
+      refresh_token: authData.refresh_token,
+      expires_in: authData.expires_in,
+      token_type: authData.token_type,
+      user: completeUserData,
     }
 
     console.log("✅ [LOGIN] Login completado para:", email)
@@ -131,7 +151,7 @@ export async function login(email: string, password: string) {
     return {
       success: true,
       user: completeUserData,
-      session: data.session,
+      session: session,
     }
   } catch (error) {
     console.log("❌ [LOGIN] Error general:", error)

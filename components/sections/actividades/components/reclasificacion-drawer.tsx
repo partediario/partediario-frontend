@@ -88,7 +88,7 @@ export default function ReclasificacionDrawer({ isOpen, onClose, onSuccess }: Re
 
     try {
       // Cargar categorías actuales desde la vista
-      const categoriasUrl = `/api/lote-stock-categoria?establecimiento_id=${establecimientoSeleccionado}`
+      const categoriasUrl = `/api/reclasificacion-categorias?establecimiento_id=${establecimientoSeleccionado}`
       const categoriasResponse = await fetch(categoriasUrl)
 
       if (categoriasResponse.ok) {
@@ -105,11 +105,17 @@ export default function ReclasificacionDrawer({ isOpen, onClose, onSuccess }: Re
             peso: cat.total_peso,
           }))
           setReclasificaciones(iniciales)
+        } else {
+          console.log("No hay categorías disponibles para reclasificar")
+          setCategoriasActuales([])
+          setReclasificaciones([])
         }
       } else {
+        const errorText = await categoriasResponse.text()
+        console.error("Error response:", errorText)
         toast({
           title: "Error",
-          description: "Error al cargar categorías actuales",
+          description: "Error al cargar categorías actuales: " + errorText,
           variant: "destructive",
         })
       }
