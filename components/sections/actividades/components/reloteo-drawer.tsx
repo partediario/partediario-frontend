@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
-import { X, RefreshCw, Save, Loader2, Search, ChevronDown, Check } from "lucide-react"
+import { X, RefreshCw, Save, Loader2, Search, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -602,19 +602,18 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
                           <div
                             className={cn(
                               "flex items-center px-3 py-2 text-sm cursor-pointer hover:bg-gray-100",
-                              lotesSeleccionados.length === 0 && "bg-blue-50 text-blue-600",
+                              lotesSeleccionados.length === 0 && "bg-blue-50",
                             )}
                             onClick={() => {
                               setLotesSeleccionados([])
                             }}
                           >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                lotesSeleccionados.length === 0 ? "opacity-100" : "opacity-0",
-                              )}
-                            />
-                            <span className="truncate">Todos los lotes</span>
+                            <Checkbox checked={lotesSeleccionados.length === 0} className="mr-2" readOnly />
+                            <span
+                              className={cn("truncate", lotesSeleccionados.length === 0 && "text-blue-600 font-medium")}
+                            >
+                              Todos los lotes
+                            </span>
                           </div>
                           {opcionesLote
                             .filter(
@@ -626,17 +625,19 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
                                 key={lote.value}
                                 className={cn(
                                   "flex items-center px-3 py-2 text-sm cursor-pointer hover:bg-gray-100",
-                                  lotesSeleccionados.includes(lote.value) && "bg-blue-50 text-blue-600",
+                                  lotesSeleccionados.includes(lote.value) && "bg-blue-50",
                                 )}
                                 onClick={() => handleLoteFilterChange(lote.value)}
                               >
-                                <Check
+                                <Checkbox checked={lotesSeleccionados.includes(lote.value)} className="mr-2" readOnly />
+                                <span
                                   className={cn(
-                                    "mr-2 h-4 w-4",
-                                    lotesSeleccionados.includes(lote.value) ? "opacity-100" : "opacity-0",
+                                    "truncate",
+                                    lotesSeleccionados.includes(lote.value) && "text-blue-600 font-medium",
                                   )}
-                                />
-                                <span className="truncate">{lote.label}</span>
+                                >
+                                  {lote.label}
+                                </span>
                               </div>
                             ))}
                           {opcionesLote.filter(
