@@ -246,8 +246,12 @@ export default function TrasladoPotreroDrawer({
     const categoriasSeleccionadas = loteInfo.pd_detalles.filter((detalle) => detalle.seleccionada)
     if (categoriasSeleccionadas.length === 0) return false
 
-    // Es parcial si alguna categoría no traslada toda su cantidad
-    return categoriasSeleccionadas.some((detalle) => detalle.cantidad_trasladar < detalle.cantidad)
+    const todasLasCategoriasSeleccionadas = categoriasSeleccionadas.length === loteInfo.pd_detalles.length
+    const algunaCategoriaEsParcial = categoriasSeleccionadas.some(
+      (detalle) => detalle.cantidad_trasladar < detalle.cantidad,
+    )
+
+    return !todasLasCategoriasSeleccionadas || algunaCategoriaEsParcial
   }
 
   const getTotalAnimalesTraslado = () => {
