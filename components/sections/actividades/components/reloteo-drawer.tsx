@@ -50,6 +50,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
   const [lotesSeleccionados, setLotesSeleccionados] = useState<string[]>([])
   const [filtroLoteAbierto, setFiltroLoteAbierto] = useState(false)
   const filtroLoteRef = useRef<HTMLDivElement>(null)
+  const [searchLote, setSearchLote] = useState("")
 
   // Usar el contexto de establecimiento
   const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
@@ -63,6 +64,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
     const handleClickOutside = (event: MouseEvent) => {
       if (filtroLoteRef.current && !filtroLoteRef.current.contains(event.target as Node)) {
         setFiltroLoteAbierto(false)
+        setSearchLote("")
       }
     }
 
@@ -91,6 +93,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
       setSearchCategoria("")
       setLotesSeleccionados([])
       setFiltroLoteAbierto(false)
+      setSearchLote("")
     }
   }, [isOpen])
 
@@ -495,6 +498,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
     setSearchCategoria("")
     setLotesSeleccionados([])
     setFiltroLoteAbierto(false)
+    setSearchLote("")
   }
 
   const getLotesSeleccionadosText = () => {
@@ -568,53 +572,80 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
                 <div>
                   <Label htmlFor="filtro-lote">Filtrar por Lote</Label>
                   <div className="relative" ref={filtroLoteRef}>
-                    <button
-                      type="button"
-                      className={cn(
-                        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-                        filtroLoteAbierto && "ring-2 ring-ring ring-offset-2",
-                      )}
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between bg-transparent"
                       onClick={() => setFiltroLoteAbierto(!filtroLoteAbierto)}
+                      type="button"
                     >
-                      <span className="text-sm">{getLotesSeleccionadosText()}</span>
-                      <ChevronDown className="h-4 w-4 opacity-50" />
-                    </button>
+                      <span className="truncate text-left">{getLotesSeleccionadosText()}</span>
+                      <ChevronDown
+                        className={cn("ml-2 h-4 w-4 shrink-0 transition-transform", filtroLoteAbierto && "rotate-180")}
+                      />
+                    </Button>
+
                     {filtroLoteAbierto && (
-                      <div className="absolute z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 w-full mt-1 max-h-60 overflow-y-auto">
-                        <div
-                          className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                          onClick={() => {
-                            setLotesSeleccionados([])
-                          }}
-                        >
-                          <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-                            {lotesSeleccionados.length === 0 && <Check className="h-4 w-4 text-blue-600" />}
-                          </span>
-                          <span
-                            className={cn("text-sm", lotesSeleccionados.length === 0 && "text-blue-600 font-medium")}
-                          >
-                            Todos los lotes
-                          </span>
-                        </div>
-                        {opcionesLote.map((lote) => (
-                          <div
-                            key={lote.value}
-                            className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                            onClick={() => handleLoteFilterChange(lote.value)}
-                          >
-                            <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-                              {lotesSeleccionados.includes(lote.value) && <Check className="h-4 w-4 text-blue-600" />}
-                            </span>
-                            <span
-                              className={cn(
-                                "text-sm",
-                                lotesSeleccionados.includes(lote.value) && "text-blue-600 font-medium",
-                              )}
-                            >
-                              {lote.label}
-                            </span>
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-hidden">
+                        <div className="p-2 border-b">
+                          <div className="relative">
+                            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              placeholder="Buscar lote..."
+                              value={searchLote}
+                              onChange={(e) => setSearchLote(e.target.value)}
+                              className="pl-8 h-8"
+                              autoFocus
+                            />
                           </div>
-                        ))}
+                        </div>
+                        <div className="max-h-48 overflow-auto">
+                          <div
+                            className={cn(
+                              "flex items-center px-3 py-2 text-sm cursor-pointer hover:bg-gray-100",
+                              lotesSeleccionados.length === 0 && "bg-blue-50 text-blue-600",
+                            )}
+                            onClick={() => {
+                              setLotesSeleccionados([])
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                lotesSeleccionados.length === 0 ? "opacity-100" : "opacity-0",
+                              )}
+                            />
+                            <span className="truncate">Todos los lotes</span>
+                          </div>
+                          {opcionesLote
+                            .filter(
+                              (lote) =>
+                                searchLote === "" || lote.label.toLowerCase().includes(searchLote.toLowerCase()),
+                            )
+                            .map((lote) => (
+                              <div
+                                key={lote.value}
+                                className={cn(
+                                  "flex items-center px-3 py-2 text-sm cursor-pointer hover:bg-gray-100",
+                                  lotesSeleccionados.includes(lote.value) && "bg-blue-50 text-blue-600",
+                                )}
+                                onClick={() => handleLoteFilterChange(lote.value)}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    lotesSeleccionados.includes(lote.value) ? "opacity-100" : "opacity-0",
+                                  )}
+                                />
+                                <span className="truncate">{lote.label}</span>
+                              </div>
+                            ))}
+                          {opcionesLote.filter(
+                            (lote) => searchLote === "" || lote.label.toLowerCase().includes(searchLote.toLowerCase()),
+                          ).length === 0 &&
+                            searchLote !== "" && (
+                              <div className="py-4 text-center text-sm text-gray-500">No se encontraron lotes.</div>
+                            )}
+                        </div>
                       </div>
                     )}
                   </div>
