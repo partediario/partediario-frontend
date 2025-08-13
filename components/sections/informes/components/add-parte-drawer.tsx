@@ -12,6 +12,8 @@ import {
   Building,
   FileText,
   Package,
+  Users,
+  MapPin,
 } from "lucide-react"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Separator } from "@/components/ui/separator"
@@ -29,6 +31,7 @@ import ReclasificacionLoteDrawer from "../../actividades/components/reclasificac
 import EntradaInsumosDrawer from "./entrada-insumos-drawer"
 import SalidaInsumosDrawer from "./salida-insumos-drawer"
 import TrasladoPotreroDrawer from "../../actividades/components/traslado-potrero-drawer"
+import ReloteoDrawer from "../../actividades/components/reloteo-drawer"
 
 interface TipoActividad {
   id: number
@@ -66,6 +69,8 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   const [reclasificacionLoteDrawerOpen, setReclasificacionLoteDrawerOpen] = useState(false)
   const [trasladoPotreroDrawerOpen, setTrasladoPotreroDrawerOpen] = useState(false)
   const [actividadTrasladoSeleccionada, setActividadTrasladoSeleccionada] = useState<TipoActividad | null>(null)
+  const [reloteoDrawerOpen, setReloteoDrawerOpen] = useState(false)
+  const [actividadReloteoSeleccionada, setActividadReloteoSeleccionada] = useState<TipoActividad | null>(null)
 
   const { currentEstablishment } = useCurrentEstablishment()
 
@@ -168,10 +173,18 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         return
       }
 
-      if (actividad.nombre === "Traslado de Potrero") {
+      if (actividad.nombre === "Traslado de Potrero" || actividad.id === 5) {
         console.log("✅ Actividad de traslado de potrero detectada")
         setActividadTrasladoSeleccionada(actividad)
         setTrasladoPotreroDrawerOpen(true)
+        onClose()
+        return
+      }
+
+      if (actividad.id === 11 || actividad.nombre === "Reloteo") {
+        console.log("✅ Actividad de reloteo detectada")
+        setActividadReloteoSeleccionada(actividad)
+        setReloteoDrawerOpen(true)
         onClose()
         return
       }
@@ -227,14 +240,19 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
     return acc
   }, {} as ActividadesPorUbicacion)
 
+  // Separar actividades de administración por tipo
   const actividadesAdministracion = actividadesPorUbicacion["ADMINISTRACION"] || []
+  const actividadesReclasificacion = actividadesAdministracion.filter((act) => act.id === 37 || act.id === 38)
+  const actividadesGestionPotreros = actividadesAdministracion.filter((act) => act.id === 5 || act.id === 11)
+
   const actividadesOtrasUbicaciones = Object.entries(actividadesPorUbicacion).filter(
     ([ubicacion]) => ubicacion !== "ADMINISTRACION",
   )
 
   console.log("🗂️ Actividades agrupadas:", actividadesPorUbicacion)
   console.log("🔢 Número de ubicaciones:", Object.keys(actividadesPorUbicacion).length)
-  console.log("📋 Actividades de Administración:", actividadesAdministracion)
+  console.log("📋 Actividades de Reclasificación:", actividadesReclasificacion)
+  console.log("📋 Actividades de Gestión Potreros:", actividadesGestionPotreros)
 
   const iconosUbicacion = {
     CAMPO: { icon: Wrench, color: "green" },
@@ -284,29 +302,67 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
                   </div>
                 </button>
 
-                {actividadesAdministracion.length > 0 && (
+                {/* Reclasificación de Animales */}
+                {actividadesReclasificacion.length > 0 && (
                   <div className="space-y-1">
                     <button
-                      onClick={() => toggleSection("ADMINISTRACION")}
+                      onClick={() => toggleSection("RECLASIFICACION")}
                       className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <FileText className="h-5 w-5 text-blue-600" />
+                        <Users className="h-5 w-5 text-blue-600" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">Administración</p>
-                        <p className="text-sm text-gray-500">{actividadesAdministracion.length} actividades</p>
+                        <p className="font-medium text-gray-900">Reclasificación de Animales</p>
+                        <p className="text-sm text-gray-500">{actividadesReclasificacion.length} actividades</p>
                       </div>
-                      {expandedSections.includes("ADMINISTRACION") ? (
+                      {expandedSections.includes("RECLASIFICACION") ? (
                         <ChevronDown className="h-4 w-4 text-gray-400" />
                       ) : (
                         <ChevronRight className="h-4 w-4 text-gray-400" />
                       )}
                     </button>
 
-                    {expandedSections.includes("ADMINISTRACION") && (
+                    {expandedSections.includes("RECLASIFICACION") && (
                       <div className="pl-4 py-2 space-y-1 max-h-60 overflow-y-auto">
-                        {actividadesAdministracion.map((actividad) => (
+                        {actividadesReclasificacion.map((actividad) => (
+                          <button
+                            key={actividad.id}
+                            onClick={() => handleOptionClick(actividad.nombre, actividad)}
+                            className="w-full text-left py-2 px-3 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-all duration-200 hover:translate-x-1"
+                          >
+                            {actividad.nombre}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Gestión de Potreros/Lotes */}
+                {actividadesGestionPotreros.length > 0 && (
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => toggleSection("GESTION_POTREROS")}
+                      className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                        <MapPin className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">Gestión de Potreros/Lotes</p>
+                        <p className="text-sm text-gray-500">{actividadesGestionPotreros.length} actividades</p>
+                      </div>
+                      {expandedSections.includes("GESTION_POTREROS") ? (
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                      )}
+                    </button>
+
+                    {expandedSections.includes("GESTION_POTREROS") && (
+                      <div className="pl-4 py-2 space-y-1 max-h-60 overflow-y-auto">
+                        {actividadesGestionPotreros.map((actividad) => (
                           <button
                             key={actividad.id}
                             onClick={() => handleOptionClick(actividad.nombre, actividad)}
@@ -542,6 +598,16 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
           onRefresh?.()
         }}
         tipoActividadId={actividadTrasladoSeleccionada?.id}
+      />
+
+      <ReloteoDrawer
+        isOpen={reloteoDrawerOpen}
+        onClose={() => setReloteoDrawerOpen(false)}
+        onSuccess={() => {
+          console.log("Reloteo guardado exitosamente")
+          onRefresh?.()
+        }}
+        tipoActividadId={actividadReloteoSeleccionada?.id}
       />
     </>
   )

@@ -18,11 +18,12 @@ import EditarActividadInsumosDrawer from "./editar-actividad-insumos-drawer"
 import VerActividadMixtaDrawer from "./ver-actividad-mixta-drawer"
 import EditarActividadMixtaDrawer from "./editar-actividad-mixta-drawer"
 import VerReclasificacionDrawer from "./ver-reclasificacion-drawer"
-import VerEntradaInsumosDrawer from "./ver-entrada-insumos-drawer"
-import EditarEntradaInsumosDrawer from "./editar-entrada-insumos-drawer"
-import VerSalidaInsumosDrawer from "./ver-salida-insumos-drawer"
-import EditarSalidaInsumosDrawer from "./editar-salida-insumos-drawer"
 import VerTrasladoDrawer from "./ver-traslado-drawer"
+import VerReloteoDrawer from "./ver-reloteo-drawer"
+import VerEntradaInsumosDrawer from "./ver-entrada-insumos-drawer"
+import VerSalidaInsumosDrawer from "./ver-salida-insumos-drawer"
+import EditarEntradaInsumosDrawer from "./editar-entrada-insumos-drawer"
+import EditarSalidaInsumosDrawer from "./editar-salida-insumos-drawer"
 import { PermissionWrapper } from "@/components/permission-wrapper"
 
 interface ParteDiarioCardProps {
@@ -43,6 +44,7 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
   const [isEditarActividadMixtaDrawerOpen, setIsEditarActividadMixtaDrawerOpen] = useState(false)
   const [isVerReclasificacionDrawerOpen, setIsVerReclasificacionDrawerOpen] = useState(false)
   const [isVerTrasladoDrawerOpen, setIsVerTrasladoDrawerOpen] = useState(false)
+  const [isVerReloteoDrawerOpen, setIsVerReloteoDrawerOpen] = useState(false)
 
   // Nuevos estados para drawers de insumos
   const [isVerEntradaInsumosDrawerOpen, setIsVerEntradaInsumosDrawerOpen] = useState(false)
@@ -97,6 +99,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200"
       case "TRASLADO":
         return "bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200"
+      case "RELOTEO":
+        return "bg-teal-100 text-teal-800 hover:bg-teal-200 border-teal-200"
       default:
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
     }
@@ -120,6 +124,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "Insumos"
       case "TRASLADO":
         return "Traslado"
+      case "RELOTEO":
+        return "Reloteo"
       default:
         return tipo
     }
@@ -196,6 +202,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       setIsVerReclasificacionDrawerOpen(true)
     } else if (parte.pd_tipo === "TRASLADO") {
       setIsVerTrasladoDrawerOpen(true)
+    } else if (parte.pd_tipo === "RELOTEO") {
+      setIsVerReloteoDrawerOpen(true)
     } else {
       setIsViewDrawerOpen(true)
     }
@@ -412,6 +420,13 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       <VerTrasladoDrawer
         isOpen={isVerTrasladoDrawerOpen}
         onClose={() => setIsVerTrasladoDrawerOpen(false)}
+        parte={parte}
+      />
+
+      {/* Drawer de reloteo */}
+      <VerReloteoDrawer
+        isOpen={isVerReloteoDrawerOpen}
+        onClose={() => setIsVerReloteoDrawerOpen(false)}
         parte={parte}
       />
 

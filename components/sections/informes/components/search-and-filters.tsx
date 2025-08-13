@@ -27,6 +27,7 @@ export default function SearchAndFilters({
     { value: "RECLASIFICACION", label: "Reclasificación" },
     { value: "INSUMOS", label: "Insumos" },
     { value: "TRASLADO", label: "Traslado" }, // Added TRASLADO filter option for daily reports
+    { value: "RELOTEO", label: "Reloteo" }, // Added RELOTEO filter option for daily reports
   ]
 
   return (
