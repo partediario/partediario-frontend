@@ -2,8 +2,8 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
-import { X, RefreshCw, Save, Loader2, Search } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { X, RefreshCw, Save, Loader2, Search, ChevronDown, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,6 +17,7 @@ import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { useUser } from "@/contexts/user-context"
 import { toast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 
 interface LoteStock {
   lote_id: number
@@ -46,7 +47,9 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
   const [hora, setHora] = useState<string>(new Date().toTimeString().slice(0, 5))
   const [nota, setNota] = useState("")
   const [searchCategoria, setSearchCategoria] = useState("")
-  const [filtroLote, setFiltroLote] = useState("")
+  const [lotesSeleccionados, setLotesSeleccionados] = useState<string[]>([])
+  const [filtroLoteAbierto, setFiltroLoteAbierto] = useState(false)
+  const filtroLoteRef = useRef<HTMLDivElement>(null)
 
   // Usar el contexto de establecimiento
   const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
@@ -54,6 +57,23 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
 
   // Obtener nombre completo del usuario
   const nombreCompleto = usuario ? `${usuario.nombres} ${usuario.apellidos}`.trim() : "Cargando..."
+
+  // Efecto para cerrar el dropdown al hacer clic afuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filtroLoteRef.current && !filtroLoteRef.current.contains(event.target as Node)) {
+        setFiltroLoteAbierto(false)
+      }
+    }
+
+    if (filtroLoteAbierto) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [filtroLoteAbierto])
 
   useEffect(() => {
     if (isOpen && establecimientoSeleccionado && empresaSeleccionada) {
@@ -69,7 +89,8 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
       setNota("")
       setLotes([])
       setSearchCategoria("")
-      setFiltroLote("")
+      setLotesSeleccionados([])
+      setFiltroLoteAbierto(false)
     }
   }, [isOpen])
 
@@ -211,15 +232,22 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
       }))
   }
 
-  const opcionesLote = [
-    { value: "todos", label: "Todos los lotes" },
-    ...lotes
-      .sort((a, b) => a.lote_id - b.lote_id)
-      .map((lote) => ({
-        value: lote.lote_id.toString(),
-        label: lote.lote_nombre,
-      })),
-  ]
+  const opcionesLote = lotes
+    .sort((a, b) => a.lote_id - b.lote_id)
+    .map((lote) => ({
+      value: lote.lote_id.toString(),
+      label: lote.lote_nombre,
+    }))
+
+  const handleLoteFilterChange = (loteId: string) => {
+    setLotesSeleccionados((prev) => {
+      if (prev.includes(loteId)) {
+        return prev.filter((id) => id !== loteId)
+      } else {
+        return [...prev, loteId]
+      }
+    })
+  }
 
   const getResumenReloteo = () => {
     const movimientos: Array<{
@@ -250,9 +278,9 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
 
   const filteredLotes = lotes
     .filter((lote) => {
-      // Filtrar por lote si se selecciona uno
-      if (filtroLote && filtroLote !== "todos") {
-        return lote.lote_id.toString() === filtroLote
+      // Filtrar por lotes seleccionados si hay alguno
+      if (lotesSeleccionados.length > 0) {
+        return lotesSeleccionados.includes(lote.lote_id.toString())
       }
       return true
     })
@@ -465,7 +493,19 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
     setNota("")
     setLotes([])
     setSearchCategoria("")
-    setFiltroLote("")
+    setLotesSeleccionados([])
+    setFiltroLoteAbierto(false)
+  }
+
+  const getLotesSeleccionadosText = () => {
+    if (lotesSeleccionados.length === 0) {
+      return "Todos los lotes"
+    }
+    if (lotesSeleccionados.length === 1) {
+      const lote = lotes.find((l) => l.lote_id.toString() === lotesSeleccionados[0])
+      return lote?.lote_nombre || "Lote seleccionado"
+    }
+    return `${lotesSeleccionados.length} lotes seleccionados`
   }
 
   return (
@@ -526,6 +566,60 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
               <h4 className="text-sm font-medium text-gray-700 mb-3">Filtros</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <Label htmlFor="filtro-lote">Filtrar por Lote</Label>
+                  <div className="relative" ref={filtroLoteRef}>
+                    <button
+                      type="button"
+                      className={cn(
+                        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                        filtroLoteAbierto && "ring-2 ring-ring ring-offset-2",
+                      )}
+                      onClick={() => setFiltroLoteAbierto(!filtroLoteAbierto)}
+                    >
+                      <span className="text-sm">{getLotesSeleccionadosText()}</span>
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </button>
+                    {filtroLoteAbierto && (
+                      <div className="absolute z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 w-full mt-1 max-h-60 overflow-y-auto">
+                        <div
+                          className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                          onClick={() => {
+                            setLotesSeleccionados([])
+                          }}
+                        >
+                          <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                            {lotesSeleccionados.length === 0 && <Check className="h-4 w-4 text-blue-600" />}
+                          </span>
+                          <span
+                            className={cn("text-sm", lotesSeleccionados.length === 0 && "text-blue-600 font-medium")}
+                          >
+                            Todos los lotes
+                          </span>
+                        </div>
+                        {opcionesLote.map((lote) => (
+                          <div
+                            key={lote.value}
+                            className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                            onClick={() => handleLoteFilterChange(lote.value)}
+                          >
+                            <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                              {lotesSeleccionados.includes(lote.value) && <Check className="h-4 w-4 text-blue-600" />}
+                            </span>
+                            <span
+                              className={cn(
+                                "text-sm",
+                                lotesSeleccionados.includes(lote.value) && "text-blue-600 font-medium",
+                              )}
+                            >
+                              {lote.label}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
                   <Label htmlFor="search-categoria">Buscar Categoría</Label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -537,17 +631,6 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
                       className="pl-10"
                     />
                   </div>
-                </div>
-                <div>
-                  <Label htmlFor="filtro-lote">Filtrar por Lote</Label>
-                  <CustomCombobox
-                    options={opcionesLote}
-                    value={filtroLote || "todos"}
-                    onValueChange={(value) => setFiltroLote(value === "todos" ? "" : value)}
-                    placeholder="Seleccionar lote..."
-                    searchPlaceholder="Buscar lote..."
-                    emptyMessage="No hay lotes disponibles."
-                  />
                 </div>
               </div>
             </div>
