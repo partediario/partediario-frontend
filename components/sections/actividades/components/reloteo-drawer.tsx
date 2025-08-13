@@ -46,6 +46,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
   const [hora, setHora] = useState<string>(new Date().toTimeString().slice(0, 5))
   const [nota, setNota] = useState("")
   const [searchCategoria, setSearchCategoria] = useState("")
+  const [filtroLote, setFiltroLote] = useState("")
 
   // Usar el contexto de establecimiento
   const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
@@ -68,6 +69,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
       setNota("")
       setLotes([])
       setSearchCategoria("")
+      setFiltroLote("")
     }
   }, [isOpen])
 
@@ -209,6 +211,16 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
       }))
   }
 
+  const opcionesLote = [
+    { value: "todos", label: "Todos los lotes" },
+    ...lotes
+      .sort((a, b) => a.lote_id - b.lote_id)
+      .map((lote) => ({
+        value: lote.lote_id.toString(),
+        label: lote.lote_nombre,
+      })),
+  ]
+
   const getResumenReloteo = () => {
     const movimientos: Array<{
       loteOrigen: string
@@ -237,6 +249,13 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
   }
 
   const filteredLotes = lotes
+    .filter((lote) => {
+      // Filtrar por lote si se selecciona uno
+      if (filtroLote && filtroLote !== "todos") {
+        return lote.lote_id.toString() === filtroLote
+      }
+      return true
+    })
     .map((lote) => ({
       ...lote,
       pd_detalles: lote.pd_detalles
@@ -446,6 +465,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
     setNota("")
     setLotes([])
     setSearchCategoria("")
+    setFiltroLote("")
   }
 
   return (
@@ -501,18 +521,34 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
               </div>
             </div>
 
-            {/* Buscador de Categorías */}
+            {/* Filtros */}
             <div>
-              <Label htmlFor="search-categoria">Buscar Categoría</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  id="search-categoria"
-                  value={searchCategoria}
-                  onChange={(e) => setSearchCategoria(e.target.value)}
-                  placeholder="Buscar por nombre de categoría..."
-                  className="pl-10"
-                />
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Filtros</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="search-categoria">Buscar Categoría</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="search-categoria"
+                      value={searchCategoria}
+                      onChange={(e) => setSearchCategoria(e.target.value)}
+                      placeholder="Buscar por nombre de categoría..."
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="filtro-lote">Filtrar por Lote</Label>
+                  <CustomCombobox
+                    options={opcionesLote}
+                    value={filtroLote || "todos"}
+                    onValueChange={(value) => setFiltroLote(value === "todos" ? "" : value)}
+                    placeholder="Seleccionar lote..."
+                    searchPlaceholder="Buscar lote..."
+                    emptyMessage="No hay lotes disponibles."
+                  />
+                </div>
               </div>
             </div>
 
