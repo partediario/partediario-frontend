@@ -40,6 +40,14 @@ const getBadgeForType = (tipo: string) => {
         textColor: "text-red-800",
         borderColor: "border-red-200",
       }
+    case "TRASLADO":
+      return {
+        icon: "🔄",
+        label: "Traslado",
+        bgColor: "bg-orange-100",
+        textColor: "text-orange-800",
+        borderColor: "border-orange-200",
+      }
     case "CLIMA":
       return {
         icon: "🌧️",
@@ -72,7 +80,7 @@ const getBadgeForType = (tipo: string) => {
         textColor: "text-purple-800",
         borderColor: "border-purple-200",
       }
-    case "Alimentación":
+    case "ALIMENTACIÓN":
       return {
         icon: "🌾",
         label: "ALIMENTACIÓN",
@@ -101,6 +109,10 @@ const getDescripcionNatural = (registro: Registro) => {
     case "SALIDA":
       return `${registro.categoria} • ${registro.cantidad} cabezas${
         registro.proveedor ? ` • ${registro.proveedor}` : ""
+      }`
+    case "TRASLADO":
+      return `${registro.categoria} • ${registro.cantidad} unidades${
+        registro.ubicacion ? ` • ${registro.ubicacion}` : ""
       }`
     case "CLIMA":
       return `${registro.descripcion}${registro.lluvia_mm ? ` • ${registro.lluvia_mm} mm` : ""}${

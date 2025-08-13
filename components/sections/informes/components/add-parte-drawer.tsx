@@ -28,6 +28,7 @@ import ReclasificacionDrawer from "../../actividades/components/reclasificacion-
 import ReclasificacionLoteDrawer from "../../actividades/components/reclasificacion-lote-drawer"
 import EntradaInsumosDrawer from "./entrada-insumos-drawer"
 import SalidaInsumosDrawer from "./salida-insumos-drawer"
+import TrasladoPotreroDrawer from "../../actividades/components/traslado-potrero-drawer"
 
 interface TipoActividad {
   id: number
@@ -63,17 +64,17 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   const [loading, setLoading] = useState(false)
   const [reclasificacionDrawerOpen, setReclasificacionDrawerOpen] = useState(false)
   const [reclasificacionLoteDrawerOpen, setReclasificacionLoteDrawerOpen] = useState(false)
+  const [trasladoPotreroDrawerOpen, setTrasladoPotreroDrawerOpen] = useState(false)
+  const [actividadTrasladoSeleccionada, setActividadTrasladoSeleccionada] = useState<TipoActividad | null>(null)
 
   const { currentEstablishment } = useCurrentEstablishment()
 
-  // Cargar tipos de actividades cuando se abre el drawer
   useEffect(() => {
     if (isOpen) {
       console.log("🔍 Drawer abierto, currentEstablishment:", currentEstablishment)
       console.log("🏢 Establecimiento ID:", currentEstablishment?.id)
       console.log("🏭 Empresa ID:", currentEstablishment?.empresa_id)
 
-      // Usar empresa_id del establishment o fallback a 1
       const empresaId = currentEstablishment?.empresa_id || 1
       console.log("🎯 Empresa ID a usar:", empresaId)
 
@@ -147,12 +148,10 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
       return
     }
 
-    // Para actividades, verificar primero si es reclasificación
     if (actividad) {
       console.log("🔍 Verificando actividad:", actividad)
       console.log("🆔 ID de actividad:", actividad.id)
 
-      // Verificar si es reclasificación de animales por categoría (ID 37)
       if (actividad.id === 37) {
         console.log("✅ Actividad de reclasificación por categoría detectada (ID 37)")
         setActividadSeleccionada(actividad)
@@ -161,7 +160,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         return
       }
 
-      // Verificar si es reclasificación de animales por lote (ID 38)
       if (actividad.id === 38) {
         console.log("✅ Actividad de reclasificación por lote detectada (ID 38)")
         setActividadSeleccionada(actividad)
@@ -170,11 +168,14 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         return
       }
 
-      // Si no es ID 37 o 38, continuar con las verificaciones normales
-      console.log("🐄 Animales:", actividad.animales)
-      console.log("📦 Insumos:", actividad.insumos)
+      if (actividad.nombre === "Traslado de Potrero") {
+        console.log("✅ Actividad de traslado de potrero detectada")
+        setActividadTrasladoSeleccionada(actividad)
+        setTrasladoPotreroDrawerOpen(true)
+        onClose()
+        return
+      }
 
-      // Verificar si la actividad requiere animales o insumos
       if (
         (actividad.animales === "OBLIGATORIO" || actividad.animales === "OPCIONAL") &&
         actividad.insumos === "NO APLICA"
@@ -186,7 +187,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         return
       }
 
-      // Verificar si la actividad requiere insumos OBLIGATORIO o OPCIONAL y animales NO APLICA
       if (
         actividad.animales === "NO APLICA" &&
         (actividad.insumos === "OBLIGATORIO" || actividad.insumos === "OPCIONAL")
@@ -198,7 +198,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         return
       }
 
-      // Verificar si la actividad requiere tanto animales como insumos (ambos OBLIGATORIO o OPCIONAL)
       if (
         (actividad.animales === "OBLIGATORIO" || actividad.animales === "OPCIONAL") &&
         (actividad.insumos === "OBLIGATORIO" || actividad.insumos === "OPCIONAL")
@@ -215,12 +214,10 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
       return
     }
 
-    // Para otras opciones, mostrar mensaje temporal
     toast.info(`Funcionalidad "${option}" en desarrollo`)
     onClose()
   }
 
-  // Agrupar actividades por ubicación, separando ADMINISTRACION del resto
   const actividadesPorUbicacion: ActividadesPorUbicacion = tiposActividades.reduce((acc, actividad) => {
     const ubicacion = actividad.ubicacion
     if (!acc[ubicacion]) {
@@ -230,7 +227,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
     return acc
   }, {} as ActividadesPorUbicacion)
 
-  // Separar actividades de ADMINISTRACION para mostrarlas en MOVIMIENTO DE ANIMALES
   const actividadesAdministracion = actividadesPorUbicacion["ADMINISTRACION"] || []
   const actividadesOtrasUbicaciones = Object.entries(actividadesPorUbicacion).filter(
     ([ubicacion]) => ubicacion !== "ADMINISTRACION",
@@ -240,7 +236,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   console.log("🔢 Número de ubicaciones:", Object.keys(actividadesPorUbicacion).length)
   console.log("📋 Actividades de Administración:", actividadesAdministracion)
 
-  // Configuración de iconos por ubicación
   const iconosUbicacion = {
     CAMPO: { icon: Wrench, color: "green" },
     CORRAL: { icon: Home, color: "orange" },
@@ -260,7 +255,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
           </DrawerHeader>
 
           <div className="p-6 space-y-6 overflow-y-auto overflow-x-hidden">
-            {/* Movimiento de Animales */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Movimiento de Animales</h3>
               <div className="space-y-2">
@@ -290,7 +284,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
                   </div>
                 </button>
 
-                {/* Actividades de Administración movidas aquí */}
                 {actividadesAdministracion.length > 0 && (
                   <div className="space-y-1">
                     <button
@@ -331,7 +324,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
 
             <Separator />
 
-            {/* Movimiento de Insumos */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Movimiento de Insumos</h3>
               <div className="space-y-2">
@@ -365,7 +357,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
 
             <Separator />
 
-            {/* Clima */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Clima</h3>
               <button
@@ -384,7 +375,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
 
             <Separator />
 
-            {/* Actividades (sin ADMINISTRACION) */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Actividades</h3>
 
@@ -451,7 +441,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         </DrawerContent>
       </Drawer>
 
-      {/* Drawer de Entrada de Animales */}
       <EntradaAnimalesDrawer
         isOpen={entradaAnimalesOpen}
         onClose={() => setEntradaAnimalesOpen(false)}
@@ -461,7 +450,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         }}
       />
 
-      {/* Drawer de Salida de Animales */}
       <SalidaAnimalesDrawer
         isOpen={salidaAnimalesOpen}
         onClose={() => setSalidaAnimalesOpen(false)}
@@ -471,7 +459,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         }}
       />
 
-      {/* Drawer de Entrada de Insumos */}
       <EntradaInsumosDrawer
         isOpen={entradaInsumosOpen}
         onClose={() => setEntradaInsumosOpen(false)}
@@ -481,7 +468,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         }}
       />
 
-      {/* Drawer de Salida de Insumos */}
       <SalidaInsumosDrawer
         isOpen={salidaInsumosOpen}
         onClose={() => setSalidaInsumosOpen(false)}
@@ -491,7 +477,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         }}
       />
 
-      {/* Drawer de Lluvia */}
       <LluviaDrawer
         isOpen={lluviaDrawerOpen}
         onClose={() => setLluviaDrawerOpen(false)}
@@ -501,7 +486,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         }}
       />
 
-      {/* Drawer de Actividad con Animales */}
       <ActividadAnimalesDrawer
         isOpen={actividadAnimalesOpen}
         onClose={() => setActividadAnimalesOpen(false)}
@@ -512,7 +496,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         }}
       />
 
-      {/* Drawer de Actividad con Insumos */}
       <ActividadInsumosDrawer
         isOpen={actividadInsumosOpen}
         onClose={() => setActividadInsumosOpen(false)}
@@ -523,7 +506,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         }}
       />
 
-      {/* Drawer de Actividad Mixta */}
       <ActividadMixtaDrawer
         isOpen={actividadMixtaOpen}
         onClose={() => setActividadMixtaOpen(false)}
@@ -534,7 +516,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         }}
       />
 
-      {/* Drawer de Reclasificación por Categoría (ID 37) */}
       <ReclasificacionDrawer
         isOpen={reclasificacionDrawerOpen}
         onClose={() => setReclasificacionDrawerOpen(false)}
@@ -544,7 +525,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         }}
       />
 
-      {/* Drawer de Reclasificación por Lote (ID 38) */}
       <ReclasificacionLoteDrawer
         isOpen={reclasificacionLoteDrawerOpen}
         onClose={() => setReclasificacionLoteDrawerOpen(false)}
@@ -552,6 +532,16 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
           console.log("Reclasificación por lote guardada exitosamente")
           onRefresh?.()
         }}
+      />
+
+      <TrasladoPotreroDrawer
+        isOpen={trasladoPotreroDrawerOpen}
+        onClose={() => setTrasladoPotreroDrawerOpen(false)}
+        onSuccess={() => {
+          console.log("Traslado de potrero guardado exitosamente")
+          onRefresh?.()
+        }}
+        tipoActividadId={actividadTrasladoSeleccionada?.id}
       />
     </>
   )

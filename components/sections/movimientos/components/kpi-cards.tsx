@@ -7,49 +7,37 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ShoppingCart, TrendingUp, Baby, TrendingDown, DollarSign, HelpCircle, X } from "lucide-react"
 
 // Función para obtener descripciones detalladas y profesionales
-const getKpiDescription = (label: string): { title: string; description: string; example: string } => {
-  const descriptions: Record<string, { title: string; description: string; example: string }> = {
+const getKpiDescription = (label: string): { title: string; description: string } => {
+  const descriptions: Record<string, { title: string; description: string }> = {
     Compras: {
       title: "Compras de Animales",
       description:
         "Registra el total de animales adquiridos mediante transacciones comerciales durante el período seleccionado.",
-      example:
-        "Ejemplo: Si muestra 30 (32.3%), significa que se compraron 30 animales y estas compras representan el 32.3% del total de movimientos de entrada al establecimiento.",
     },
     Entradas: {
       title: "Entradas Totales de Animales",
       description:
         "Contabiliza todos los animales que ingresan al establecimiento, incluyendo compras, traslados desde otros campos, devoluciones y nacimientos.",
-      example:
-        "Ejemplo: Si muestra 88 (94.6%), significa que ingresaron 88 animales en total y estas entradas representan el 94.6% del total de movimientos registrados (entradas + salidas).",
     },
     Nacimientos: {
       title: "Nacimientos Registrados",
       description:
         "Cuantifica los animales nacidos dentro del establecimiento durante el período de análisis, indicador clave de la productividad reproductiva.",
-      example:
-        "Ejemplo: Si muestra 58 (62.4%), significa que nacieron 58 animales y estos nacimientos representan el 62.4% del total de entradas al establecimiento.",
     },
     Mortandad: {
       title: "Mortandad Animal",
       description:
         "Registra el número de animales fallecidos en el establecimiento, indicador crítico para el control sanitario y gestión de riesgos.",
-      example:
-        "Ejemplo: Si muestra 1 (1.1%), significa que murió 1 animal y esta pérdida representa el 1.1% del total de movimientos de salida del establecimiento.",
     },
     Ventas: {
       title: "Ventas de Animales",
       description:
         "Contabiliza los animales comercializados y vendidos del establecimiento, indicador fundamental de la actividad comercial.",
-      example:
-        "Ejemplo: Si muestra 4 (4.3%), significa que se vendieron 4 animales y estas ventas representan el 4.3% del total de movimientos de salida del establecimiento.",
     },
     Salidas: {
       title: "Salidas Totales de Animales",
       description:
         "Registra todos los animales que salen del establecimiento, incluyendo ventas, traslados a otros campos, mortandad y otros movimientos de egreso.",
-      example:
-        "Ejemplo: Si muestra 5 (5.4%), significa que salieron 5 animales en total y estas salidas representan el 5.4% del total de movimientos registrados (entradas + salidas).",
     },
   }
 
@@ -58,7 +46,6 @@ const getKpiDescription = (label: string): { title: string; description: string;
       title: `Información sobre ${label}`,
       description:
         "Este indicador muestra datos importantes para el seguimiento y control de su establecimiento ganadero.",
-      example: "Consulte con su administrador para obtener más detalles sobre este indicador específico.",
     }
   )
 }
@@ -212,11 +199,6 @@ export default function KpiCards({ data = [], isLoading = false, metricas, total
 
                           <div className="space-y-3">
                             <p className="text-sm text-gray-700 leading-relaxed">{kpiInfo.description}</p>
-
-                            <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r">
-                              <p className="text-sm text-blue-800 font-medium mb-1">Interpretación:</p>
-                              <p className="text-sm text-blue-700 leading-relaxed">{kpiInfo.example}</p>
-                            </div>
 
                             <div className="text-xs text-gray-500 pt-2 border-t">
                               <strong>Período actual:</strong> {kpi.period || "Total acumulado hasta la fecha"}

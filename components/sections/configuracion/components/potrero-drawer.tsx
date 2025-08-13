@@ -1,5 +1,7 @@
 "use client"
 
+import { TooltipTrigger } from "@/components/ui/tooltip"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { MapPin, X, AlertCircle, CheckCircle, HelpCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
 import { useEstablishment } from "@/contexts/establishment-context"
 
@@ -385,7 +387,7 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
               {/* Receptividad y Unidad en la misma fila */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Label className="text-sm font-medium text-gray-700">Receptividad</Label>
+                  <Label className="text-sm font-medium text-gray-700">Receptividad por hectárea</Label>
                   <Tooltip>
                     <TooltipTrigger>
                       <HelpCircle className="w-4 h-4 text-slate-400" />
