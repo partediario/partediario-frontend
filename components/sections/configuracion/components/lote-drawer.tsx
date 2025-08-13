@@ -356,7 +356,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
 
       // Eliminar stock
       for (const stockItem of stockParaEliminar) {
-        await fetch(`/api/lote-stock/${stockItem.id}`, {
+        await fetch(`/api/lote-stock/record/${stockItem.id}`, {
           method: "DELETE",
         })
       }
@@ -379,7 +379,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
 
       // Actualizar stock existente
       for (const stockItem of stockParaActualizar) {
-        await fetch(`/api/lote-stock/${stockItem.id}`, {
+        await fetch(`/api/lote-stock/record/${stockItem.id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",

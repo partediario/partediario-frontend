@@ -1,12 +1,25 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import type React from "react"
+
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Table, TableHead, TableRow, TableHeader, TableCell, TableBody } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MilkIcon as Cow, TableIcon, BarChart3, Download, ChevronDown, HelpCircle, X } from "lucide-react"
+import {
+  MilkIcon as Cow,
+  TableIcon,
+  BarChart3,
+  Download,
+  ChevronDown,
+  HelpCircle,
+  X,
+  TrendingUp,
+  Target,
+  Activity,
+} from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 // Tipos para integración con Supabase
@@ -31,6 +44,16 @@ interface CargaPotreroProps {
   isLoading?: boolean
 }
 
+interface TooltipData {
+  potrero: string
+  cabHas: number
+  kgHas: number
+  ugHas: number
+  hectareas: number
+  x: number
+  y: number
+}
+
 export default function CargaPotrero({ data: propData, isLoading: propLoading = false }: CargaPotreroProps) {
   const [data, setData] = useState<PotreroData[]>(propData || [])
   const [isLoading, setIsLoading] = useState(propLoading)
@@ -38,21 +61,18 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
   const [showTooltip, setShowTooltip] = useState(false)
   const [selectedPotrero, setSelectedPotrero] = useState<string | null>(null)
   const [currentEstablecimiento, setCurrentEstablecimiento] = useState<string>("")
+  const [tooltip, setTooltipData] = useState<TooltipData | null>(null)
+  const chartRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
 
   // Función para obtener el establecimiento actual del localStorage
   const getCurrentEstablishment = () => {
     try {
-      const userData = localStorage.getItem("user_data")
       const selectedEstablishment = localStorage.getItem("selected_establishment")
-
       if (selectedEstablishment) {
         const establishment = JSON.parse(selectedEstablishment)
-        console.log("🏭 [CargaPotrero] Establecimiento desde localStorage:", establishment.id)
         return establishment.id
       }
-
-      console.log("⚠️ [CargaPotrero] No hay establecimiento en localStorage")
       return null
     } catch (error) {
       console.error("❌ [CargaPotrero] Error obteniendo establecimiento:", error)
@@ -60,31 +80,22 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
     }
   }
 
-  // Cargar establecimiento inicial al montar el componente
   useEffect(() => {
     const initialEstablishment = getCurrentEstablishment()
     if (initialEstablishment) {
-      console.log("🚀 [CargaPotrero] Carga inicial con establecimiento:", initialEstablishment)
       setCurrentEstablecimiento(initialEstablishment)
     }
   }, [])
 
-  // Escuchar cambios en el establecimiento seleccionado
   useEffect(() => {
     const handleEstablishmentChange = (event: CustomEvent) => {
       const { establecimientoId } = event.detail
-      console.log("🏭 [CargaPotrero] Establecimiento cambiado a:", establecimientoId)
       setCurrentEstablecimiento(establecimientoId)
     }
-
     window.addEventListener("establishmentChange", handleEstablishmentChange as EventListener)
-
-    return () => {
-      window.removeEventListener("establishmentChange", handleEstablishmentChange as EventListener)
-    }
+    return () => window.removeEventListener("establishmentChange", handleEstablishmentChange as EventListener)
   }, [])
 
-  // Cargar datos cuando cambie el establecimiento
   useEffect(() => {
     if (currentEstablecimiento && !propData) {
       fetchCargaPotreros()
@@ -92,12 +103,7 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
   }, [currentEstablecimiento, propData])
 
   const fetchCargaPotreros = async () => {
-    if (!currentEstablecimiento) {
-      console.log("⚠️ [CargaPotrero] No hay establecimiento seleccionado")
-      return
-    }
-
-    console.log("🔄 [CargaPotrero] Cargando datos para establecimiento:", currentEstablecimiento)
+    if (!currentEstablecimiento) return
     setIsLoading(true)
     try {
       const response = await fetch(`/api/carga-potreros?establecimiento_id=${currentEstablecimiento}`)
@@ -105,7 +111,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
         throw new Error("Error al cargar datos de carga por potrero")
       }
       const result = await response.json()
-      console.log("✅ [CargaPotrero] Datos cargados:", result)
       setData(result)
     } catch (error) {
       console.error("❌ [CargaPotrero] Error:", error)
@@ -120,7 +125,7 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
     }
   }
 
-  // Función para determinar el estado del potrero
+  // Estado del potrero
   const getEstado = (cabHas: number | null): string => {
     const cabezas = cabHas || 0
     if (cabezas === 0) return "vacio"
@@ -129,7 +134,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
     return "optimo"
   }
 
-  // Función para obtener el color del estado
   const getEstadoColor = (estado: string): string => {
     switch (estado) {
       case "optimo":
@@ -144,7 +148,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
     }
   }
 
-  // Función para obtener el texto del estado
   const getEstadoText = (estado: string): string => {
     switch (estado) {
       case "optimo":
@@ -159,7 +162,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
     }
   }
 
-  // Función para obtener el color del valor de carga
   const getCargaColor = (estado: string): string => {
     switch (estado) {
       case "optimo":
@@ -174,6 +176,77 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
     }
   }
 
+  // Estadísticas para las tarjetas
+  const estadisticas = useMemo(() => {
+    if (!data.length) return null
+
+    const totalCabHas = data.reduce((sum, item) => sum + (item.cabezas_por_ha || 0), 0)
+    const promedioCabHas = totalCabHas / data.length
+    const maxCabHas = Math.max(...data.map((item) => item.cabezas_por_ha || 0))
+    const potreroMaxCarga = data.find((item) => (item.cabezas_por_ha || 0) === maxCabHas)
+
+    const totalKgHas = data.reduce((sum, item) => sum + (item.kg_por_ha || 0), 0)
+    const promedioKgHas = totalKgHas / data.length
+
+    const totalUgHas = data.reduce((sum, item) => sum + (item.ug_por_ha || 0), 0)
+    const promedioUgHas = totalUgHas / data.length
+
+    return {
+      promedioCabHas,
+      maxCabHas,
+      potreroMaxCarga: potreroMaxCarga?.potrero || "N/A",
+      promedioKgHas,
+      promedioUgHas,
+      totalPotreros: data.length,
+    }
+  }, [data])
+
+  // Colores para las barras según el valor
+  const getBarColor = (value: number, maxValue: number, type: "cab" | "kg" | "ug") => {
+    const intensity = maxValue > 0 ? value / maxValue : 0
+
+    if (type === "cab") {
+      if (intensity > 0.8) return "#1e40af" // Azul intenso
+      if (intensity > 0.6) return "#3b82f6" // Azul medio
+      if (intensity > 0.4) return "#60a5fa" // Azul claro
+      if (intensity > 0.2) return "#93c5fd" // Azul muy claro
+      return "#dbeafe" // Azul pálido
+    } else if (type === "kg") {
+      if (intensity > 0.8) return "#dc2626" // Rojo intenso
+      if (intensity > 0.6) return "#ef4444" // Rojo medio
+      if (intensity > 0.4) return "#f87171" // Rojo claro
+      if (intensity > 0.2) return "#fca5a5" // Rojo muy claro
+      return "#fecaca" // Rojo pálido
+    } else {
+      // ug
+      if (intensity > 0.8) return "#059669" // Verde intenso
+      if (intensity > 0.6) return "#10b981" // Verde medio
+      if (intensity > 0.4) return "#34d399" // Verde claro
+      if (intensity > 0.2) return "#6ee7b7" // Verde muy claro
+      return "#a7f3d0" // Verde pálido
+    }
+  }
+
+  // Manejadores de tooltip
+  const handleBarHover = (event: React.MouseEvent, potreroData: PotreroData) => {
+    const rect = chartRef.current?.getBoundingClientRect()
+    if (rect) {
+      setTooltipData({
+        potrero: potreroData.potrero,
+        cabHas: potreroData.cabezas_por_ha || 0,
+        kgHas: potreroData.kg_por_ha || 0,
+        ugHas: potreroData.ug_por_ha || 0,
+        hectareas: potreroData.hectareas_utiles || 0,
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      })
+    }
+  }
+
+  const handleBarLeave = () => {
+    setTooltipData(null)
+  }
+
   const handleExport = async (format: "pdf" | "xlsx") => {
     setShowExportMenu(false)
 
@@ -186,38 +259,26 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
       })
 
       if (format === "pdf") {
-        // Importar jsPDF dinámicamente
         const { jsPDF } = await import("jspdf")
         const autoTable = (await import("jspdf-autotable")).default
 
         const doc = new jsPDF()
         const pageWidth = doc.internal.pageSize.width
-        const pageHeight = doc.internal.pageSize.height
 
-        // Color principal verde oliva
         const primaryColor = [140, 156, 120] // #8C9C78
 
-        // Cargar y agregar logo
         try {
           const logoImg = new Image()
           logoImg.crossOrigin = "anonymous"
           logoImg.src = "/logo-parte-diario.png"
-
           await new Promise((resolve, reject) => {
             logoImg.onload = resolve
-            logoImg.onerror = () => {
-              console.log("Logo no encontrado, continuando sin logo")
-              resolve(null)
-            }
+            logoImg.onerror = () => resolve(null)
             setTimeout(reject, 3000)
           })
-
           doc.addImage(logoImg, "PNG", pageWidth - 40, 10, 30, 30)
-        } catch (logoError) {
-          console.log("No se pudo cargar el logo:", logoError)
-        }
+        } catch {}
 
-        // Encabezado principal
         doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2])
         doc.rect(0, 0, pageWidth, 50, "F")
 
@@ -229,7 +290,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
         doc.setFontSize(16)
         doc.text("Carga por Potrero del Establecimiento", 20, 35)
 
-        // Información del establecimiento
         doc.setTextColor(60, 60, 60)
         doc.setFont("helvetica", "normal")
         doc.setFontSize(12)
@@ -241,7 +301,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
           day: "numeric",
         })
 
-        // Caja de información
         doc.setFillColor(248, 249, 250)
         doc.rect(20, 65, pageWidth - 40, 45, "F")
         doc.setDrawColor(220, 220, 220)
@@ -257,7 +316,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
         doc.setFont("helvetica", "normal")
         doc.text(fechaGeneracion, 25, 105)
 
-        // Preparar datos para la tabla
         const tableData = data.map((item) => [
           item.potrero,
           (item.cabezas_por_ha || 0).toFixed(2),
@@ -266,7 +324,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
           (item.ug_por_ha || 0).toFixed(2),
         ])
 
-        // Crear tabla centrada
         autoTable(doc, {
           head: [["Potrero", "Cab/Has", "Has Ganaderas", "Kg/Has", "UG/Has"]],
           body: tableData,
@@ -287,9 +344,7 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
             cellPadding: 5,
             halign: "center",
           },
-          alternateRowStyles: {
-            fillColor: [248, 249, 250],
-          },
+          alternateRowStyles: { fillColor: [248, 249, 250] },
           columnStyles: {
             0: { cellWidth: 40, halign: "left" },
             1: { cellWidth: 30, halign: "center" },
@@ -306,31 +361,19 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
       } else if (format === "xlsx") {
         try {
           const XLSX = await import("xlsx")
-
           const exportData = data.map((item) => ({
             Potrero: item.potrero,
             "Cab/Has": (item.cabezas_por_ha || 0).toFixed(2),
             "Kg/Has": (item.kg_por_ha || 0).toFixed(2),
             "UG/Has": (item.ug_por_ha || 0).toFixed(2),
+            "Has Ganaderas": item.hectareas_utiles,
             "Cantidad Animales": item.cantidad_animales,
             "Peso Total (kg)": item.peso_total,
           }))
-
           const ws = XLSX.utils.json_to_sheet(exportData)
           const wb = XLSX.utils.book_new()
           XLSX.utils.book_append_sheet(wb, ws, "Carga Potreros")
-
-          const colWidths = [
-            { wch: 20 }, // Potrero
-            { wch: 12 }, // Cab/Has
-            { wch: 15 }, // Has Ganaderas
-            { wch: 12 }, // Kg/Has
-            { wch: 12 }, // UG/Has
-            { wch: 15 }, // Cantidad Animales
-            { wch: 15 }, // Peso Total
-          ]
-          ws["!cols"] = colWidths
-
+          ws["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 18 }, { wch: 18 }]
           const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" })
           const blob = new Blob([wbout], { type: "application/octet-stream" })
           const link = document.createElement("a")
@@ -344,7 +387,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
           URL.revokeObjectURL(url)
         } catch (xlsxError) {
           console.log("XLSX failed, using CSV fallback:", xlsxError)
-          // Fallback a CSV
           const headers = [
             "Potrero",
             "Cab/Has",
@@ -359,10 +401,10 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
             ...data.map((item) =>
               [
                 item.potrero,
-                item.cabezas_por_ha.toFixed(2),
+                (item.cabezas_por_ha || 0).toFixed(2),
                 item.hectareas_utiles,
-                item.kg_por_ha.toFixed(2),
-                item.ug_por_ha.toFixed(2),
+                (item.kg_por_ha || 0).toFixed(2),
+                (item.ug_por_ha || 0).toFixed(2),
                 item.cantidad_animales,
                 item.peso_total,
               ].join(","),
@@ -419,6 +461,12 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
     )
   }
 
+  // Altura del área del gráfico en píxeles
+  const CHART_HEIGHT = 350
+  const maxCabHas = Math.max(...data.map((item) => item.cabezas_por_ha || 0))
+  const maxKgHas = Math.max(...data.map((item) => item.kg_por_ha || 0))
+  const maxUgHas = Math.max(...data.map((item) => item.ug_por_ha || 0))
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-3">
@@ -446,19 +494,13 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                       </Button>
                     </div>
                     <div className="space-y-2 text-sm text-gray-600">
-                      <p>Análisis detallado de la carga animal por potrero individual.</p>
+                      <p>Análisis de carga animal por potrero con tabla y gráfico de barras.</p>
                       <div className="space-y-1">
-                        <p>
-                          <strong>• Vista de tabla:</strong> Datos detallados comparativos
-                        </p>
-                        <p>
-                          <strong>• Estados:</strong> Vacío, Bajo, Óptimo, Sobrecarga
-                        </p>
                         <p>
                           <strong>• Métricas:</strong> Cab/Has, Kg/Has, UG/Has
                         </p>
                         <p>
-                          <strong>• Comparación:</strong> Entre diferentes potreros
+                          <strong>• Estados:</strong> Vacío, Bajo, Óptimo, Sobrecarga
                         </p>
                       </div>
                     </div>
@@ -522,7 +564,7 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
               <div className="text-center py-8 text-gray-500">No hay datos disponibles para este establecimiento</div>
             ) : (
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="text-sm">
                   <TableHeader>
                     <TableRow className="bg-gray-50">
                       <TableHead className="font-semibold">Potrero</TableHead>
@@ -564,13 +606,269 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
           </TabsContent>
 
           <TabsContent value="grafico">
-            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-              <div className="text-center">
-                <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500 font-medium">Gráfico de Carga por Potrero</p>
-                <p className="text-sm text-gray-400">Visualización por burbujas o barras apiladas próximamente</p>
+            {data.length === 0 ? (
+              <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <div className="text-center">
+                  <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500 font-medium">Sin datos para graficar</p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="w-full space-y-6">
+                {/* Gráfico Principal */}
+                <Card className="w-full">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <BarChart3 className="w-6 h-6 text-blue-500" />
+                      Análisis de Carga por Potrero
+                    </CardTitle>
+                    <p className="text-base text-gray-600">Comparación de métricas de carga animal entre potreros</p>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div
+                      ref={chartRef}
+                      className="w-full relative bg-gray-50 rounded-lg p-4"
+                      style={{ height: "500px" }}
+                    >
+                      {/* Eje Y */}
+                      <div
+                        className="absolute left-2 top-4 flex flex-col justify-between text-xs text-gray-600"
+                        style={{ height: `${CHART_HEIGHT}px` }}
+                      >
+                        <span>{Math.max(maxCabHas, maxKgHas, maxUgHas).toFixed(0)}</span>
+                        <span>{(Math.max(maxCabHas, maxKgHas, maxUgHas) * 0.75).toFixed(0)}</span>
+                        <span>{(Math.max(maxCabHas, maxKgHas, maxUgHas) * 0.5).toFixed(0)}</span>
+                        <span>{(Math.max(maxCabHas, maxKgHas, maxUgHas) * 0.25).toFixed(0)}</span>
+                        <span>0</span>
+                      </div>
+
+                      {/* Líneas de cuadrícula */}
+                      <div className="absolute left-12 right-4 top-4" style={{ height: `${CHART_HEIGHT}px` }}>
+                        {[0, 1, 2, 3, 4].map((index) => (
+                          <div
+                            key={index}
+                            className="absolute w-full border-t border-gray-200"
+                            style={{ top: `${(index / 4) * 100}%` }}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Contenedor de barras agrupadas */}
+                      <div
+                        className="absolute left-12 right-4 top-4 flex justify-between gap-2"
+                        style={{ height: `${CHART_HEIGHT}px` }}
+                      >
+                        {data.map((item, index) => {
+                          const maxValue = Math.max(maxCabHas, maxKgHas, maxUgHas)
+                          const cabHeight = maxValue > 0 ? ((item.cabezas_por_ha || 0) / maxValue) * CHART_HEIGHT : 0
+                          const kgHeight = maxValue > 0 ? ((item.kg_por_ha || 0) / maxValue) * CHART_HEIGHT : 0
+                          const ugHeight = maxValue > 0 ? ((item.ug_por_ha || 0) / maxValue) * CHART_HEIGHT : 0
+                          const groupWidth = `${Math.max(100 / data.length - 3, 8)}%`
+
+                          return (
+                            <div
+                              key={index}
+                              className="flex flex-col justify-end items-center h-full"
+                              style={{ width: groupWidth }}
+                            >
+                              {/* Grupo de 3 barras */}
+                              <div className="flex justify-center items-end gap-1 w-full">
+                                {/* Barra Cab/Has */}
+                                <div
+                                  className="cursor-pointer transition-all duration-200 hover:opacity-80 hover:scale-105"
+                                  style={{
+                                    height: `${cabHeight}px`,
+                                    backgroundColor: getBarColor(item.cabezas_por_ha || 0, maxCabHas, "cab"),
+                                    borderRadius: "4px 4px 0 0",
+                                    border: "1px solid #e5e7eb",
+                                    minHeight: (item.cabezas_por_ha || 0) > 0 ? "4px" : "0px",
+                                    width: "30%",
+                                  }}
+                                  onMouseEnter={(e) => handleBarHover(e, item)}
+                                  onMouseLeave={handleBarLeave}
+                                  onMouseMove={(e) => handleBarHover(e, item)}
+                                />
+                                {/* Barra Kg/Has */}
+                                <div
+                                  className="cursor-pointer transition-all duration-200 hover:opacity-80 hover:scale-105"
+                                  style={{
+                                    height: `${kgHeight}px`,
+                                    backgroundColor: getBarColor(item.kg_por_ha || 0, maxKgHas, "kg"),
+                                    borderRadius: "4px 4px 0 0",
+                                    border: "1px solid #e5e7eb",
+                                    minHeight: (item.kg_por_ha || 0) > 0 ? "4px" : "0px",
+                                    width: "30%",
+                                  }}
+                                  onMouseEnter={(e) => handleBarHover(e, item)}
+                                  onMouseLeave={handleBarLeave}
+                                  onMouseMove={(e) => handleBarHover(e, item)}
+                                />
+                                {/* Barra UG/Has */}
+                                <div
+                                  className="cursor-pointer transition-all duration-200 hover:opacity-80 hover:scale-105"
+                                  style={{
+                                    height: `${ugHeight}px`,
+                                    backgroundColor: getBarColor(item.ug_por_ha || 0, maxUgHas, "ug"),
+                                    borderRadius: "4px 4px 0 0",
+                                    border: "1px solid #e5e7eb",
+                                    minHeight: (item.ug_por_ha || 0) > 0 ? "4px" : "0px",
+                                    width: "30%",
+                                  }}
+                                  onMouseEnter={(e) => handleBarHover(e, item)}
+                                  onMouseLeave={handleBarLeave}
+                                  onMouseMove={(e) => handleBarHover(e, item)}
+                                />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Etiquetas de potreros */}
+                      <div
+                        className="absolute left-12 right-4 flex justify-between gap-2"
+                        style={{ top: `${CHART_HEIGHT + 20}px` }}
+                      >
+                        {data.map((item, index) => {
+                          const groupWidth = `${Math.max(100 / data.length - 3, 8)}%`
+                          return (
+                            <div key={index} className="flex justify-center items-center" style={{ width: groupWidth }}>
+                              <span className="text-xs text-gray-600 transform -rotate-45 origin-center whitespace-nowrap">
+                                {item.potrero}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Leyenda */}
+                      <div className="absolute top-4 right-4 bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                        <div className="flex flex-col gap-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                            <span>Cab/Has</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-red-500 rounded"></div>
+                            <span>Kg/Has</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-green-500 rounded"></div>
+                            <span>UG/Has</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Tooltip */}
+                      {tooltip && (
+                        <div
+                          className="absolute bg-white p-4 border border-gray-200 rounded-lg shadow-xl z-50 min-w-[280px] pointer-events-none"
+                          style={{
+                            left: Math.min(
+                              tooltip.x + 10,
+                              chartRef.current?.clientWidth ? chartRef.current.clientWidth - 300 : tooltip.x,
+                            ),
+                            top: Math.max(tooltip.y - 120, 10),
+                          }}
+                        >
+                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                            <Cow className="w-5 h-5 text-green-500" />
+                            <p className="font-bold text-gray-900 text-lg">{tooltip.potrero}</p>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-600 text-sm">Cab/Has:</span>
+                              <span className="font-bold text-blue-600 text-lg">{tooltip.cabHas.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-600 text-sm">Kg/Has:</span>
+                              <span className="font-bold text-red-600 text-lg">{tooltip.kgHas.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-600 text-sm">UG/Has:</span>
+                              <span className="font-bold text-green-600 text-lg">{tooltip.ugHas.toFixed(2)}</span>
+                            </div>
+                            <div className="pt-2 border-t border-gray-100">
+                              <div className="flex justify-between items-center">
+                                <span className="text-gray-600 text-sm">Has Ganaderas:</span>
+                                <span className="font-semibold text-gray-900">{tooltip.hectareas}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Estadísticas Resumen */}
+                {estadisticas && (
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                      <CardContent className="p-6">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-blue-500 rounded-full">
+                            <TrendingUp className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-blue-700">Promedio Cab/Has</p>
+                            <p className="text-3xl font-bold text-blue-900">{estadisticas.promedioCabHas.toFixed(2)}</p>
+                            <p className="text-sm text-blue-600">cab/ha</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                      <CardContent className="p-6">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-green-500 rounded-full">
+                            <Target className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-green-700">Promedio Kg/Has</p>
+                            <p className="text-3xl font-bold text-green-900">{estadisticas.promedioKgHas.toFixed(0)}</p>
+                            <p className="text-sm text-green-600">kg/ha</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                      <CardContent className="p-6">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-purple-500 rounded-full">
+                            <Activity className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-purple-700">Promedio UG/Has</p>
+                            <p className="text-3xl font-bold text-purple-900">
+                              {estadisticas.promedioUgHas.toFixed(2)}
+                            </p>
+                            <p className="text-sm text-purple-600">ug/ha</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+                      <CardContent className="p-6">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-orange-500 rounded-full">
+                            <Cow className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-orange-700">Mayor Carga</p>
+                            <p className="text-2xl font-bold text-orange-900">{estadisticas.potreroMaxCarga}</p>
+                            <p className="text-sm text-orange-600">{estadisticas.maxCabHas.toFixed(2)} cab/ha</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>

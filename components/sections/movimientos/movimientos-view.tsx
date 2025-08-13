@@ -234,14 +234,14 @@ export default function MovimientosView() {
           </div>
         )}
 
+        {/* Stock Actual - MOVIDO AQUÍ DESPUÉS DE LOS KPIs */}
+        <StockActual onRowClick={setSelectedStockItem} />
+
         {/* Carga Total del Campo */}
         <CargaCampo />
 
         {/* Carga por Potrero */}
         <CargaPotrero />
-
-        {/* Stock Actual */}
-        <StockActual onRowClick={setSelectedStockItem} />
 
         {/* Movimientos Recientes */}
         <MovimientosRecientes onRowClick={setSelectedMovimiento} onExport={handleExport} />
