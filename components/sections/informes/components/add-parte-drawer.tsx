@@ -294,7 +294,7 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
                         <FileText className="h-5 w-5 text-blue-600" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">Reclasificación</p>
+                        <p className="font-medium text-gray-900">Administración</p>
                         <p className="text-sm text-gray-500">{actividadesAdministracion.length} actividades</p>
                       </div>
                       {expandedSections.includes("ADMINISTRACION") ? (
