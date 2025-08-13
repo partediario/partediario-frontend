@@ -232,6 +232,8 @@ export default function TrasladoPotreroDrawer({
         return {
           ...detalle,
           cantidad_trasladar: cantidadValida,
+          // Destildar automáticamente si la cantidad es 0
+          seleccionada: cantidadValida > 0 ? detalle.seleccionada : false,
         }
       }
       return detalle
@@ -709,13 +711,19 @@ export default function TrasladoPotreroDrawer({
                                   type="number"
                                   min="0"
                                   max={detalle.cantidad}
-                                  value={detalle.cantidad_trasladar || 0}
+                                  value={detalle.cantidad_trasladar === 0 ? "" : detalle.cantidad_trasladar.toString()}
                                   onChange={(e) => {
-                                    const value = e.target.value === "" ? 0 : Number.parseInt(e.target.value)
-                                    if (!isNaN(value)) {
-                                      handleCantidadChange(detalle.categoria_animal_id, value)
+                                    const inputValue = e.target.value
+                                    if (inputValue === "") {
+                                      handleCantidadChange(detalle.categoria_animal_id, 0)
+                                    } else {
+                                      const value = Number.parseInt(inputValue)
+                                      if (!isNaN(value)) {
+                                        handleCantidadChange(detalle.categoria_animal_id, value)
+                                      }
                                     }
                                   }}
+                                  onFocus={(e) => e.target.select()}
                                   className="w-20"
                                   disabled={!detalle.seleccionada}
                                   placeholder="0"

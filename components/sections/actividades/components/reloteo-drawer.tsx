@@ -180,7 +180,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
     )
   }
 
-  const handleCantidadChange = (loteId: number, categoriaId: number, cantidad: number) => {
+  const handleCantidadChange = (loteId: number, categoriaId: number, value: string) => {
     setLotes((prevLotes) =>
       prevLotes.map((lote) => {
         if (lote.lote_id === loteId) {
@@ -188,10 +188,28 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
             ...lote,
             pd_detalles: lote.pd_detalles.map((detalle) => {
               if (detalle.categoria_animal_id === categoriaId) {
-                const cantidadValida = cantidad === 0 ? 0 : Math.min(Math.max(1, cantidad), detalle.cantidad)
+                // Handle empty string or invalid input
+                if (value === "" || value === "0") {
+                  return {
+                    ...detalle,
+                    cantidad_trasladar: 0,
+                    // Destildar automáticamente si la cantidad es 0
+                    seleccionada: false,
+                  }
+                }
+
+                // Parse the number and validate range
+                const cantidad = Number.parseInt(value, 10)
+                if (isNaN(cantidad)) {
+                  return detalle // Keep current value if invalid
+                }
+
+                const cantidadValida = Math.min(Math.max(0, cantidad), detalle.cantidad)
                 return {
                   ...detalle,
                   cantidad_trasladar: cantidadValida,
+                  // Destildar automáticamente si la cantidad es 0
+                  seleccionada: cantidadValida > 0 ? detalle.seleccionada : false,
                 }
               }
               return detalle
@@ -728,16 +746,16 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
                                       type="number"
                                       min="0"
                                       max={detalle.cantidad}
-                                      value={detalle.cantidad_trasladar || 0}
+                                      value={
+                                        detalle.cantidad_trasladar === 0 ? "" : detalle.cantidad_trasladar.toString()
+                                      }
                                       onChange={(e) => {
-                                        const value = e.target.value === "" ? 0 : Number.parseInt(e.target.value)
-                                        if (!isNaN(value)) {
-                                          handleCantidadChange(lote.lote_id, detalle.categoria_animal_id, value)
-                                        }
+                                        handleCantidadChange(lote.lote_id, detalle.categoria_animal_id, e.target.value)
                                       }}
                                       className="w-20"
                                       disabled={!detalle.seleccionada}
                                       placeholder="0"
+                                      onFocus={(e) => e.target.select()}
                                     />
                                     <span className="text-gray-500">/ {detalle.cantidad}</span>
                                   </div>
