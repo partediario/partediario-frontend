@@ -6,7 +6,7 @@ import { Table, TableHead, TableRow, TableHeader, TableCell, TableBody } from "@
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Search, Filter, Download, User, ChevronDown, Calculator, X, HelpCircle } from "lucide-react"
+import { Calendar, Search, Filter, Download, User, ChevronDown } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { toast } from "@/hooks/use-toast"
@@ -40,94 +40,28 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
   const { establecimientoSeleccionado, getEstablecimientoNombre } = useEstablishment()
 
   const [movimientos, setMovimientos] = useState<MovimientoReciente[]>([])
-  const [movimientosOriginales, setMovimientosOriginales] = useState<MovimientoReciente[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [showHelpTooltip, setShowHelpTooltip] = useState(false)
-
-  // Filtros individuales
   const [tipoFiltro, setTipoFiltro] = useState<string>("todos")
-  const [movimientoFiltro, setMovimientoFiltro] = useState<string>("todos")
-  const [categoriaFiltro, setCategoriaFiltro] = useState<string>("todos")
   const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null })
 
-  // Estados para menús
+  // Estados para controlar los menús desplegables
   const [showFilterMenu, setShowFilterMenu] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
 
-  // Opciones únicas
-  const getOpcionesUnicas = () => {
-    const movimientosUnicos = [...new Set(movimientosOriginales.map((mov) => mov.movimiento))].sort()
-    const categoriasUnicas = [...new Set(movimientosOriginales.map((mov) => mov.categoria_animal))].sort()
-    return { movimientos: movimientosUnicos, categorias: categoriasUnicas }
+  // Función para obtener el texto del filtro
+  const getFilterText = () => {
+    switch (tipoFiltro) {
+      case "ENTRADA":
+        return "Filtrar: Entrada"
+      case "SALIDA":
+        return "Filtrar: Salida"
+      default:
+        return "Filtrar"
+    }
   }
 
-  const opcionesUnicas = getOpcionesUnicas()
-
-  // Contador de filtros activos
-  const contarFiltrosActivos = () => {
-    let count = 0
-    if (tipoFiltro !== "todos") count++
-    if (movimientoFiltro !== "todos") count++
-    if (categoriaFiltro !== "todos") count++
-    if (searchTerm.trim()) count++
-    // Nota: si agregas dateRange en UI, puedes sumar aquí también
-    return count
-  }
-  const filtrosActivos = contarFiltrosActivos()
-
-  // Aplicar filtros locales
-  const aplicarFiltros = () => {
-    let movimientosFiltrados = [...movimientosOriginales]
-
-    if (tipoFiltro !== "todos") {
-      movimientosFiltrados = movimientosFiltrados.filter((mov) => mov.tipo_movimiento === tipoFiltro)
-    }
-    if (movimientoFiltro !== "todos") {
-      movimientosFiltrados = movimientosFiltrados.filter((mov) => mov.movimiento === movimientoFiltro)
-    }
-    if (categoriaFiltro !== "todos") {
-      movimientosFiltrados = movimientosFiltrados.filter((mov) => mov.categoria_animal === categoriaFiltro)
-    }
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase().trim()
-      movimientosFiltrados = movimientosFiltrados.filter(
-        (mov) =>
-          mov.categoria_animal?.toLowerCase().includes(searchLower) ||
-          mov.usuario?.toLowerCase().includes(searchLower) ||
-          mov.movimiento?.toLowerCase().includes(searchLower) ||
-          mov.tipo_movimiento?.toLowerCase().includes(searchLower),
-      )
-    }
-
-    setMovimientos(movimientosFiltrados)
-  }
-
-  useEffect(() => {
-    aplicarFiltros()
-  }, [movimientosOriginales, tipoFiltro, movimientoFiltro, categoriaFiltro, searchTerm])
-
-  const limpiarFiltros = () => {
-    setTipoFiltro("todos")
-    setMovimientoFiltro("todos")
-    setCategoriaFiltro("todos")
-    setSearchTerm("")
-    setShowFilterMenu(false)
-  }
-
-  // Subtotales dinámicos
-  const calcularSubtotales = () => {
-    if (movimientos.length === 0) {
-      return { totalCantidad: 0, totalPesoTotal: 0, pesoPromedioPonderado: 0 }
-    }
-    const totalCantidad = movimientos.reduce((sum, mov) => sum + (mov.total_cantidad_animales || 0), 0)
-    const totalPesoTotal = movimientos.reduce((sum, mov) => sum + (mov.peso_total || 0), 0)
-    const pesoPromedioPonderado = totalCantidad > 0 ? totalPesoTotal / totalCantidad : 0
-    return { totalCantidad, totalPesoTotal, pesoPromedioPonderado }
-  }
-  const subtotales = calcularSubtotales()
-
-  // Carga de movimientos
+  // Cargar movimientos
   const fetchMovimientos = async () => {
     if (!establecimientoSeleccionado) return
 
@@ -136,6 +70,9 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
       const params = new URLSearchParams({
         establecimiento_id: establecimientoSeleccionado,
       })
+
+      if (searchTerm.trim()) params.append("search", searchTerm.trim())
+      if (tipoFiltro !== "todos") params.append("tipo", tipoFiltro)
       if (dateRange.from) params.append("fecha_desde", dateRange.from.toISOString().split("T")[0])
       if (dateRange.to) params.append("fecha_hasta", dateRange.to.toISOString().split("T")[0])
 
@@ -143,12 +80,7 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
       if (!response.ok) throw new Error("Error al cargar movimientos")
 
       const data = await response.json()
-      const movimientosData = data.movimientos || []
-      const movimientosConKey = movimientosData.map((mov: any, index: number) => ({
-        ...mov,
-        unique_key: `${mov.movimiento_id}_${index}`,
-      }))
-      setMovimientosOriginales(movimientosConKey)
+      setMovimientos(data.movimientos || [])
     } catch (error) {
       console.error("Error fetching movimientos:", error)
       toast({
@@ -163,11 +95,11 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
 
   useEffect(() => {
     fetchMovimientos()
-  }, [establecimientoSeleccionado, dateRange])
+  }, [establecimientoSeleccionado, searchTerm, tipoFiltro, dateRange])
 
-  // Export helpers
+  // Función para descargar archivo Excel manualmente
   const downloadExcelFile = (data: any[], filename: string) => {
-    if (!data.length) return
+    // Crear CSV como alternativa más simple
     const headers = Object.keys(data[0])
     const csvContent = [
       headers.join(","),
@@ -175,6 +107,7 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
         headers
           .map((header) => {
             const value = row[header]
+            // Escapar comillas y envolver en comillas si contiene comas
             if (typeof value === "string" && (value.includes(",") || value.includes('"'))) {
               return `"${value.replace(/"/g, '""')}"`
             }
@@ -183,6 +116,7 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
           .join(","),
       ),
     ].join("\n")
+
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
@@ -195,11 +129,17 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
     URL.revokeObjectURL(url)
   }
 
+  // Función de exportación con PDF profesional corregido
   const handleExport = async (format: "pdf" | "xlsx") => {
     setShowExportMenu(false)
-    try {
-      toast({ title: "Generando archivo", description: `Preparando archivo ${format.toUpperCase()}...` })
 
+    try {
+      toast({
+        title: "Generando archivo",
+        description: `Preparando archivo ${format.toUpperCase()}...`,
+      })
+
+      // Datos para exportar
       const dataToExport = movimientos.map((mov) => ({
         Fecha: new Date(mov.fecha).toLocaleDateString("es-ES"),
         Categoría: mov.categoria_animal,
@@ -212,37 +152,61 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
       }))
 
       if (format === "pdf") {
+        // Importar jsPDF dinámicamente
         const { jsPDF } = await import("jspdf")
         const autoTable = (await import("jspdf-autotable")).default
+
         const doc = new jsPDF()
         const pageWidth = doc.internal.pageSize.width
         const pageHeight = doc.internal.pageSize.height
-        const primaryColor = [140, 156, 120]
 
+        // Color principal verde oliva
+        const primaryColor = [140, 156, 120] // #8C9C78
+
+        // Cargar y agregar logo
         try {
           const logoImg = new Image()
           logoImg.crossOrigin = "anonymous"
           logoImg.src = "/logo-parte-diario.png"
+
           await new Promise((resolve, reject) => {
             logoImg.onload = resolve
-            logoImg.onerror = () => resolve(null)
-            setTimeout(reject, 3000)
+            logoImg.onerror = () => {
+              console.log("Logo no encontrado, continuando sin logo")
+              resolve(null)
+            }
+            setTimeout(reject, 3000) // Timeout después de 3 segundos
           })
-          doc.addImage(logoImg, "PNG", pageWidth - 40, 10, 30, 30)
-        } catch {}
 
+          // Agregar logo en la esquina superior derecha
+          doc.addImage(logoImg, "PNG", pageWidth - 40, 10, 30, 30)
+        } catch (logoError) {
+          console.log("No se pudo cargar el logo:", logoError)
+        }
+
+        // Encabezado principal con color verde oliva
         doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2])
         doc.rect(0, 0, pageWidth, 50, "F")
+
+        // Título principal en blanco
         doc.setTextColor(255, 255, 255)
         doc.setFont("helvetica", "bold")
         doc.setFontSize(24)
         doc.text("REPORTE DE MOVIMIENTOS", 20, 25)
+
         doc.setFontSize(16)
         doc.text("Movimientos Recientes de Animales", 20, 35)
 
+        // Línea decorativa
+        doc.setDrawColor(200, 200, 200)
+        doc.setLineWidth(0.5)
+        doc.line(20, 55, pageWidth - 20, 55)
+
+        // Información del establecimiento con estilo - CORREGIDO
         doc.setTextColor(60, 60, 60)
         doc.setFont("helvetica", "normal")
         doc.setFontSize(12)
+
         const establecimientoNombre = getEstablecimientoNombre(establecimientoSeleccionado) || "No especificado"
         const fechaGeneracion = new Date().toLocaleDateString("es-ES", {
           year: "numeric",
@@ -250,50 +214,50 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
           day: "numeric",
         })
 
+        // Caja de información - ALTURA AUMENTADA para incluir fecha
         doc.setFillColor(248, 249, 250)
-        doc.rect(20, 65, pageWidth - 40, 45, "F")
+        doc.rect(20, 65, pageWidth - 40, 45, "F") // Aumenté la altura de 35 a 45
         doc.setDrawColor(220, 220, 220)
         doc.rect(20, 65, pageWidth - 40, 45, "S")
+
+        // Establecimiento
         doc.setFont("helvetica", "bold")
         doc.text("Establecimiento:", 25, 75)
         doc.setFont("helvetica", "normal")
         doc.text(establecimientoNombre, 25, 85)
+
+        // Fecha de generación - MOVIDA DENTRO DEL CUADRO
         doc.setFont("helvetica", "bold")
         doc.text("Fecha de generación:", 25, 95)
         doc.setFont("helvetica", "normal")
         doc.text(fechaGeneracion, 25, 105)
 
-        // Filtros aplicados (solo si hay filtros activos)
-        let yPosition = 120
-        if (filtrosActivos > 0) {
+        // Filtros aplicados con estilo
+        let yPosition = 120 // Ajustado por el aumento de altura del cuadro anterior
+        if (tipoFiltro !== "todos" || searchTerm) {
           doc.setFillColor(233, 246, 255)
-          doc.rect(20, yPosition, pageWidth - 40, 40, "F")
+          doc.rect(20, yPosition, pageWidth - 40, 30, "F")
           doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2])
-          doc.rect(20, yPosition, pageWidth - 40, 40, "S")
+          doc.rect(20, yPosition, pageWidth - 40, 30, "S")
+
           doc.setFont("helvetica", "bold")
           doc.setFontSize(11)
           doc.text("Filtros aplicados:", 25, yPosition + 10)
+
           doc.setFont("helvetica", "normal")
           doc.setFontSize(10)
           let filterY = yPosition + 18
           if (tipoFiltro !== "todos") {
             doc.text(`• Tipo de movimiento: ${tipoFiltro}`, 25, filterY)
-            filterY += 6
-          }
-          if (movimientoFiltro !== "todos") {
-            doc.text(`• Movimiento: ${movimientoFiltro}`, 25, filterY)
-            filterY += 6
-          }
-          if (categoriaFiltro !== "todos") {
-            doc.text(`• Categoría: ${categoriaFiltro}`, 25, filterY)
-            filterY += 6
+            filterY += 8
           }
           if (searchTerm) {
             doc.text(`• Búsqueda: ${searchTerm}`, 25, filterY)
           }
-          yPosition += 50
+          yPosition += 40
         }
 
+        // Preparar datos para la tabla
         const tableData = dataToExport.map((item) => [
           item.Fecha,
           item.Categoría,
@@ -305,6 +269,7 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
           item.Usuario,
         ])
 
+        // Crear tabla profesional - CORREGIDA Y CENTRADA
         autoTable(doc, {
           head: [["Fecha", "Categoría", "Tipo", "Movimiento", "Cantidad", "Peso Prom.", "Peso Total", "Usuario"]],
           body: tableData,
@@ -314,7 +279,7 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
             cellPadding: 3,
             lineColor: [220, 220, 220],
             lineWidth: 0.1,
-            halign: "center",
+            halign: "center", // Centrar todo el contenido
             valign: "middle",
           },
           headStyles: {
@@ -325,48 +290,63 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
             cellPadding: 4,
             halign: "center",
           },
-          alternateRowStyles: { fillColor: [248, 249, 250] },
-          columnStyles: {
-            0: { cellWidth: 22, halign: "center" },
-            1: { cellWidth: 30, halign: "center" },
-            2: { cellWidth: 18, halign: "center" },
-            3: { cellWidth: 26, halign: "center" },
-            4: { cellWidth: 22, halign: "center" },
-            5: { cellWidth: 24, halign: "center" },
-            6: { cellWidth: 24, halign: "center" },
-            7: { cellWidth: 24, halign: "center" },
+          alternateRowStyles: {
+            fillColor: [248, 249, 250],
           },
-          margin: { left: 15, right: 15 },
+          columnStyles: {
+            0: { cellWidth: 22, halign: "center" }, // Fecha
+            1: { cellWidth: 30, halign: "center" }, // Categoría
+            2: { cellWidth: 18, halign: "center" }, // Tipo
+            3: { cellWidth: 26, halign: "center" }, // Movimiento
+            4: { cellWidth: 22, halign: "center" }, // Cantidad - ancho aumentado
+            5: { cellWidth: 24, halign: "center" }, // Peso Prom. - ancho aumentado para "kg"
+            6: { cellWidth: 24, halign: "center" }, // Peso Total - ancho aumentado para "kg"
+            7: { cellWidth: 24, halign: "center" }, // Usuario
+          },
+          margin: { left: 15, right: 15 }, // Márgenes para centrar
           tableWidth: "auto",
-          didDrawPage: () => {
+          didDrawPage: (data) => {
+            // Pie de página profesional
             const pageNumber = doc.internal.getCurrentPageInfo().pageNumber
             const totalPages = doc.internal.getNumberOfPages()
+
             doc.setFontSize(8)
             doc.setTextColor(128, 128, 128)
             doc.text(`Página ${pageNumber} de ${totalPages}`, pageWidth - 30, pageHeight - 10, { align: "right" })
+
             doc.text("Generado por Parte Diario", 20, pageHeight - 10)
           },
         })
 
+        // Descargar el PDF
         const fileName = `movimientos_recientes_${new Date().toISOString().split("T")[0]}.pdf`
         doc.save(fileName)
-      } else {
+      } else if (format === "xlsx") {
         try {
+          // Intentar usar XLSX primero
           const XLSX = await import("xlsx")
+
+          // Crear hoja de cálculo
           const ws = XLSX.utils.json_to_sheet(dataToExport)
+
+          // Crear libro
           const wb = XLSX.utils.book_new()
           XLSX.utils.book_append_sheet(wb, ws, "Movimientos")
-          // @ts-ignore
-          ws["!cols"] = [
-            { wch: 12 },
-            { wch: 20 },
-            { wch: 10 },
-            { wch: 15 },
-            { wch: 10 },
-            { wch: 12 },
-            { wch: 12 },
-            { wch: 20 },
+
+          // Configurar ancho de columnas
+          const colWidths = [
+            { wch: 12 }, // Fecha
+            { wch: 20 }, // Categoría
+            { wch: 10 }, // Tipo
+            { wch: 15 }, // Movimiento
+            { wch: 10 }, // Cantidad
+            { wch: 12 }, // Peso Prom.
+            { wch: 12 }, // Peso Total
+            { wch: 20 }, // Usuario
           ]
+          ws["!cols"] = colWidths
+
+          // Crear buffer y descargar manualmente
           const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" })
           const blob = new Blob([wbout], { type: "application/octet-stream" })
           const link = document.createElement("a")
@@ -380,12 +360,16 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
           URL.revokeObjectURL(url)
         } catch (xlsxError) {
           console.log("XLSX failed, using CSV fallback:", xlsxError)
+          // Fallback a CSV si XLSX falla
           const fileName = `movimientos_recientes_${new Date().toISOString().split("T")[0]}.xlsx`
           downloadExcelFile(dataToExport, fileName)
         }
       }
 
-      toast({ title: "Éxito", description: `Archivo ${format.toUpperCase()} descargado correctamente` })
+      toast({
+        title: "Éxito",
+        description: `Archivo ${format.toUpperCase()} descargado correctamente`,
+      })
     } catch (error) {
       console.error("Error exporting:", error)
       toast({
@@ -412,41 +396,6 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
         <CardTitle className="flex items-center gap-2 text-lg">
           <Calendar className="w-5 h-5 text-gray-700" />
           Movimientos Recientes
-          <div className="relative">
-            <button
-              className="ml-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
-              onClick={() => setShowHelpTooltip(!showHelpTooltip)}
-            >
-              <HelpCircle className="w-4 h-4 text-gray-400" />
-            </button>
-            {showHelpTooltip && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowHelpTooltip(false)} />
-                <div className="absolute top-8 left-0 z-50 w-80 p-4 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">Movimientos Recientes</h4>
-                    <button onClick={() => setShowHelpTooltip(false)} className="text-gray-400 hover:text-gray-600">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Historial de movimientos de animales con filtros avanzados y exportación.
-                  </p>
-                  <div className="space-y-1 text-sm text-gray-600">
-                    <p>
-                      <span className="font-medium">• Tipos:</span> Entradas, Salidas
-                    </p>
-                    <p>
-                      <span className="font-medium">• Filtros:</span> Categoría, Usuario, Tipo, Búsqueda
-                    </p>
-                    <p>
-                      <span className="font-medium">• Exportar:</span> Excel, PDF
-                    </p>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -462,94 +411,54 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
             />
           </div>
 
-          {/* Botón Filtros Múltiples */}
+          {/* Botón Filtrar */}
           <div className="relative">
             <Button
               variant="outline"
-              className={`flex items-center gap-2 ${filtrosActivos > 0 ? "bg-blue-50 border-blue-300 text-blue-700" : ""}`}
+              className={`flex items-center gap-2 ${tipoFiltro !== "todos" ? "bg-blue-50 border-blue-300 text-blue-700" : ""}`}
               onClick={() => {
                 setShowFilterMenu(!showFilterMenu)
                 setShowExportMenu(false)
               }}
             >
               <Filter className="w-4 h-4" />
-              {filtrosActivos > 0 ? `${filtrosActivos} filtros activos` : "Filtros"}
-              {filtrosActivos > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-blue-100 text-blue-800 text-xs">
-                  {filtrosActivos}
-                </Badge>
-              )}
+              {getFilterText()}
               <ChevronDown className="w-4 h-4" />
             </Button>
 
             {showFilterMenu && (
-              <div className="absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-80">
-                <div className="p-4 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-sm">Filtros Combinados</h4>
-                    {filtrosActivos > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={limpiarFiltros}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <X className="w-3 h-3 mr-1" />
-                        Limpiar todo
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Filtro por Tipo */}
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">Tipo de Movimiento</label>
-                    <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seleccionar tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todos los tipos</SelectItem>
-                        <SelectItem value="ENTRADA">Entrada</SelectItem>
-                        <SelectItem value="SALIDA">Salida</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Filtro por Movimiento */}
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">Movimiento Específico</label>
-                    <Select value={movimientoFiltro} onValueChange={setMovimientoFiltro}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seleccionar movimiento" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todos los movimientos</SelectItem>
-                        {opcionesUnicas.movimientos.map((movimiento) => (
-                          <SelectItem key={movimiento} value={movimiento}>
-                            {movimiento}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Filtro por Categoría */}
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">Categoría de Animal</label>
-                    <Select value={categoriaFiltro} onValueChange={setCategoriaFiltro}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seleccionar categoría" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todas las categorías</SelectItem>
-                        {opcionesUnicas.categorias.map((categoria) => (
-                          <SelectItem key={categoria} value={categoria}>
-                            {categoria}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-48">
+                <div className="p-3 space-y-3">
+                  <h4 className="font-medium text-sm">Filtrar por tipo</h4>
+                  <Select
+                    value={tipoFiltro}
+                    onValueChange={(value) => {
+                      setTipoFiltro(value)
+                      setShowFilterMenu(false)
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Seleccionar tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="ENTRADA">Entrada</SelectItem>
+                      <SelectItem value="SALIDA">Salida</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {tipoFiltro !== "todos" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setTipoFiltro("todos")
+                        setShowFilterMenu(false)
+                      }}
+                      className="w-full"
+                    >
+                      Limpiar filtro
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -559,7 +468,7 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
           <div className="relative">
             <Button
               variant="outline"
-              className="flex items-center gap-2 bg-transparent"
+              className="flex items-center gap-2"
               onClick={() => {
                 setShowExportMenu(!showExportMenu)
                 setShowFilterMenu(false)
@@ -604,52 +513,20 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
           />
         )}
 
-        {/* Subtotales dinámicos: SOLO cuando hay filtros activos */}
-        {!isLoading && movimientos.length > 0 && filtrosActivos > 0 && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Calculator className="w-4 h-4 text-blue-600" />
-              <h4 className="font-semibold text-blue-900">Subtotales de Resultados Filtrados</h4>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white rounded-lg p-3 border border-blue-100">
-                <div className="text-sm text-gray-600 mb-1">Total Cantidad</div>
-                <div className="text-xl font-bold text-blue-600">
-                  {subtotales.totalCantidad.toLocaleString()} animales
-                </div>
-              </div>
-              <div className="bg-white rounded-lg p-3 border border-blue-100">
-                <div className="text-sm text-gray-600 mb-1">Total Kg Totales</div>
-                <div className="text-xl font-bold text-green-600">{subtotales.totalPesoTotal.toLocaleString()} kg</div>
-              </div>
-              <div className="bg-white rounded-lg p-3 border border-blue-100">
-                <div className="text-sm text-gray-600 mb-1">Kg Promedio (Ponderado)</div>
-                <div className="text-xl font-bold text-orange-600">
-                  {subtotales.pesoPromedioPonderado.toFixed(2)} kg/animal
-                </div>
-              </div>
-            </div>
-            <div className="mt-2 text-xs text-gray-500">
-              * Los totales reflejan únicamente los {movimientos.length} movimientos mostrados según los filtros
-              aplicados
-            </div>
-          </div>
-        )}
-
-        {/* Tabla con una sola estructura */}
-        <div className="border rounded-lg overflow-hidden">
+        {/* Tabla con altura fija y scroll */}
+        <div className="border rounded-lg">
           <div className="overflow-auto" style={{ height: "480px" }}>
             <Table>
               <TableHeader className="sticky top-0 bg-gray-50 z-10">
                 <TableRow>
-                  <TableHead className="font-semibold h-12 px-4 text-left align-middle w-[100px]">Fecha</TableHead>
-                  <TableHead className="font-semibold h-12 px-4 text-left align-middle w-[140px]">Categoría</TableHead>
-                  <TableHead className="font-semibold h-12 px-4 text-left align-middle w-[80px]">Tipo</TableHead>
-                  <TableHead className="font-semibold h-12 px-4 text-left align-middle w-[120px]">Movimiento</TableHead>
-                  <TableHead className="font-semibold h-12 px-4 text-left align-middle w-[80px]">Cantidad</TableHead>
-                  <TableHead className="font-semibold h-12 px-4 text-left align-middle w-[100px]">Peso Prom.</TableHead>
-                  <TableHead className="font-semibold h-12 px-4 text-left align-middle w-[100px]">Peso Total</TableHead>
-                  <TableHead className="font-semibold h-12 px-4 text-left align-middle w-[120px]">Usuario</TableHead>
+                  <TableHead className="font-semibold">Fecha</TableHead>
+                  <TableHead className="font-semibold">Categoría</TableHead>
+                  <TableHead className="font-semibold">Tipo</TableHead>
+                  <TableHead className="font-semibold">Movimiento</TableHead>
+                  <TableHead className="font-semibold">Cantidad</TableHead>
+                  <TableHead className="font-semibold">Peso Prom.</TableHead>
+                  <TableHead className="font-semibold">Peso Total</TableHead>
+                  <TableHead className="font-semibold">Usuario</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -662,9 +539,7 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
                 ) : movimientos.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                      {filtrosActivos > 0
-                        ? "No se encontraron movimientos con los filtros aplicados"
-                        : "No se encontraron movimientos"}
+                      No se encontraron movimientos
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -674,13 +549,9 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
                       className="hover:bg-gray-50 cursor-pointer"
                       onClick={() => onRowClick && onRowClick(mov.movimiento_id)}
                     >
-                      <TableCell className="h-12 px-4 text-left align-middle font-medium w-[100px]">
-                        {new Date(mov.fecha).toLocaleDateString("es-ES")}
-                      </TableCell>
-                      <TableCell className="h-12 px-4 text-left align-middle w-[140px]">
-                        {mov.categoria_animal}
-                      </TableCell>
-                      <TableCell className="h-12 px-4 text-left align-middle w-[80px]">
+                      <TableCell className="font-medium">{new Date(mov.fecha).toLocaleDateString("es-ES")}</TableCell>
+                      <TableCell>{mov.categoria_animal}</TableCell>
+                      <TableCell>
                         <Badge
                           className={
                             mov.tipo_movimiento === "ENTRADA" ? "bg-[#34A853] text-white" : "bg-[#EA4335] text-white"
@@ -689,25 +560,21 @@ export default function MovimientosRecientes({ onRowClick }: MovimientosReciente
                           {mov.tipo_movimiento === "ENTRADA" ? "Entrada" : "Salida"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="h-12 px-4 text-left align-middle w-[120px]">{mov.movimiento}</TableCell>
+                      <TableCell>{mov.movimiento}</TableCell>
                       <TableCell
-                        className={`h-12 px-4 text-left align-middle font-semibold w-[80px] ${
-                          mov.tipo_movimiento === "ENTRADA" ? "text-[#34A853]" : "text-[#EA4335]"
-                        }`}
+                        className={
+                          mov.tipo_movimiento === "ENTRADA"
+                            ? "text-[#34A853] font-semibold"
+                            : "text-[#EA4335] font-semibold"
+                        }
                       >
                         {mov.total_cantidad_animales?.toLocaleString() || "0"}
                       </TableCell>
-                      <TableCell className="h-12 px-4 text-left align-middle w-[100px]">
-                        {mov.peso_promedio?.toLocaleString() || "0"} kg
-                      </TableCell>
-                      <TableCell className="h-12 px-4 text-left align-middle w-[100px]">
-                        {mov.peso_total?.toLocaleString() || "0"} kg
-                      </TableCell>
-                      <TableCell className="h-12 px-4 text-left align-middle w-[120px]">
-                        <div className="flex items-center gap-1">
-                          <User className="w-3 h-3 text-gray-400" />
-                          {mov.usuario}
-                        </div>
+                      <TableCell>{mov.peso_promedio?.toLocaleString() || "0"} kg</TableCell>
+                      <TableCell>{mov.peso_total?.toLocaleString() || "0"} kg</TableCell>
+                      <TableCell className="flex items-center gap-1">
+                        <User className="w-3 h-3 text-gray-400" />
+                        {mov.usuario}
                       </TableCell>
                     </TableRow>
                   ))

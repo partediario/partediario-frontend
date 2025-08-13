@@ -22,7 +22,6 @@ import VerEntradaInsumosDrawer from "./ver-entrada-insumos-drawer"
 import EditarEntradaInsumosDrawer from "./editar-entrada-insumos-drawer"
 import VerSalidaInsumosDrawer from "./ver-salida-insumos-drawer"
 import EditarSalidaInsumosDrawer from "./editar-salida-insumos-drawer"
-import VerTrasladoDrawer from "./ver-traslado-drawer"
 import { PermissionWrapper } from "@/components/permission-wrapper"
 
 interface ParteDiarioCardProps {
@@ -42,7 +41,6 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
   const [isVerActividadMixtaDrawerOpen, setIsVerActividadMixtaDrawerOpen] = useState(false)
   const [isEditarActividadMixtaDrawerOpen, setIsEditarActividadMixtaDrawerOpen] = useState(false)
   const [isVerReclasificacionDrawerOpen, setIsVerReclasificacionDrawerOpen] = useState(false)
-  const [isVerTrasladoDrawerOpen, setIsVerTrasladoDrawerOpen] = useState(false)
 
   // Nuevos estados para drawers de insumos
   const [isVerEntradaInsumosDrawerOpen, setIsVerEntradaInsumosDrawerOpen] = useState(false)
@@ -95,8 +93,6 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200"
       case "INSUMOS":
         return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200"
-      case "TRASLADO":
-        return "bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200"
       default:
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
     }
@@ -118,8 +114,6 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "Reclasificación"
       case "INSUMOS":
         return "Insumos"
-      case "TRASLADO":
-        return "Traslado"
       default:
         return tipo
     }
@@ -194,8 +188,6 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       }
     } else if (parte.pd_tipo === "RECLASIFICACION") {
       setIsVerReclasificacionDrawerOpen(true)
-    } else if (parte.pd_tipo === "TRASLADO") {
-      setIsVerTrasladoDrawerOpen(true)
     } else {
       setIsViewDrawerOpen(true)
     }
@@ -406,12 +398,6 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       <VerReclasificacionDrawer
         isOpen={isVerReclasificacionDrawerOpen}
         onClose={() => setIsVerReclasificacionDrawerOpen(false)}
-        parte={parte}
-      />
-
-      <VerTrasladoDrawer
-        isOpen={isVerTrasladoDrawerOpen}
-        onClose={() => setIsVerTrasladoDrawerOpen(false)}
         parte={parte}
       />
 
