@@ -584,11 +584,11 @@ export default function TrasladoPotreroDrawer({
           </button>
         </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4">
           {/* Datos Generales */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold mb-4">Datos Generales</h3>
+              <h3 className="text-lg font-semibold mb-3">Datos Generales</h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -655,7 +655,7 @@ export default function TrasladoPotreroDrawer({
 
             {/* Animales a Trasladar */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Animales a Trasladar *</h3>
+              <h3 className="text-lg font-semibold mb-3">Animales a Trasladar *</h3>
               {!potreroOrigen ? (
                 <div className="text-center py-8 text-gray-500">
                   <p>Selecciona un potrero origen para ver los animales disponibles</p>
@@ -694,7 +694,7 @@ export default function TrasladoPotreroDrawer({
                       <TableBody>
                         {loteInfo.pd_detalles.map((detalle) => (
                           <TableRow key={detalle.categoria_animal_id}>
-                            <TableCell>
+                            <TableCell className="py-2">
                               <Checkbox
                                 checked={detalle.seleccionada}
                                 onCheckedChange={(checked) =>
@@ -702,10 +702,10 @@ export default function TrasladoPotreroDrawer({
                                 }
                               />
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="py-2">
                               <div className="font-medium">{detalle.categoria_animal_nombre}</div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="py-2">
                               <div className="flex items-center space-x-2">
                                 <Input
                                   type="number"
@@ -724,7 +724,7 @@ export default function TrasladoPotreroDrawer({
                                     }
                                   }}
                                   onFocus={(e) => e.target.select()}
-                                  className="w-20"
+                                  className="w-16 h-8"
                                   disabled={!detalle.seleccionada}
                                   placeholder="0"
                                 />
@@ -738,7 +738,7 @@ export default function TrasladoPotreroDrawer({
                   </div>
 
                   {mostrarOpcionesTraslado() && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-4">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 space-y-3">
                       <div>
                         <Label htmlFor="nombreLoteNuevo" className="text-sm font-medium">
                           Nombre del nuevo lote *

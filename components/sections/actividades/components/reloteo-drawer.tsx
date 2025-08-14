@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import type { JSX } from "react" // Import JSX to fix the lint error
 import { useState, useEffect, useRef } from "react"
 import { X, RefreshCw, Save, Loader2, Search, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -317,6 +317,83 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
     }))
     .filter((lote) => lote.pd_detalles.length > 0)
 
+  // Crear filas para la tabla unificada
+  const createTableRows = () => {
+    const rows: JSX.Element[] = []
+
+    filteredLotes.forEach((lote) => {
+      // Fila de header del lote
+      rows.push(
+        <TableRow key={`header-${lote.lote_id}`} className="bg-blue-50 border-t-2 border-blue-200">
+          <TableCell colSpan={4} className="py-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={`lote-${lote.lote_id}`}
+                checked={lote.pd_detalles.every((detalle) => detalle.seleccionada)}
+                onCheckedChange={(checked) => handleLoteSelectionChange(lote.lote_id, checked as boolean)}
+              />
+              <Label htmlFor={`lote-${lote.lote_id}`} className="font-semibold text-blue-900">
+                {lote.lote_nombre} - Lote Completo
+              </Label>
+            </div>
+          </TableCell>
+        </TableRow>,
+      )
+
+      // Filas de categorías
+      lote.pd_detalles.forEach((detalle, index) => {
+        rows.push(
+          <TableRow key={`${lote.lote_id}-${detalle.categoria_animal_id}`} className="hover:bg-gray-50">
+            <TableCell className="py-2 pl-8">
+              <Checkbox
+                checked={detalle.seleccionada}
+                onCheckedChange={(checked) =>
+                  handleCategoriaSelectionChange(lote.lote_id, detalle.categoria_animal_id, checked as boolean)
+                }
+              />
+            </TableCell>
+            <TableCell className="py-2">
+              <div className="font-medium">{detalle.categoria_animal_nombre}</div>
+            </TableCell>
+            <TableCell className="py-2">
+              <div className="flex items-center space-x-2">
+                <Input
+                  type="number"
+                  min="0"
+                  max={detalle.cantidad}
+                  value={detalle.cantidad_trasladar === 0 ? "" : detalle.cantidad_trasladar.toString()}
+                  onChange={(e) => {
+                    handleCantidadChange(lote.lote_id, detalle.categoria_animal_id, e.target.value)
+                  }}
+                  className="w-16 h-8 text-sm"
+                  disabled={!detalle.seleccionada}
+                  placeholder="0"
+                  onFocus={(e) => e.target.select()}
+                />
+                <span className="text-gray-500 text-sm">/ {detalle.cantidad}</span>
+              </div>
+            </TableCell>
+            <TableCell className="py-2">
+              <CustomCombobox
+                options={getOpcionesLoteDestino(lote.lote_id)}
+                value={detalle.lote_destino_id?.toString() || ""}
+                onValueChange={(value) =>
+                  handleLoteDestinoChange(lote.lote_id, detalle.categoria_animal_id, Number.parseInt(value))
+                }
+                placeholder="Seleccionar lote..."
+                searchPlaceholder="Buscar lote..."
+                emptyMessage="No hay lotes disponibles."
+                disabled={!detalle.seleccionada}
+              />
+            </TableCell>
+          </TableRow>,
+        )
+      })
+    })
+
+    return rows
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -545,10 +622,10 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
 
         <div className="flex-1 overflow-y-auto p-6">
           {/* Datos Generales */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold mb-4">Datos Generales</h3>
-              <div className="space-y-4">
+              <h3 className="text-lg font-semibold mb-3">Datos Generales</h3>
+              <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Tipo</Label>
@@ -585,7 +662,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
 
             {/* Filtros */}
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Filtros</h4>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Filtros</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="filtro-lote">Filtrar por Lote</Label>
@@ -685,9 +762,9 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
               </div>
             </div>
 
-            {/* Animales a Relotear */}
+            {/* Animales a Relotear - Tabla Unificada con Agrupación */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Animales a Relotear *</h3>
+              <h3 className="text-lg font-semibold mb-3">Animales a Relotear *</h3>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin" />
@@ -698,101 +775,27 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
                   <p>No se encontraron lotes con animales</p>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {filteredLotes.map((lote) => (
-                    <div key={lote.lote_id} className="border rounded-lg p-4">
-                      <div className="flex items-center space-x-2 mb-4">
-                        <Checkbox
-                          id={`lote-${lote.lote_id}`}
-                          checked={lote.pd_detalles.every((detalle) => detalle.seleccionada)}
-                          onCheckedChange={(checked) => handleLoteSelectionChange(lote.lote_id, checked as boolean)}
-                        />
-                        <Label htmlFor={`lote-${lote.lote_id}`} className="font-semibold text-blue-900">
-                          {lote.lote_nombre} - Lote Completo
-                        </Label>
-                      </div>
-
-                      <div className="border rounded-lg overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-12"></TableHead>
-                              <TableHead>Categoría</TableHead>
-                              <TableHead>Cantidad a Relotear</TableHead>
-                              <TableHead>Lote Destino</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {lote.pd_detalles.map((detalle) => (
-                              <TableRow key={detalle.categoria_animal_id}>
-                                <TableCell>
-                                  <Checkbox
-                                    checked={detalle.seleccionada}
-                                    onCheckedChange={(checked) =>
-                                      handleCategoriaSelectionChange(
-                                        lote.lote_id,
-                                        detalle.categoria_animal_id,
-                                        checked as boolean,
-                                      )
-                                    }
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <div className="font-medium">{detalle.categoria_animal_nombre}</div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center space-x-2">
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      max={detalle.cantidad}
-                                      value={
-                                        detalle.cantidad_trasladar === 0 ? "" : detalle.cantidad_trasladar.toString()
-                                      }
-                                      onChange={(e) => {
-                                        handleCantidadChange(lote.lote_id, detalle.categoria_animal_id, e.target.value)
-                                      }}
-                                      className="w-20"
-                                      disabled={!detalle.seleccionada}
-                                      placeholder="0"
-                                      onFocus={(e) => e.target.select()}
-                                    />
-                                    <span className="text-gray-500">/ {detalle.cantidad}</span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <CustomCombobox
-                                    options={getOpcionesLoteDestino(lote.lote_id)}
-                                    value={detalle.lote_destino_id?.toString() || ""}
-                                    onValueChange={(value) =>
-                                      handleLoteDestinoChange(
-                                        lote.lote_id,
-                                        detalle.categoria_animal_id,
-                                        Number.parseInt(value),
-                                      )
-                                    }
-                                    placeholder="Seleccionar lote..."
-                                    searchPlaceholder="Buscar lote..."
-                                    emptyMessage="No hay lotes disponibles."
-                                    disabled={!detalle.seleccionada}
-                                  />
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                  ))}
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="w-12 py-2"></TableHead>
+                        <TableHead className="py-2">Categoría</TableHead>
+                        <TableHead className="py-2">Cantidad a Relotear</TableHead>
+                        <TableHead className="py-2">Lote Destino</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>{createTableRows()}</TableBody>
+                  </Table>
                 </div>
               )}
             </div>
 
             {/* Resumen del Reloteo */}
             {getResumenReloteo().length > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">📋 Resumen del Reloteo</h4>
-                <div className="space-y-2">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">📋 Resumen del Reloteo</h4>
+                <div className="space-y-1">
                   {getResumenReloteo().map((movimiento, index) => (
                     <div key={index} className="text-sm text-gray-700">
                       <span className="font-medium">{movimiento.cantidad}</span> {movimiento.categoria} del lote{" "}
