@@ -215,7 +215,7 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
   }, [parte])
 
   // Función para aplicar los datos extraídos
-  const aplicarDatosExtraidos = useCallback((datos: any) => {
+  const aplicarDatosExtraidos = useCallback((datos: any, lotesDisponibles: Lote[] = []) => {
     if (!datos) {
       console.log("❌ No hay datos para aplicar")
       return
@@ -223,6 +223,7 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
 
     console.log("🔄 Aplicando datos extraídos...")
     console.log("📋 Datos a aplicar:", datos)
+    console.log("🏷️ Lotes disponibles:", lotesDisponibles)
 
     // Aplicar datos básicos
     setTipoActividadNombre(datos.tipoActividadNombre)
@@ -230,11 +231,26 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
     setFecha(datos.fecha)
     setHora(datos.hora)
     setNota(datos.nota)
-    setDetalles(datos.detalles)
 
     // CRÍTICO: Aplicar tipo de movimiento
     console.log("🎯 Aplicando tipo de movimiento:", datos.tipoMovimientoId)
     setTipoMovimiento(datos.tipoMovimientoId)
+
+    // NUEVO: Actualizar nombres de lotes en los detalles usando los lotes disponibles
+    if (datos.detalles && datos.detalles.length > 0) {
+      const detallesConNombres = datos.detalles.map((detalle: any) => {
+        const loteEncontrado = lotesDisponibles.find((l) => l.id === detalle.lote_id)
+        console.log(`🔍 Buscando lote ${detalle.lote_id}:`, loteEncontrado)
+        return {
+          ...detalle,
+          lote_nombre: loteEncontrado ? loteEncontrado.nombre : `Lote ${detalle.lote_id}`,
+        }
+      })
+      console.log("✅ Detalles con nombres actualizados:", detallesConNombres)
+      setDetalles(detallesConNombres)
+    } else {
+      setDetalles(datos.detalles)
+    }
 
     console.log("✅ Datos aplicados exitosamente")
   }, [])
@@ -275,9 +291,9 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
       // 3. Pequeña pausa para asegurar que React haya actualizado los estados
       await new Promise((resolve) => setTimeout(resolve, 200))
 
-      // 4. Aplicar los datos extraídos
-      console.log("🔧 Aplicando datos...")
-      aplicarDatosExtraidos(datosExtraidos)
+      // 4. Aplicar los datos extraídos CON los lotes cargados
+      console.log("🔧 Aplicando datos con lotes...")
+      aplicarDatosExtraidos(datosExtraidos, lotesData)
 
       console.log("✅ Inicialización completada exitosamente")
     } catch (error) {
