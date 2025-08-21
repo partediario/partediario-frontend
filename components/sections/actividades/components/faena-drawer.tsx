@@ -1,9 +1,6 @@
 "use client"
 
-import { RadioGroupItem } from "@/components/ui/radio-group"
-
-import { RadioGroup } from "@/components/ui/radio-group"
-
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,6 +10,7 @@ import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
 import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Trash2, Edit, Users, AlertCircle, X } from "lucide-react"
 import { useCurrentEstablishment } from "@/hooks/use-current-establishment"
 import { useUser } from "@/contexts/user-context"
@@ -30,6 +28,9 @@ interface CategoriaExistente {
   categoria_animal_id: number
   nombre_categoria_animal: string
   lote_id: number
+  cantidad: number
+  sexo?: string
+  edad?: string
 }
 
 interface Lote {
@@ -154,10 +155,16 @@ export default function FaenaDrawer({
 
     setLoadingCategorias(true)
     try {
-      const response = await fetch(`/api/categorias-existentes-lote?lote_id=${loteId}`)
-      if (!response.ok) throw new Error("Error al cargar categorías")
+      console.log("🔄 Cargando categorías existentes para lote_id:", loteId)
+      const response = await fetch(`/api/categorias-animales-existentes?lote_id=${loteId}`)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.details || errorData.error || `HTTP ${response.status}`)
+      }
 
       const data = await response.json()
+      console.log("✅ Datos de categorías existentes recibidos:", data)
       setCategorias(data.categorias || [])
     } catch (error) {
       console.error("Error fetching categorias:", error)
@@ -203,22 +210,80 @@ export default function FaenaDrawer({
   }
 
   const validarDetalle = (): string[] => {
+    console.log("🔍 Iniciando validación de detalle...")
+    console.log("Datos del detalle:", { loteId, categoriaId, cantidad, peso })
+
     const errores: string[] = []
 
+    // Validar campos obligatorios
     if (!loteId) errores.push("Debe seleccionar un lote")
     if (!categoriaId) errores.push("Debe seleccionar una categoría")
     if (!cantidad || Number.parseInt(cantidad) <= 0) errores.push("La cantidad debe ser mayor a 0")
     if (!peso || Number.parseInt(peso) <= 0) errores.push("El peso debe ser mayor a 0")
 
+    // VALIDACIÓN DE STOCK - igual que en salida de animales
+    if (categoriaId && cantidad && Number.parseInt(cantidad) > 0) {
+      console.log("🔍 INICIANDO VALIDACIÓN DE STOCK")
+      console.log("   Categoría seleccionada ID:", categoriaId)
+      console.log("   Cantidad solicitada:", cantidad)
+      console.log("   Categorías disponibles:", categoriasExistentes.length)
+
+      const categoriaSeleccionada = categoriasExistentes.find((c) => c.categoria_animal_id.toString() === categoriaId)
+
+      console.log("   Categoría encontrada:", categoriaSeleccionada)
+
+      if (categoriaSeleccionada) {
+        // Calcular cantidad ya utilizada en otros detalles de la misma categoría
+        const cantidadYaUtilizada = detalles
+          .filter((d) => d.categoria_animal_id.toString() === categoriaId && editandoDetalle !== detalles.indexOf(d))
+          .reduce((sum, d) => sum + d.cantidad, 0)
+
+        const stockDisponible = Number(categoriaSeleccionada.cantidad) - cantidadYaUtilizada
+        const cantidadSolicitada = Number.parseInt(cantidad)
+
+        console.log(`📊 Validación de stock para ${categoriaSeleccionada.nombre_categoria_animal}:`)
+        console.log(`   Stock total: ${categoriaSeleccionada.cantidad}`)
+        console.log(`   Ya utilizado en otros detalles: ${cantidadYaUtilizada}`)
+        console.log(`   Stock disponible: ${stockDisponible}`)
+        console.log(`   Cantidad solicitada: ${cantidadSolicitada}`)
+        console.log(`   ¿Supera el stock?: ${cantidadSolicitada > stockDisponible}`)
+
+        if (cantidadSolicitada > stockDisponible) {
+          const errorMsg =
+            `Stock insuficiente para ${categoriaSeleccionada.nombre_categoria_animal}. ` +
+            `Disponible: ${stockDisponible}, solicitado: ${cantidadSolicitada}`
+          console.log("❌ ERROR DE STOCK:", errorMsg)
+          errores.push(errorMsg)
+        } else {
+          console.log("✅ Stock suficiente")
+        }
+      } else {
+        console.log("❌ No se encontró la categoría seleccionada en las categorías existentes")
+        errores.push("No se pudo validar el stock para la categoría seleccionada")
+      }
+    }
+
+    console.log("Errores encontrados en detalle:", errores)
     return errores
   }
 
   const agregarDetalle = () => {
     const erroresValidacion = validarDetalle()
     if (erroresValidacion.length > 0) {
+      console.log("❌ Mostrando errores de validación de detalle")
       setErroresDetalle(erroresValidacion)
+
+      // También mostrar toast
+      toast({
+        title: "Error en validación",
+        description: erroresValidacion.join(", "),
+        variant: "destructive",
+      })
       return
     }
+
+    console.log("✅ Validación de detalle exitosa, agregando...")
+    setErroresDetalle([])
 
     const loteSeleccionado = lotes.find((l) => l.id.toString() === loteId)
     const categoriaSeleccionada = categoriasExistentes.find((c) => c.categoria_animal_id.toString() === categoriaId)
@@ -240,8 +305,10 @@ export default function FaenaDrawer({
       nuevosDetalles[editandoDetalle] = nuevoDetalle
       setDetalles(nuevosDetalles)
       setEditandoDetalle(null)
+      console.log("✅ Detalle actualizado")
     } else {
       setDetalles([...detalles, nuevoDetalle])
+      console.log("✅ Detalle agregado")
     }
 
     limpiarFormularioDetalle()
@@ -379,17 +446,19 @@ export default function FaenaDrawer({
         <div className="flex-1 overflow-y-auto p-6">
           {/* Errores principales */}
           {errores.length > 0 && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
-                <AlertCircle className="w-5 h-5" />
-                Se encontraron {errores.length} errores:
-              </div>
-              <ul className="list-disc list-inside text-red-700 space-y-1">
-                {errores.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </div>
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <div className="font-medium mb-2">Se encontraron {errores.length} errores:</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {errores.map((error, index) => (
+                    <li key={index} className="text-sm">
+                      {error}
+                    </li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
           )}
 
           {/* Datos Generales */}
@@ -415,30 +484,38 @@ export default function FaenaDrawer({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="tipo-actividad">Tipo de Actividad *</Label>
-                    <Input value={actividadSeleccionada?.nombre || ""} disabled className="bg-gray-50" />
+                    <Label className="text-sm font-medium text-gray-700">Tipo de Actividad *</Label>
+                    <div className="mt-1">
+                      <Input value={actividadSeleccionada?.nombre || ""} disabled className="bg-gray-50" />
+                    </div>
                   </div>
                   <div>
-                    <Label>Tipo de Movimiento *</Label>
-                    <CustomCombobox
-                      options={opcionesTiposMovimiento}
-                      value={tipoMovimiento}
-                      onValueChange={setTipoMovimiento}
-                      placeholder="Selecciona tipo de movimiento..."
-                      searchPlaceholder="Buscar tipo de movimiento..."
-                      emptyMessage="No se encontraron tipos de movimiento."
-                    />
+                    <Label className="text-sm font-medium text-gray-700">Tipo de Movimiento *</Label>
+                    <div className="mt-1">
+                      <CustomCombobox
+                        options={opcionesTiposMovimiento}
+                        value={tipoMovimiento}
+                        onValueChange={setTipoMovimiento}
+                        placeholder="Selecciona tipo de movimiento..."
+                        searchPlaceholder="Buscar tipo de movimiento..."
+                        emptyMessage="No se encontraron tipos de movimiento."
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Fecha *</Label>
-                    <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
+                    <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
+                    <div className="mt-1">
+                      <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
+                    </div>
                   </div>
                   <div>
-                    <Label>Hora *</Label>
-                    <CustomTimePicker time={hora} onTimeChange={setHora} placeholder="Seleccionar hora" />
+                    <Label className="text-sm font-medium text-gray-700">Hora *</Label>
+                    <div className="mt-1">
+                      <CustomTimePicker time={hora} onTimeChange={setHora} placeholder="Seleccionar hora" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -461,19 +538,21 @@ export default function FaenaDrawer({
               {/* Formulario de detalle expandido - ARRIBA de la tabla */}
               {mostrarFormDetalle && (
                 <div className="bg-gray-50 border rounded-lg p-6 mb-4">
-                  {/* Errores de detalle */}
+                  {/* Mostrar errores de validación del detalle */}
                   {erroresDetalle.length > 0 && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
-                      <div className="flex items-center gap-2 text-red-800 font-medium mb-1">
-                        <AlertCircle className="w-4 h-4" />
-                        Errores encontrados:
-                      </div>
-                      <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
-                        {erroresDetalle.map((error, index) => (
-                          <li key={index}>{error}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    <Alert variant="destructive" className="mb-4">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        <div className="font-medium mb-2">Campos faltantes:</div>
+                        <ul className="list-disc list-inside space-y-1">
+                          {erroresDetalle.map((error, index) => (
+                            <li key={index} className="text-sm">
+                              {error}
+                            </li>
+                          ))}
+                        </ul>
+                      </AlertDescription>
+                    </Alert>
                   )}
 
                   <h4 className="font-medium mb-4">{editandoDetalle !== null ? "Editar Detalle" : "Nuevo Detalle"}</h4>
@@ -481,58 +560,84 @@ export default function FaenaDrawer({
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Lote *</Label>
-                        <CustomCombobox
-                          options={opcionesLotes}
-                          value={loteId}
-                          onValueChange={setLoteId}
-                          placeholder="Selecciona lote..."
-                          searchPlaceholder="Buscar lote..."
-                          emptyMessage="No se encontraron lotes."
-                        />
+                        <Label className="text-sm font-medium text-gray-700">Lote *</Label>
+                        <div className="mt-1">
+                          <CustomCombobox
+                            options={opcionesLotes}
+                            value={loteId}
+                            onValueChange={setLoteId}
+                            placeholder="Selecciona lote..."
+                            searchPlaceholder="Buscar lote..."
+                            emptyMessage="No se encontraron lotes."
+                          />
+                        </div>
                       </div>
 
                       <div>
-                        <Label>Categoría Animal *</Label>
-                        <CustomCombobox
-                          options={opcionesCategorias}
-                          value={categoriaId}
-                          onValueChange={setCategoriaId}
-                          placeholder={loteId ? "Selecciona categoría..." : "Primero selecciona un lote"}
-                          searchPlaceholder="Buscar categoría..."
-                          emptyMessage="No se encontraron categorías con stock."
-                          disabled={!loteId}
-                          loading={loadingCategorias}
-                        />
+                        <Label className="text-sm font-medium text-gray-700">
+                          Categoría Animal *
+                          {categoriaId && (
+                            <span className="text-xs text-gray-500 ml-2">
+                              (Stock:{" "}
+                              {categoriasExistentes.find((c) => c.categoria_animal_id.toString() === categoriaId)
+                                ?.cantidad || 0}
+                              )
+                            </span>
+                          )}
+                        </Label>
+                        <div className="mt-1">
+                          <CustomCombobox
+                            options={opcionesCategorias}
+                            value={categoriaId}
+                            onValueChange={setCategoriaId}
+                            placeholder={loteId ? "Selecciona categoría..." : "Primero selecciona un lote"}
+                            searchPlaceholder="Buscar categoría..."
+                            emptyMessage="No se encontraron categorías con stock."
+                            disabled={!loteId}
+                            loading={loadingCategorias}
+                          />
+                        </div>
+                        {loadingCategorias && (
+                          <p className="text-xs text-gray-500 mt-1">Cargando categorías disponibles...</p>
+                        )}
+                        {!loadingCategorias && categoriasExistentes.length === 0 && loteId && (
+                          <p className="text-xs text-amber-600 mt-1">
+                            No hay animales disponibles en el lote seleccionado
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Cantidad *</Label>
-                        <Input
-                          type="number"
-                          value={cantidad}
-                          onChange={(e) => setCantidad(e.target.value)}
-                          placeholder="Ej: 10"
-                          min="1"
-                        />
+                        <Label className="text-sm font-medium text-gray-700">Cantidad *</Label>
+                        <div className="mt-1">
+                          <Input
+                            type="number"
+                            value={cantidad}
+                            onChange={(e) => setCantidad(e.target.value)}
+                            placeholder="Ej: 10"
+                            min="1"
+                          />
+                        </div>
                       </div>
 
                       <div>
-                        <Label>Peso (kg) *</Label>
-                        <Input
-                          type="number"
-                          value={peso}
-                          onChange={(e) => setPeso(e.target.value)}
-                          placeholder="Ej: 250"
-                          min="1"
-                        />
+                        <Label className="text-sm font-medium text-gray-700">Peso (kg) *</Label>
+                        <div className="mt-1">
+                          <Input
+                            type="number"
+                            value={peso}
+                            onChange={(e) => setPeso(e.target.value)}
+                            placeholder="Ej: 250"
+                            min="1"
+                          />
+                        </div>
                       </div>
                     </div>
 
                     <div>
-                      <Label>Tipo de peso</Label>
+                      <Label className="text-sm font-medium text-gray-700">Tipo de peso</Label>
                       <RadioGroup
                         value={tipoPeso}
                         onValueChange={(value) => setTipoPeso(value as "TOTAL" | "PROMEDIO")}
@@ -540,11 +645,15 @@ export default function FaenaDrawer({
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="TOTAL" id="total" />
-                          <Label htmlFor="total">Total</Label>
+                          <Label htmlFor="total" className="text-sm font-normal text-gray-700">
+                            Total
+                          </Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="PROMEDIO" id="promedio" />
-                          <Label htmlFor="promedio">Promedio</Label>
+                          <Label htmlFor="promedio" className="text-sm font-normal text-gray-700">
+                            Promedio
+                          </Label>
                         </div>
                       </RadioGroup>
                     </div>
@@ -616,14 +725,18 @@ export default function FaenaDrawer({
 
             {/* Nota */}
             <div>
-              <Label htmlFor="nota">Nota</Label>
-              <Textarea
-                id="nota"
-                value={nota}
-                onChange={(e) => setNota(e.target.value)}
-                placeholder="Observaciones adicionales..."
-                rows={3}
-              />
+              <Label htmlFor="nota" className="text-sm font-medium text-gray-700">
+                Nota
+              </Label>
+              <div className="mt-1">
+                <Textarea
+                  id="nota"
+                  value={nota}
+                  onChange={(e) => setNota(e.target.value)}
+                  placeholder="Observaciones adicionales..."
+                  rows={3}
+                />
+              </div>
             </div>
           </div>
         </div>

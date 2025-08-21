@@ -10,6 +10,7 @@ import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
 import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Trash2, Edit, Users, AlertCircle, X } from "lucide-react"
 import { useUser } from "@/contexts/user-context"
 import { useEstablishment } from "@/contexts/establishment-context"
@@ -27,6 +28,9 @@ interface CategoriaExistente {
   categoria_animal_id: number
   nombre_categoria_animal: string
   lote_id: number
+  cantidad: number
+  sexo?: string
+  edad?: string
 }
 
 interface Lote {
@@ -35,6 +39,7 @@ interface Lote {
 }
 
 interface DetalleActividad {
+  id: string
   categoria_animal_id: number
   categoria_nombre: string
   cantidad: number
@@ -42,6 +47,8 @@ interface DetalleActividad {
   tipo_peso: "TOTAL" | "PROMEDIO"
   lote_id: number
   lote_nombre: string
+  es_original: boolean
+  cantidad_original: number
 }
 
 interface TipoMovimiento {
@@ -78,7 +85,7 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
 
   // Estados del formulario de detalle
   const [mostrarFormDetalle, setMostrarFormDetalle] = useState(false)
-  const [editandoDetalle, setEditandoDetalle] = useState<number | null>(null)
+  const [editandoDetalle, setEditandoDetalle] = useState<DetalleActividad | null>(null)
   const [loteId, setLoteId] = useState<string>("")
   const [categoriaId, setCategoriaId] = useState<string>("")
   const [cantidad, setCantidad] = useState<string>("")
@@ -95,6 +102,115 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
   const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
 
   const nombreCompleto = usuario ? `${usuario.nombres} ${usuario.apellidos}`.trim() : "Cargando..."
+
+  // Función para calcular stock disponible (adaptada de editar-salida-animales-drawer)
+  const calcularStockDisponible = (categoriaId: string): number => {
+    console.log("🧮 CALCULANDO STOCK DISPONIBLE PARA FAENA")
+    console.log("   Categoría ID:", categoriaId)
+    console.log("   Editando detalle:", editandoDetalle?.id)
+
+    // Obtener la categoría seleccionada
+    const categoria = categoriasExistentes.find((c) => c.categoria_animal_id.toString() === categoriaId)
+    if (!categoria) {
+      console.log("❌ Categoría no encontrada")
+      return 0
+    }
+
+    console.log(`   Stock base de ${categoria.nombre_categoria_animal}: ${categoria.cantidad}`)
+    const stockBase = Number(categoria.cantidad)
+
+    // CASO 1: Editando una línea original
+    if (
+      editandoDetalle &&
+      editandoDetalle.es_original &&
+      editandoDetalle.categoria_animal_id.toString() === categoriaId
+    ) {
+      console.log("📝 EDITANDO LÍNEA ORIGINAL")
+      console.log(`   Cantidad original de la línea: ${editandoDetalle.cantidad_original}`)
+
+      // Para editar una línea original, el stock disponible es:
+      // stock base + cantidad original de esa línea específica
+      const stockParaEdicion = stockBase + editandoDetalle.cantidad_original
+      console.log(`   Stock disponible para edición: ${stockParaEdicion}`)
+      return Math.max(0, stockParaEdicion)
+    }
+
+    // CASO 2: Agregando nueva línea o editando línea nueva
+    console.log("➕ AGREGANDO NUEVA LÍNEA O EDITANDO LÍNEA NUEVA")
+
+    // Obtener los detalles originales iniciales para saber qué se había descontado
+    const parseDetalles = () => {
+      try {
+        if (typeof parte?.pd_detalles === "string") {
+          return JSON.parse(parte.pd_detalles)
+        }
+        return parte?.pd_detalles || {}
+      } catch {
+        return {}
+      }
+    }
+
+    const detallesOriginalesIniciales = parseDetalles()
+
+    // Calcular cuánto se había descontado originalmente para esta categoría
+    let cantidadOriginalTotalDescontada = 0
+    if (
+      detallesOriginalesIniciales?.detalles_animales &&
+      Array.isArray(detallesOriginalesIniciales.detalles_animales)
+    ) {
+      detallesOriginalesIniciales.detalles_animales.forEach((detalle: any) => {
+        const categoriaDetalle = categoriasExistentes.find(
+          (c) =>
+            c.nombre_categoria_animal.toLowerCase().trim() === (detalle.categoria_animal || "").toLowerCase().trim(),
+        )
+        if (categoriaDetalle && categoriaDetalle.categoria_animal_id.toString() === categoriaId) {
+          cantidadOriginalTotalDescontada += detalle.cantidad || 0
+          console.log(`   Cantidad original descontada: ${detalle.cantidad}`)
+        }
+      })
+    }
+
+    console.log(`   Total cantidad original descontada: ${cantidadOriginalTotalDescontada}`)
+
+    // Calcular cuánto de esa cantidad original aún está presente en los detalles actuales
+    let cantidadOriginalAunPresente = 0
+    detalles.forEach((detalle) => {
+      if (detalle.categoria_animal_id.toString() === categoriaId && detalle.es_original) {
+        cantidadOriginalAunPresente += detalle.cantidad_original
+        console.log(`   Cantidad original aún presente: ${detalle.cantidad_original} (detalle ${detalle.id})`)
+      }
+    })
+
+    console.log(`   Total cantidad original aún presente: ${cantidadOriginalAunPresente}`)
+
+    // La cantidad liberada es la diferencia entre lo que se había descontado y lo que aún está presente
+    const cantidadLiberada = cantidadOriginalTotalDescontada - cantidadOriginalAunPresente
+    console.log(`   Cantidad liberada: ${cantidadLiberada}`)
+
+    // Stock ajustado = stock base + cantidad liberada
+    const stockAjustado = stockBase + cantidadLiberada
+    console.log(`   Stock ajustado: ${stockAjustado}`)
+
+    // Restar cantidades usadas por detalles nuevos (no originales) y excluyendo el que estamos editando
+    let cantidadUsadaPorNuevos = 0
+    detalles.forEach((detalle) => {
+      if (
+        detalle.categoria_animal_id.toString() === categoriaId &&
+        !detalle.es_original &&
+        detalle.id !== editandoDetalle?.id
+      ) {
+        cantidadUsadaPorNuevos += detalle.cantidad
+        console.log(`   - Cantidad usada por detalle nuevo ${detalle.id}: ${detalle.cantidad}`)
+      }
+    })
+
+    console.log(`   Total cantidad usada por nuevos: ${cantidadUsadaPorNuevos}`)
+
+    const stockFinal = stockAjustado - cantidadUsadaPorNuevos
+    console.log(`   = Stock disponible final: ${stockFinal}`)
+
+    return Math.max(0, stockFinal)
+  }
 
   // Función para limpiar todos los estados
   const limpiarEstados = useCallback(() => {
@@ -195,7 +311,8 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
         hora: parte.pd_hora?.slice(0, 5) || "",
         nota: parte.pd_nota || "",
         detalles:
-          detalles?.detalles_animales?.map((detalle: any) => ({
+          detalles?.detalles_animales?.map((detalle: any, index: number) => ({
+            id: detalle.detalle_id?.toString() || `existing_${index}`,
             categoria_animal_id: detalle.categoria_animal_id || 0,
             categoria_nombre: detalle.categoria_animal,
             cantidad: detalle.cantidad,
@@ -203,6 +320,8 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
             tipo_peso: detalle.tipo_peso as "TOTAL" | "PROMEDIO",
             lote_id: detalle.lote_id || 0,
             lote_nombre: detalle.lote_id ? `Lote ${detalle.lote_id}` : "Sin lote",
+            es_original: true, // Marcar como original
+            cantidad_original: detalle.cantidad || 0, // Guardar cantidad original
           })) || [],
       }
 
@@ -378,6 +497,32 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
     if (!cantidad || Number.parseInt(cantidad) <= 0) errores.push("La cantidad debe ser mayor a 0")
     if (!peso || Number.parseInt(peso) <= 0) errores.push("El peso debe ser mayor a 0")
 
+    // VALIDACIÓN DE STOCK PARA FAENA
+    if (categoriaId && cantidad && Number.parseInt(cantidad) > 0) {
+      console.log("🔍 INICIANDO VALIDACIÓN DE STOCK PARA FAENA")
+      console.log("   Categoría seleccionada ID:", categoriaId)
+      console.log("   Cantidad solicitada:", cantidad)
+      console.log("   Editando detalle:", editandoDetalle?.id)
+
+      const stockDisponible = calcularStockDisponible(categoriaId)
+      const categoriaSeleccionada = categoriasExistentes.find((c) => c.categoria_animal_id.toString() === categoriaId)
+
+      console.log(`📊 Validación de stock para ${categoriaSeleccionada?.nombre_categoria_animal}:`)
+      console.log(`   Stock disponible calculado: ${stockDisponible}`)
+      console.log(`   Cantidad solicitada: ${cantidad}`)
+      console.log(`   ¿Supera el stock?: ${Number.parseInt(cantidad) > stockDisponible}`)
+
+      if (Number.parseInt(cantidad) > stockDisponible) {
+        const errorMsg =
+          `Stock insuficiente para ${categoriaSeleccionada?.nombre_categoria_animal}. ` +
+          `Disponible: ${stockDisponible}, solicitado: ${cantidad}`
+        console.log("❌ ERROR DE STOCK:", errorMsg)
+        errores.push(errorMsg)
+      } else {
+        console.log("✅ Stock suficiente")
+      }
+    }
+
     return errores
   }
 
@@ -385,6 +530,13 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
     const erroresValidacion = validarDetalle()
     if (erroresValidacion.length > 0) {
       setErroresDetalle(erroresValidacion)
+
+      // También mostrar toast
+      toast({
+        title: "Error en validación",
+        description: erroresValidacion.join(", "),
+        variant: "destructive",
+      })
       return
     }
 
@@ -394,6 +546,7 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
     if (!loteSeleccionado || !categoriaSeleccionada) return
 
     const nuevoDetalle: DetalleActividad = {
+      id: editandoDetalle ? editandoDetalle.id : Date.now().toString(),
       categoria_animal_id: Number.parseInt(categoriaId),
       categoria_nombre: categoriaSeleccionada.nombre_categoria_animal,
       cantidad: Number.parseInt(cantidad),
@@ -401,34 +554,39 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
       tipo_peso: tipoPeso,
       lote_id: Number.parseInt(loteId),
       lote_nombre: loteSeleccionado.nombre,
+      es_original: editandoDetalle ? editandoDetalle.es_original : false,
+      cantidad_original: editandoDetalle ? editandoDetalle.cantidad_original : 0,
     }
 
-    if (editandoDetalle !== null) {
-      const nuevosDetalles = [...detalles]
-      nuevosDetalles[editandoDetalle] = nuevoDetalle
-      setDetalles(nuevosDetalles)
+    if (editandoDetalle) {
+      // Actualizar detalle existente
+      const detallesActualizados = detalles.map((detalle) =>
+        detalle.id === editandoDetalle.id ? nuevoDetalle : detalle,
+      )
+      setDetalles(detallesActualizados)
       setEditandoDetalle(null)
     } else {
+      // Agregar nuevo detalle
       setDetalles([...detalles, nuevoDetalle])
     }
 
     limpiarFormularioDetalle()
   }
 
-  const editarDetalle = (index: number) => {
-    const detalle = detalles[index]
+  const editarDetalle = (detalle: DetalleActividad) => {
+    console.log("✏️ Iniciando edición de detalle:", detalle)
+    setEditandoDetalle(detalle)
     setLoteId(detalle.lote_id.toString())
     setCategoriaId(detalle.categoria_animal_id.toString())
     setCantidad(detalle.cantidad.toString())
     setPeso(detalle.peso.toString())
     setTipoPeso(detalle.tipo_peso)
-    setEditandoDetalle(index)
     setMostrarFormDetalle(true)
     setErroresDetalle([])
   }
 
-  const eliminarDetalle = (index: number) => {
-    setDetalles(detalles.filter((_, i) => i !== index))
+  const eliminarDetalle = (id: string) => {
+    setDetalles(detalles.filter((d) => d.id !== id))
   }
 
   const limpiarFormularioDetalle = () => {
@@ -631,22 +789,22 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
                   {mostrarFormDetalle && (
                     <div className="bg-gray-50 border rounded-lg p-6 mb-4">
                       {erroresDetalle.length > 0 && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
-                          <div className="flex items-center gap-2 text-red-800 font-medium mb-1">
-                            <AlertCircle className="w-4 h-4" />
-                            Errores encontrados:
-                          </div>
-                          <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
-                            {erroresDetalle.map((error, index) => (
-                              <li key={index}>{error}</li>
-                            ))}
-                          </ul>
-                        </div>
+                        <Alert variant="destructive" className="mb-4">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>
+                            <div className="font-medium mb-2">Campos faltantes:</div>
+                            <ul className="list-disc list-inside space-y-1">
+                              {erroresDetalle.map((error, index) => (
+                                <li key={index} className="text-sm">
+                                  {error}
+                                </li>
+                              ))}
+                            </ul>
+                          </AlertDescription>
+                        </Alert>
                       )}
 
-                      <h4 className="font-medium mb-4">
-                        {editandoDetalle !== null ? "Editar Detalle" : "Nuevo Detalle"}
-                      </h4>
+                      <h4 className="font-medium mb-4">{editandoDetalle ? "Editar Detalle" : "Nuevo Detalle"}</h4>
 
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -665,7 +823,14 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
                           </div>
 
                           <div>
-                            <Label className="text-sm font-medium text-gray-700">Categoría Animal *</Label>
+                            <Label className="text-sm font-medium text-gray-700">
+                              Categoría Animal *
+                              {categoriaId && (
+                                <span className="text-xs text-gray-500 ml-2">
+                                  (Stock disponible: {calcularStockDisponible(categoriaId)})
+                                </span>
+                              )}
+                            </Label>
                             <div className="mt-1">
                               <CustomCombobox
                                 options={opcionesCategorias}
@@ -734,7 +899,7 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
 
                       <div className="flex gap-2 mt-6">
                         <Button onClick={agregarDetalle} className="bg-green-600 hover:bg-green-700">
-                          {editandoDetalle !== null ? "Actualizar" : "Agregar"}
+                          {editandoDetalle ? "Actualizar" : "Agregar"}
                         </Button>
                         <Button variant="outline" onClick={limpiarFormularioDetalle}>
                           Cancelar
@@ -762,7 +927,7 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
                         <div className="divide-y">
                           {detalles.map((detalle, index) => (
                             <div
-                              key={index}
+                              key={detalle.id}
                               className="grid grid-cols-12 gap-2 p-3 text-sm hover:bg-gray-50 items-center"
                             >
                               <div className="col-span-2 font-medium truncate">{detalle.lote_nombre}</div>
@@ -774,7 +939,7 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => editarDetalle(index)}
+                                  onClick={() => editarDetalle(detalle)}
                                   className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                                 >
                                   <Edit className="w-3 h-3" />
@@ -782,7 +947,7 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => eliminarDetalle(index)}
+                                  onClick={() => eliminarDetalle(detalle.id)}
                                   className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                 >
                                   <Trash2 className="w-3 h-3" />
