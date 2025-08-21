@@ -25,6 +25,8 @@ import VerSalidaInsumosDrawer from "./ver-salida-insumos-drawer"
 import EditarEntradaInsumosDrawer from "./editar-entrada-insumos-drawer"
 import EditarSalidaInsumosDrawer from "./editar-salida-insumos-drawer"
 import { PermissionWrapper } from "@/components/permission-wrapper"
+import VerFaenaDrawer from "./ver-faena-drawer"
+import EditarFaenaDrawer from "./editar-faena-drawer"
 
 interface ParteDiarioCardProps {
   parte: ParteDiario
@@ -51,6 +53,10 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
   const [isEditarEntradaInsumosDrawerOpen, setIsEditarEntradaInsumosDrawerOpen] = useState(false)
   const [isVerSalidaInsumosDrawerOpen, setIsVerSalidaInsumosDrawerOpen] = useState(false)
   const [isEditarSalidaInsumosDrawerOpen, setIsEditarSalidaInsumosDrawerOpen] = useState(false)
+
+  // Nuevos estados para drawers de Faena
+  const [isVerFaenaDrawerOpen, setIsVerFaenaDrawerOpen] = useState(false)
+  const [isEditarFaenaDrawerOpen, setIsEditarFaenaDrawerOpen] = useState(false)
 
   const [tipoActividad, setTipoActividad] = useState<{ animales: string; insumos: string } | null>(null)
 
@@ -101,6 +107,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200"
       case "RELOTEO":
         return "bg-teal-100 text-teal-800 hover:bg-teal-200 border-teal-200"
+      case "FAENA":
+        return "bg-indigo-100 text-indigo-800 hover:bg-indigo-200 border-indigo-200"
       default:
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
     }
@@ -126,6 +134,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "Traslado"
       case "RELOTEO":
         return "Reloteo"
+      case "FAENA":
+        return "Faena"
       default:
         return tipo
     }
@@ -176,6 +186,12 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         setIsVerEntradaInsumosDrawerOpen(true)
       }
     } else if (parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id) {
+      // Check if it's a Faena activity (detalle_tipo_id: 36)
+      if (parte.pd_detalles.detalle_tipo_id === 36) {
+        setIsVerFaenaDrawerOpen(true)
+        return
+      }
+
       const tipo = await fetchTipoActividad(parte.pd_detalles.detalle_tipo_id)
       if (tipo) {
         // Actividad mixta: ambos animales e insumos son OBLIGATORIO o OPCIONAL
@@ -249,6 +265,12 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         })
       }
     } else if (parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id) {
+      // Check if it's a Faena activity (detalle_tipo_id: 36)
+      if (parte.pd_detalles.detalle_tipo_id === 36) {
+        setIsEditarFaenaDrawerOpen(true)
+        return
+      }
+
       const tipo = await fetchTipoActividad(parte.pd_detalles.detalle_tipo_id)
       if (tipo) {
         // Actividad mixta: ambos animales e insumos son OBLIGATORIO o OPCIONAL
@@ -456,6 +478,17 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       <EditarSalidaInsumosDrawer
         isOpen={isEditarSalidaInsumosDrawerOpen}
         onClose={() => setIsEditarSalidaInsumosDrawerOpen(false)}
+        parte={parte}
+        onSuccess={() => {
+          window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+        }}
+      />
+
+      {/* Drawers de Faena */}
+      <VerFaenaDrawer isOpen={isVerFaenaDrawerOpen} onClose={() => setIsVerFaenaDrawerOpen(false)} parte={parte} />
+      <EditarFaenaDrawer
+        isOpen={isEditarFaenaDrawerOpen}
+        onClose={() => setIsEditarFaenaDrawerOpen(false)}
         parte={parte}
         onSuccess={() => {
           window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))

@@ -32,6 +32,7 @@ import EntradaInsumosDrawer from "./entrada-insumos-drawer"
 import SalidaInsumosDrawer from "./salida-insumos-drawer"
 import TrasladoPotreroDrawer from "../../actividades/components/traslado-potrero-drawer"
 import ReloteoDrawer from "../../actividades/components/reloteo-drawer"
+import FaenaDrawer from "../../actividades/components/faena-drawer" // Importar FaenaDrawer
 
 interface TipoActividad {
   id: number
@@ -71,6 +72,8 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   const [actividadTrasladoSeleccionada, setActividadTrasladoSeleccionada] = useState<TipoActividad | null>(null)
   const [reloteoDrawerOpen, setReloteoDrawerOpen] = useState(false)
   const [actividadReloteoSeleccionada, setActividadReloteoSeleccionada] = useState<TipoActividad | null>(null)
+  const [faenaDrawerOpen, setFaenaDrawerOpen] = useState(false) // Estado para FaenaDrawer
+  const [actividadFaenaSeleccionada, setActividadFaenaSeleccionada] = useState<TipoActividad | null>(null) // Estado para FaenaDrawer
 
   const { currentEstablishment } = useCurrentEstablishment()
 
@@ -185,6 +188,14 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         console.log("✅ Actividad de reloteo detectada")
         setActividadReloteoSeleccionada(actividad)
         setReloteoDrawerOpen(true)
+        onClose()
+        return
+      }
+
+      if (actividad.id === 36 || actividad.nombre === "Faena") {
+        console.log("✅ Actividad de faena detectada")
+        setActividadFaenaSeleccionada(actividad)
+        setFaenaDrawerOpen(true)
         onClose()
         return
       }
@@ -608,6 +619,16 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
           onRefresh?.()
         }}
         tipoActividadId={actividadReloteoSeleccionada?.id}
+      />
+
+      <FaenaDrawer
+        isOpen={faenaDrawerOpen}
+        onClose={() => setFaenaDrawerOpen(false)}
+        actividadSeleccionada={actividadFaenaSeleccionada}
+        onSuccess={() => {
+          console.log("Faena guardada exitosamente")
+          onRefresh?.()
+        }}
       />
     </>
   )

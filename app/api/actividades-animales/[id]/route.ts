@@ -68,14 +68,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const body = await request.json()
     console.log("📝 Actualizando actividad para parte ID:", parteId, body)
 
-    const { tipo_actividad_id, fecha, hora, nota, user_id, detalles } = body
+    const { tipo_actividad_id, fecha, hora, nota, user_id, detalles, tipo_movimiento_animal_id } = body
 
     // Validaciones
     if (!tipo_actividad_id || !fecha || !hora) {
       return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 })
     }
 
-    // Actualizar la actividad principal (el parteId ES el ID de la actividad)
+    // Actualizar la actividad principal (sin tipo_movimiento_animal_id)
     const { error: updateError } = await supabase
       .from("pd_actividades")
       .update({
@@ -100,7 +100,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Error al eliminar detalles existentes" }, { status: 500 })
     }
 
-    // Insertar nuevos detalles si existen
+    // Insertar nuevos detalles si existen (con tipo_movimiento_animal_id en cada detalle)
     if (detalles && detalles.length > 0) {
       const detallesParaInsertar = detalles.map((detalle: any) => ({
         actividad_id: parteId,
@@ -109,7 +109,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         peso: detalle.peso,
         tipo_peso: detalle.tipo_peso,
         lote_id: detalle.lote_id,
+        tipo_movimiento_animal_id: tipo_movimiento_animal_id, // Guardar en cada detalle
       }))
+
+      console.log("🔄 Actualizando tipo_movimiento_animal_id en cada detalle:", tipo_movimiento_animal_id)
 
       const { error: insertError } = await supabase.from("pd_actividad_animales").insert(detallesParaInsertar)
 

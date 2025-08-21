@@ -14,23 +14,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "establecimiento_id is required" }, { status: 400 })
     }
 
-    // Query the view with the inactivo filter
+    // Get ALL lots (active and inactive) for destination selection
     const { data, error } = await supabaseServer
-      .from("pd_lote_stock_view")
-      .select("*")
+      .from("pd_lotes")
+      .select("id, nombre, inactivo")
       .eq("establecimiento_id", establecimientoId)
-      .eq("inactivo", false) // Only show active lots (inactivo = FALSE)
-      .order("lote_id")
+      .order("id")
 
     if (error) {
-      console.error("Error fetching lotes stock:", error)
-      return NextResponse.json({ error: "Error fetching lotes stock" }, { status: 500 })
+      console.error("Error fetching all lotes:", error)
+      return NextResponse.json({ error: "Error fetching all lotes" }, { status: 500 })
     }
 
-    // Filter out lots with no animals (empty pd_detalles)
-    const lotesWithAnimals = data?.filter((lote) => lote.pd_detalles && lote.pd_detalles.length > 0) || []
-
-    return NextResponse.json(lotesWithAnimals)
+    return NextResponse.json(data || [])
   } catch (error) {
     console.error("Unexpected error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

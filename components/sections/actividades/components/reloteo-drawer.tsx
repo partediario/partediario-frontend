@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils"
 interface LoteStock {
   lote_id: number
   lote_nombre: string
+  inactivo: boolean
   pd_detalles: Array<{
     categoria_animal_id: number
     categoria_animal_nombre: string
@@ -31,6 +32,12 @@ interface LoteStock {
     seleccionada: boolean
     lote_destino_id?: number
   }>
+}
+
+interface LoteDestino {
+  id: number
+  nombre: string
+  inactivo: boolean
 }
 
 interface ReloteoDrawerProps {
@@ -43,6 +50,7 @@ interface ReloteoDrawerProps {
 export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActividadId }: ReloteoDrawerProps) {
   const [loading, setLoading] = useState(false)
   const [lotes, setLotes] = useState<LoteStock[]>([])
+  const [todosLotes, setTodosLotes] = useState<LoteDestino[]>([]) // Para los selectores de destino
   const [fecha, setFecha] = useState<Date>(new Date())
   const [hora, setHora] = useState<string>(new Date().toTimeString().slice(0, 5))
   const [nota, setNota] = useState("")
@@ -80,6 +88,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
   useEffect(() => {
     if (isOpen && establecimientoSeleccionado && empresaSeleccionada) {
       loadLotes()
+      loadTodosLotes()
     }
   }, [isOpen, establecimientoSeleccionado, empresaSeleccionada])
 
@@ -90,6 +99,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
       setHora(new Date().toTimeString().slice(0, 5))
       setNota("")
       setLotes([])
+      setTodosLotes([])
       setSearchCategoria("")
       setLotesSeleccionados([])
       setFiltroLoteAbierto(false)
@@ -114,6 +124,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
       const lotesData: LoteStock[] = await response.json()
 
       // Initialize cada categoria con valores por defecto
+      // Note: The API now already filters out inactive lots, so no need to filter here
       const lotesWithDefaults = lotesData.map((lote) => ({
         ...lote,
         pd_detalles: lote.pd_detalles
@@ -136,6 +147,31 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadTodosLotes = async () => {
+    if (!establecimientoSeleccionado) {
+      console.error("No hay establecimiento seleccionado")
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/lotes-todos?establecimiento_id=${establecimientoSeleccionado}`)
+
+      if (!response.ok) {
+        throw new Error("Error al cargar todos los lotes")
+      }
+
+      const todosLotesData: LoteDestino[] = await response.json()
+      setTodosLotes(todosLotesData.sort((a, b) => a.id - b.id))
+    } catch (error) {
+      console.error("Error loading todos los lotes:", error)
+      toast({
+        title: "Error",
+        description: "Error al cargar lotes de destino",
+        variant: "destructive",
+      })
     }
   }
 
@@ -244,12 +280,13 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
   }
 
   const getOpcionesLoteDestino = (loteOrigenId: number) => {
-    return lotes
-      .filter((lote) => lote.lote_id !== loteOrigenId)
-      .sort((a, b) => a.lote_id - b.lote_id)
+    // Use todosLotes (includes active and inactive) and exclude only the origin lot
+    return todosLotes
+      .filter((lote) => lote.id !== loteOrigenId)
+      .sort((a, b) => a.id - b.id)
       .map((lote) => ({
-        value: lote.lote_id.toString(),
-        label: lote.lote_nombre,
+        value: lote.id.toString(),
+        label: lote.inactivo ? `${lote.nombre} (Inactivo)` : lote.nombre,
       }))
   }
 
@@ -281,11 +318,11 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
     lotes.forEach((lote) => {
       lote.pd_detalles.forEach((detalle) => {
         if (detalle.seleccionada && detalle.cantidad_trasladar > 0 && detalle.lote_destino_id) {
-          const loteDestino = lotes.find((l) => l.lote_id === detalle.lote_destino_id)
+          const loteDestino = todosLotes.find((l) => l.id === detalle.lote_destino_id)
           if (loteDestino) {
             movimientos.push({
               loteOrigen: lote.lote_nombre,
-              loteDestino: loteDestino.lote_nombre,
+              loteDestino: loteDestino.nombre,
               categoria: detalle.categoria_animal_nombre,
               cantidad: detalle.cantidad_trasladar,
             })
@@ -590,6 +627,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
     setHora(new Date().toTimeString().slice(0, 5))
     setNota("")
     setLotes([])
+    setTodosLotes([])
     setSearchCategoria("")
     setLotesSeleccionados([])
     setFiltroLoteAbierto(false)
