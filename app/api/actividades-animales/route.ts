@@ -6,12 +6,13 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SE
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    console.log("📝 Creando nueva actividad con animales:", body)
+    console.log("📝 Datos recibidos para actividad:", body)
 
-    const { tipo_actividad_id, fecha, hora, nota, user_id, detalles, tipo_movimiento_animal_id } = body
+    const { establecimiento_id, tipo_actividad_id, fecha, hora, nota, user_id, detalles, tipo_movimiento_animal_id } =
+      body
 
     // Validaciones
-    if (!tipo_actividad_id || !fecha || !hora || !user_id) {
+    if (!establecimiento_id || !tipo_actividad_id || !fecha || !hora) {
       return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 })
     }
 
@@ -19,27 +20,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Debe agregar al menos un detalle" }, { status: 400 })
     }
 
-    // Crear la actividad principal (sin tipo_movimiento_animal_id)
+    // Preparar datos para insertar en pd_actividades (sin tipo_movimiento_animal_id)
+    const actividadData = {
+      establecimiento_id,
+      tipo_actividad_id,
+      fecha,
+      hora,
+      nota: nota || null,
+      user_id,
+    }
+
+    // Insertar cabecera de actividad
+    console.log("💾 Insertando cabecera de actividad...")
     const { data: actividad, error: actividadError } = await supabase
       .from("pd_actividades")
-      .insert({
-        tipo_actividad_id,
-        fecha,
-        hora,
-        nota: nota || null,
-        user_id,
-      })
+      .insert(actividadData)
       .select()
       .single()
 
     if (actividadError) {
-      console.error("❌ Error creando actividad:", actividadError)
-      return NextResponse.json({ error: "Error al crear la actividad" }, { status: 500 })
+      console.error("❌ Error insertando actividad:", actividadError)
+      return NextResponse.json({ error: "Error al guardar la actividad" }, { status: 500 })
     }
 
     console.log("✅ Actividad creada:", actividad)
 
-    // Crear los detalles con tipo_movimiento_animal_id en cada uno
+    // Insertar detalles de animales (ahora con tipo_movimiento_animal_id en cada detalle)
+    console.log("💾 Insertando detalles de animales...")
     const detallesParaInsertar = detalles.map((detalle: any) => ({
       actividad_id: actividad.id,
       categoria_animal_id: detalle.categoria_animal_id,
@@ -47,29 +54,32 @@ export async function POST(request: NextRequest) {
       peso: detalle.peso,
       tipo_peso: detalle.tipo_peso,
       lote_id: detalle.lote_id,
-      tipo_movimiento_animal_id: tipo_movimiento_animal_id, // Guardar en cada detalle
+      tipo_movimiento_animal_id: tipo_movimiento_animal_id, // Ahora se guarda en cada detalle
     }))
 
     console.log("🔄 Guardando tipo_movimiento_animal_id en cada detalle:", tipo_movimiento_animal_id)
 
-    const { error: detallesError } = await supabase.from("pd_actividad_animales").insert(detallesParaInsertar)
+    const { data: detallesInsertados, error: detallesError } = await supabase
+      .from("pd_actividad_animales")
+      .insert(detallesParaInsertar)
+      .select()
 
     if (detallesError) {
-      console.error("❌ Error creando detalles:", detallesError)
-      // Rollback: eliminar la actividad creada
+      console.error("❌ Error insertando detalles:", detallesError)
+      // Si falla, eliminar la actividad creada
       await supabase.from("pd_actividades").delete().eq("id", actividad.id)
-      return NextResponse.json({ error: "Error al crear los detalles" }, { status: 500 })
+      return NextResponse.json({ error: "Error al guardar los detalles de la actividad" }, { status: 500 })
     }
 
-    console.log("✅ Actividad con animales creada exitosamente")
+    console.log("✅ Detalles insertados:", detallesInsertados)
 
     return NextResponse.json({
       success: true,
-      actividad_id: actividad.id,
-      message: "Actividad creada correctamente",
+      actividad,
+      detalles: detallesInsertados,
     })
   } catch (error) {
-    console.error("❌ Error en API actividades-animales POST:", error)
+    console.error("❌ Error en API actividades-animales:", error)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
