@@ -29,6 +29,8 @@ import VerFaenaDrawer from "./ver-faena-drawer"
 import EditarFaenaDrawer from "./editar-faena-drawer"
 import VerLimpiezaBebederosDrawer from "./ver-limpieza-bebederos-drawer"
 import EditarLimpiezaBebederosDrawer from "./editar-limpieza-bebederos-drawer"
+import VerReparacionAlambradosDrawer from "./ver-reparacion-alambrados-drawer"
+import EditarReparacionAlambradosDrawer from "./editar-reparacion-alambrados-drawer"
 
 interface ParteDiarioCardProps {
   parte: ParteDiario
@@ -63,6 +65,9 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
   // Nuevos estados para drawers de Limpieza de Bebederos
   const [isVerLimpiezaBebederosDrawerOpen, setIsVerLimpiezaBebederosDrawerOpen] = useState(false)
   const [isEditarLimpiezaBebederosDrawerOpen, setIsEditarLimpiezaBebederosDrawerOpen] = useState(false)
+
+  const [isVerReparacionAlambradosDrawerOpen, setIsVerReparacionAlambradosDrawerOpen] = useState(false)
+  const [isEditarReparacionAlambradosDrawerOpen, setIsEditarReparacionAlambradosDrawerOpen] = useState(false)
 
   const [tipoActividad, setTipoActividad] = useState<{ animales: string; insumos: string } | null>(null)
 
@@ -117,6 +122,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "bg-indigo-100 text-indigo-800 hover:bg-indigo-200 border-indigo-200"
       case "LIMPIEZA DE BEBEDEROS":
         return "bg-cyan-100 text-cyan-800 hover:bg-cyan-200 border-cyan-200"
+      case "REPARACION DE ALAMBRADOS":
+        return "bg-pink-100 text-pink-800 hover:bg-pink-200 border-pink-200"
       default:
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
     }
@@ -146,6 +153,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "Faena"
       case "LIMPIEZA DE BEBEDEROS":
         return "Limpieza de Bebederos"
+      case "REPARACION DE ALAMBRADOS":
+        return "Reparación de Alambrados"
       default:
         return tipo
     }
@@ -204,6 +213,11 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
 
       if (parte.pd_detalles.detalle_tipo_id === 2) {
         setIsVerLimpiezaBebederosDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 1) {
+        setIsVerReparacionAlambradosDrawerOpen(true)
         return
       }
 
@@ -288,6 +302,11 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
 
       if (parte.pd_detalles.detalle_tipo_id === 2) {
         setIsEditarLimpiezaBebederosDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 1) {
+        setIsEditarReparacionAlambradosDrawerOpen(true)
         return
       }
 
@@ -524,6 +543,21 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       <EditarLimpiezaBebederosDrawer
         isOpen={isEditarLimpiezaBebederosDrawerOpen}
         onClose={() => setIsEditarLimpiezaBebederosDrawerOpen(false)}
+        parte={parte}
+        onSuccess={() => {
+          window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+        }}
+      />
+
+      {/* Drawers de Reparación de Alambrados */}
+      <VerReparacionAlambradosDrawer
+        isOpen={isVerReparacionAlambradosDrawerOpen}
+        onClose={() => setIsVerReparacionAlambradosDrawerOpen(false)}
+        parte={parte}
+      />
+      <EditarReparacionAlambradosDrawer
+        isOpen={isEditarReparacionAlambradosDrawerOpen}
+        onClose={() => setIsEditarReparacionAlambradosDrawerOpen(false)}
         parte={parte}
         onSuccess={() => {
           window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))

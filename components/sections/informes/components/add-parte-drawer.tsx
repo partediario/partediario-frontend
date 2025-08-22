@@ -34,6 +34,7 @@ import TrasladoPotreroDrawer from "../../actividades/components/traslado-potrero
 import ReloteoDrawer from "../../actividades/components/reloteo-drawer"
 import FaenaDrawer from "../../actividades/components/faena-drawer" // Importar FaenaDrawer
 import LimpiezaBebederosDrawer from "../../actividades/components/limpieza-bebederos-drawer" // Importar LimpiezaBebederosDrawer
+import ReparacionAlambradosDrawer from "../../actividades/components/reparacion-alambrados-drawer"
 
 interface TipoActividad {
   id: number
@@ -78,6 +79,9 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   const [limpiezaBebederosDrawerOpen, setLimpiezaBebederosDrawerOpen] = useState(false) // Estado para LimpiezaBebederosDrawer
   const [actividadLimpiezaBebederosSeleccionada, setActividadLimpiezaBebederosSeleccionada] =
     useState<TipoActividad | null>(null) // Estado para LimpiezaBebederosDrawer
+  const [reparacionAlambradosDrawerOpen, setReparacionAlambradosDrawerOpen] = useState(false)
+  const [actividadReparacionAlambradosSeleccionada, setActividadReparacionAlambradosSeleccionada] =
+    useState<TipoActividad | null>(null)
 
   const { currentEstablishment } = useCurrentEstablishment()
 
@@ -163,6 +167,14 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
     if (actividad) {
       console.log("🔍 Verificando actividad:", actividad)
       console.log("🆔 ID de actividad:", actividad.id)
+
+      if (actividad.id === 1 || actividad.nombre === "Reparación de Alambrados") {
+        console.log("✅ Actividad de reparación de alambrados detectada")
+        setActividadReparacionAlambradosSeleccionada(actividad)
+        setReparacionAlambradosDrawerOpen(true)
+        onClose()
+        return
+      }
 
       if (actividad.id === 2 || actividad.nombre === "Limpieza de Bebederos") {
         console.log("✅ Actividad de limpieza de bebederos detectada")
@@ -649,6 +661,16 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         actividadSeleccionada={actividadLimpiezaBebederosSeleccionada}
         onSuccess={() => {
           console.log("Limpieza de bebederos guardada exitosamente")
+          onRefresh?.()
+        }}
+      />
+
+      <ReparacionAlambradosDrawer
+        isOpen={reparacionAlambradosDrawerOpen}
+        onClose={() => setReparacionAlambradosDrawerOpen(false)}
+        actividadSeleccionada={actividadReparacionAlambradosSeleccionada}
+        onSuccess={() => {
+          console.log("Reparación de alambrados guardada exitosamente")
           onRefresh?.()
         }}
       />

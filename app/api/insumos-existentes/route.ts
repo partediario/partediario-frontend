@@ -7,18 +7,23 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const establecimientoId = searchParams.get("establecimiento_id")
+    const claseInsumoId = searchParams.get("clase_insumo_id")
 
     if (!establecimientoId) {
       return NextResponse.json({ error: "Se requiere establecimiento_id" }, { status: 400 })
     }
 
-    // Usar la nueva vista insumos_existentes_view
-    const { data: insumosExistentes, error: insumosError } = await supabase
+    let query = supabase
       .from("insumos_existentes_view")
-      .select("insumo_id, nombre_insumo, establecimiento_id, cantidad_disponible, unidad_medida_uso")
+      .select("insumo_id, nombre_insumo, establecimiento_id, cantidad_disponible, unidad_medida_uso, clase_insumo_id")
       .eq("establecimiento_id", establecimientoId)
       .gte("cantidad_disponible", 0)
-      .order("insumo_id", { ascending: true })
+
+    if (claseInsumoId) {
+      query = query.eq("clase_insumo_id", claseInsumoId)
+    }
+
+    const { data: insumosExistentes, error: insumosError } = await query.order("insumo_id", { ascending: true })
 
     if (insumosError) {
       console.error("Error obteniendo insumos existentes:", insumosError)
@@ -28,7 +33,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Obtener unidades de medida
     const { data: unidades, error: unidadesError } = await supabase
       .from("pd_unidad_medida_insumos")
       .select("id, nombre")
@@ -47,6 +51,7 @@ export async function GET(request: NextRequest) {
       cantidad_disponible: insumo.cantidad_disponible,
       unidad_medida: unidadesMap.get(insumo.unidad_medida_uso) || "Unidad",
       unidad_medida_uso_id: insumo.unidad_medida_uso,
+      clase_insumo_id: insumo.clase_insumo_id,
     }))
 
     return NextResponse.json({
