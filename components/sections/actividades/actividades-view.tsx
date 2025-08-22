@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/hooks/use-toast"
 import { useEstablishment } from "@/contexts/establishment-context"
+import LimpiezaBebederosDrawer from "./components/limpieza-bebederos-drawer"
 
 // Interfaces para los datos de la API
 interface Actividad {
@@ -146,6 +147,9 @@ export default function ActividadesView() {
   const [vistaGraficoTipos, setVistaGraficoTipos] = useState(false)
   const [vistaTotalActividades, setVistaTotalActividades] = useState(false)
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<CategoriaActividad | null>(null)
+
+  const [isLimpiezaBebederosDrawerOpen, setIsLimpiezaBebederosDrawerOpen] = useState(false)
+  const [actividadLimpiezaBebederos, setActividadLimpiezaBebederos] = useState<any>(null)
 
   const { toast } = useToast()
   const { establecimientoSeleccionado: contextEstablecimiento } = useEstablishment()
@@ -1150,8 +1154,20 @@ export default function ActividadesView() {
                             key={`${actividad.actividad_id}-${actividad.fecha}-${actividad.hora}`}
                             className="hover:bg-gray-50 cursor-pointer"
                             onClick={() => {
-                              setActividadSeleccionada(actividad)
-                              setVistaDetalle(true)
+                              if (actividad.tipo_actividad_id === 2) {
+                                // Abrir drawer de limpieza de bebederos
+                                setActividadLimpiezaBebederos({
+                                  id: actividad.tipo_actividad_id,
+                                  nombre: actividad.tipo_actividad_nombre,
+                                  ubicacion: actividad.tipo_actividad_ubicacion_formateada,
+                                  descripcion: "",
+                                })
+                                setIsLimpiezaBebederosDrawerOpen(true)
+                              } else {
+                                // Abrir drawer de detalle normal
+                                setActividadSeleccionada(actividad)
+                                setVistaDetalle(true)
+                              }
                             }}
                           >
                             <TableCell className="py-3">
@@ -1526,6 +1542,18 @@ export default function ActividadesView() {
             </div>
           </DrawerContent>
         </Drawer>
+
+        <LimpiezaBebederosDrawer
+          isOpen={isLimpiezaBebederosDrawerOpen}
+          onClose={() => {
+            setIsLimpiezaBebederosDrawerOpen(false)
+            setActividadLimpiezaBebederos(null)
+          }}
+          onSuccess={() => {
+            cargarActividades()
+          }}
+          actividadSeleccionada={actividadLimpiezaBebederos}
+        />
       </div>
     </div>
   )

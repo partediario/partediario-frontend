@@ -27,6 +27,8 @@ import EditarSalidaInsumosDrawer from "./editar-salida-insumos-drawer"
 import { PermissionWrapper } from "@/components/permission-wrapper"
 import VerFaenaDrawer from "./ver-faena-drawer"
 import EditarFaenaDrawer from "./editar-faena-drawer"
+import VerLimpiezaBebederosDrawer from "./ver-limpieza-bebederos-drawer"
+import EditarLimpiezaBebederosDrawer from "./editar-limpieza-bebederos-drawer"
 
 interface ParteDiarioCardProps {
   parte: ParteDiario
@@ -57,6 +59,10 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
   // Nuevos estados para drawers de Faena
   const [isVerFaenaDrawerOpen, setIsVerFaenaDrawerOpen] = useState(false)
   const [isEditarFaenaDrawerOpen, setIsEditarFaenaDrawerOpen] = useState(false)
+
+  // Nuevos estados para drawers de Limpieza de Bebederos
+  const [isVerLimpiezaBebederosDrawerOpen, setIsVerLimpiezaBebederosDrawerOpen] = useState(false)
+  const [isEditarLimpiezaBebederosDrawerOpen, setIsEditarLimpiezaBebederosDrawerOpen] = useState(false)
 
   const [tipoActividad, setTipoActividad] = useState<{ animales: string; insumos: string } | null>(null)
 
@@ -109,6 +115,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "bg-teal-100 text-teal-800 hover:bg-teal-200 border-teal-200"
       case "FAENA":
         return "bg-indigo-100 text-indigo-800 hover:bg-indigo-200 border-indigo-200"
+      case "LIMPIEZA DE BEBEDEROS":
+        return "bg-cyan-100 text-cyan-800 hover:bg-cyan-200 border-cyan-200"
       default:
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
     }
@@ -136,6 +144,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "Reloteo"
       case "FAENA":
         return "Faena"
+      case "LIMPIEZA DE BEBEDEROS":
+        return "Limpieza de Bebederos"
       default:
         return tipo
     }
@@ -189,6 +199,11 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       // Check if it's a Faena activity (detalle_tipo_id: 36)
       if (parte.pd_detalles.detalle_tipo_id === 36) {
         setIsVerFaenaDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 2) {
+        setIsVerLimpiezaBebederosDrawerOpen(true)
         return
       }
 
@@ -268,6 +283,11 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       // Check if it's a Faena activity (detalle_tipo_id: 36)
       if (parte.pd_detalles.detalle_tipo_id === 36) {
         setIsEditarFaenaDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 2) {
+        setIsEditarLimpiezaBebederosDrawerOpen(true)
         return
       }
 
@@ -489,6 +509,21 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       <EditarFaenaDrawer
         isOpen={isEditarFaenaDrawerOpen}
         onClose={() => setIsEditarFaenaDrawerOpen(false)}
+        parte={parte}
+        onSuccess={() => {
+          window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+        }}
+      />
+
+      {/* Drawers de Limpieza de Bebederos */}
+      <VerLimpiezaBebederosDrawer
+        isOpen={isVerLimpiezaBebederosDrawerOpen}
+        onClose={() => setIsVerLimpiezaBebederosDrawerOpen(false)}
+        parte={parte}
+      />
+      <EditarLimpiezaBebederosDrawer
+        isOpen={isEditarLimpiezaBebederosDrawerOpen}
+        onClose={() => setIsEditarLimpiezaBebederosDrawerOpen(false)}
         parte={parte}
         onSuccess={() => {
           window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))

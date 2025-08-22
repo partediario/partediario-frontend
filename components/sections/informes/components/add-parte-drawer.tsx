@@ -33,6 +33,7 @@ import SalidaInsumosDrawer from "./salida-insumos-drawer"
 import TrasladoPotreroDrawer from "../../actividades/components/traslado-potrero-drawer"
 import ReloteoDrawer from "../../actividades/components/reloteo-drawer"
 import FaenaDrawer from "../../actividades/components/faena-drawer" // Importar FaenaDrawer
+import LimpiezaBebederosDrawer from "../../actividades/components/limpieza-bebederos-drawer" // Importar LimpiezaBebederosDrawer
 
 interface TipoActividad {
   id: number
@@ -74,6 +75,9 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   const [actividadReloteoSeleccionada, setActividadReloteoSeleccionada] = useState<TipoActividad | null>(null)
   const [faenaDrawerOpen, setFaenaDrawerOpen] = useState(false) // Estado para FaenaDrawer
   const [actividadFaenaSeleccionada, setActividadFaenaSeleccionada] = useState<TipoActividad | null>(null) // Estado para FaenaDrawer
+  const [limpiezaBebederosDrawerOpen, setLimpiezaBebederosDrawerOpen] = useState(false) // Estado para LimpiezaBebederosDrawer
+  const [actividadLimpiezaBebederosSeleccionada, setActividadLimpiezaBebederosSeleccionada] =
+    useState<TipoActividad | null>(null) // Estado para LimpiezaBebederosDrawer
 
   const { currentEstablishment } = useCurrentEstablishment()
 
@@ -159,6 +163,14 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
     if (actividad) {
       console.log("🔍 Verificando actividad:", actividad)
       console.log("🆔 ID de actividad:", actividad.id)
+
+      if (actividad.id === 2 || actividad.nombre === "Limpieza de Bebederos") {
+        console.log("✅ Actividad de limpieza de bebederos detectada")
+        setActividadLimpiezaBebederosSeleccionada(actividad)
+        setLimpiezaBebederosDrawerOpen(true)
+        onClose()
+        return
+      }
 
       if (actividad.id === 37) {
         console.log("✅ Actividad de reclasificación por categoría detectada (ID 37)")
@@ -627,6 +639,16 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         actividadSeleccionada={actividadFaenaSeleccionada}
         onSuccess={() => {
           console.log("Faena guardada exitosamente")
+          onRefresh?.()
+        }}
+      />
+
+      <LimpiezaBebederosDrawer
+        isOpen={limpiezaBebederosDrawerOpen}
+        onClose={() => setLimpiezaBebederosDrawerOpen(false)}
+        actividadSeleccionada={actividadLimpiezaBebederosSeleccionada}
+        onSuccess={() => {
+          console.log("Limpieza de bebederos guardada exitosamente")
           onRefresh?.()
         }}
       />
