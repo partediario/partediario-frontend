@@ -242,18 +242,21 @@ export default function EditarSalidaAnimalesDrawer({
   }
 
   // Función para limpiar el formulario de detalle
+  const [loteId, setLoteId] = useState("")
+  const [categoriaId, setCategoriaId] = useState("")
+  const [cantidad, setCantidad] = useState("")
+  const [peso, setPeso] = useState("")
+  const [tipoPeso, setTipoPeso] = useState<"TOTAL" | "PROMEDIO">("TOTAL")
+
   const limpiarFormularioDetalle = () => {
-    console.log("🧹 Limpiando formulario de detalle...")
-    setNuevoDetalle({
-      tipo_movimiento_id: "",
-      categoria_id: "",
-      cantidad: 0,
-      peso: 0,
-      tipo_peso: "TOTAL",
-    })
+    setLoteId("")
+    setCategoriaId("")
+    setCantidad("")
+    setPeso("")
+    setTipoPeso("TOTAL")
+    setMostrarFormDetalle(false)
     setEditandoDetalle(null)
     setErroresDetalle([])
-    console.log("✅ Formulario de detalle limpiado")
   }
 
   // Obtener establecimiento_id y empresa_id actual del localStorage

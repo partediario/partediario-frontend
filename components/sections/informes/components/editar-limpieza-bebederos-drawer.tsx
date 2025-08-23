@@ -72,7 +72,6 @@ export default function EditarLimpiezaBebederosDrawer({
 
   // Función para limpiar todos los estados
   const limpiarEstados = useCallback(() => {
-    console.log("🧹 Limpiando todos los estados")
     setTipoActividadId("")
     setTipoActividadNombre("")
     setFecha(new Date())
@@ -251,7 +250,6 @@ export default function EditarLimpiezaBebederosDrawer({
       console.log("🔓 Drawer abierto - iniciando carga...")
       inicializarDrawer()
     } else {
-      console.log("🔒 Drawer cerrado - limpiando estados...")
       limpiarEstados()
     }
   }, [isOpen, inicializarDrawer, limpiarEstados])

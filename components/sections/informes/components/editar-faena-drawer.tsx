@@ -214,7 +214,6 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
 
   // Función para limpiar todos los estados
   const limpiarEstados = useCallback(() => {
-    console.log("🧹 Limpiando todos los estados")
     setTipoActividadId("")
     setTipoActividadNombre("")
     setFecha(new Date())
@@ -441,7 +440,6 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
       console.log("🔓 Drawer abierto - iniciando carga...")
       inicializarDrawer()
     } else {
-      console.log("🔒 Drawer cerrado - limpiando estados...")
       limpiarEstados()
     }
   }, [isOpen, inicializarDrawer, limpiarEstados])
