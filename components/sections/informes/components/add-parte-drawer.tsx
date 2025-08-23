@@ -35,6 +35,7 @@ import ReloteoDrawer from "../../actividades/components/reloteo-drawer"
 import FaenaDrawer from "../../actividades/components/faena-drawer" // Importar FaenaDrawer
 import LimpiezaBebederosDrawer from "../../actividades/components/limpieza-bebederos-drawer" // Importar LimpiezaBebederosDrawer
 import ReparacionAlambradosDrawer from "../../actividades/components/reparacion-alambrados-drawer"
+import SeñaladaDrawer from "../../actividades/components/senalada-drawer"
 
 interface TipoActividad {
   id: number
@@ -82,6 +83,8 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   const [reparacionAlambradosDrawerOpen, setReparacionAlambradosDrawerOpen] = useState(false)
   const [actividadReparacionAlambradosSeleccionada, setActividadReparacionAlambradosSeleccionada] =
     useState<TipoActividad | null>(null)
+  const [senaladadDrawerOpen, setSenaladadDrawerOpen] = useState(false)
+  const [actividadSenaladadSeleccionada, setActividadSenaladadSeleccionada] = useState<TipoActividad | null>(null)
 
   const { currentEstablishment } = useCurrentEstablishment()
 
@@ -184,6 +187,14 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         return
       }
 
+      if (actividad.id === 8 || actividad.nombre === "Señalada") {
+        console.log("✅ Actividad de señalada detectada")
+        setActividadSenaladadSeleccionada(actividad)
+        setSenaladadDrawerOpen(true)
+        onClose()
+        return
+      }
+
       if (actividad.id === 37) {
         console.log("✅ Actividad de reclasificación por categoría detectada (ID 37)")
         setActividadSeleccionada(actividad)
@@ -275,7 +286,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
     return acc
   }, {} as ActividadesPorUbicacion)
 
-  // Separar actividades de administración por tipo
   const actividadesAdministracion = actividadesPorUbicacion["ADMINISTRACION"] || []
   const actividadesReclasificacion = actividadesAdministracion.filter((act) => act.id === 37 || act.id === 38)
   const actividadesGestionPotreros = actividadesAdministracion.filter((act) => act.id === 5 || act.id === 11)
@@ -337,7 +347,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
                   </div>
                 </button>
 
-                {/* Reclasificación de Animales */}
                 {actividadesReclasificacion.length > 0 && (
                   <div className="space-y-1">
                     <button
@@ -374,7 +383,6 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
                   </div>
                 )}
 
-                {/* Gestión de Potreros/Lotes */}
                 {actividadesGestionPotreros.length > 0 && (
                   <div className="space-y-1">
                     <button
@@ -671,6 +679,16 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         actividadSeleccionada={actividadReparacionAlambradosSeleccionada}
         onSuccess={() => {
           console.log("Reparación de alambrados guardada exitosamente")
+          onRefresh?.()
+        }}
+      />
+
+      <SeñaladaDrawer
+        isOpen={senaladadDrawerOpen}
+        onClose={() => setSenaladadDrawerOpen(false)}
+        actividadSeleccionada={actividadSenaladadSeleccionada}
+        onSuccess={() => {
+          console.log("Señalada guardada exitosamente")
           onRefresh?.()
         }}
       />

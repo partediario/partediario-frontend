@@ -9,7 +9,20 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     console.log("📋 Obteniendo detalles de actividad para parte ID:", parteId)
 
-    // Obtener la actividad principal usando el ID del parte diario
+    const { data: parteData, error: parteError } = await supabase
+      .from("pd_partes_diarios")
+      .select("pd_actividad_id")
+      .eq("pd_id", parteId)
+      .eq("pd_tipo", "ACTIVIDAD")
+      .single()
+
+    if (parteError || !parteData?.pd_actividad_id) {
+      console.error("❌ Error obteniendo parte diario:", parteError)
+      return NextResponse.json({ error: "Parte diario no encontrado" }, { status: 404 })
+    }
+
+    const actividadId = parteData.pd_actividad_id
+
     const { data: actividad, error: actividadError } = await supabase
       .from("pd_actividades")
       .select(`
@@ -21,7 +34,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           animales
         )
       `)
-      .eq("id", parteId)
+      .eq("id", actividadId)
       .single()
 
     if (actividadError) {
@@ -43,7 +56,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           nombre
         )
       `)
-      .eq("actividad_id", actividad.id)
+      .eq("actividad_id", actividadId)
 
     if (detallesError) {
       console.error("❌ Error obteniendo detalles:", detallesError)
@@ -66,16 +79,34 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   try {
     const parteId = params.id
     const body = await request.json()
-    console.log("📝 Actualizando actividad para parte ID:", parteId, body)
+    console.log("📝 [v0] Actualizando actividad para parte ID:", parteId)
+    console.log("📝 [v0] Body recibido:", JSON.stringify(body, null, 2))
 
-    const { tipo_actividad_id, fecha, hora, nota, user_id, detalles, tipo_movimiento_animal_id } = body
+    const { tipo_actividad_id, fecha, hora, nota, user_id, detalles, tipo_movimiento_animal_id, establecimiento_id } =
+      body
 
-    // Validaciones
-    if (!tipo_actividad_id || !fecha || !hora) {
+    if (!tipo_actividad_id || !fecha || !hora || !establecimiento_id) {
+      console.error("❌ [v0] Campos faltantes:", { tipo_actividad_id, fecha, hora, establecimiento_id })
       return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 })
     }
 
-    // Actualizar la actividad principal (sin tipo_movimiento_animal_id)
+    const { data: parteData, error: parteError } = await supabase
+      .from("pd_partes_diarios")
+      .select("pd_actividad_id")
+      .eq("pd_id", parteId)
+      .eq("pd_tipo", "ACTIVIDAD")
+      .single()
+
+    console.log("📋 [v0] Parte data obtenida:", parteData)
+
+    if (parteError || !parteData?.pd_actividad_id) {
+      console.error("❌ [v0] Error obteniendo parte diario:", parteError)
+      return NextResponse.json({ error: "Parte diario no encontrado" }, { status: 404 })
+    }
+
+    const actividadId = parteData.pd_actividad_id
+    console.log("🎯 [v0] Actividad ID a actualizar:", actividadId)
+
     const { error: updateError } = await supabase
       .from("pd_actividades")
       .update({
@@ -84,52 +115,55 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         hora,
         nota: nota || null,
         user_id,
+        updated_at: new Date().toISOString(),
       })
-      .eq("id", parteId)
+      .eq("id", actividadId)
 
+    console.log("📝 [v0] Resultado actualización actividad:", updateError ? "ERROR" : "SUCCESS")
     if (updateError) {
-      console.error("❌ Error actualizando actividad:", updateError)
+      console.error("❌ [v0] Error actualizando actividad:", updateError)
       return NextResponse.json({ error: "Error al actualizar la actividad" }, { status: 500 })
     }
 
-    // Eliminar detalles existentes
-    const { error: deleteError } = await supabase.from("pd_actividad_animales").delete().eq("actividad_id", parteId)
+    const { error: deleteError } = await supabase.from("pd_actividad_animales").delete().eq("actividad_id", actividadId)
 
+    console.log("🗑️ [v0] Resultado eliminación detalles:", deleteError ? "ERROR" : "SUCCESS")
     if (deleteError) {
-      console.error("❌ Error eliminando detalles existentes:", deleteError)
+      console.error("❌ [v0] Error eliminando detalles existentes:", deleteError)
       return NextResponse.json({ error: "Error al eliminar detalles existentes" }, { status: 500 })
     }
 
-    // Insertar nuevos detalles si existen (con tipo_movimiento_animal_id en cada detalle)
     if (detalles && detalles.length > 0) {
       const detallesParaInsertar = detalles.map((detalle: any) => ({
-        actividad_id: parteId,
+        actividad_id: actividadId,
         categoria_animal_id: detalle.categoria_animal_id,
         cantidad: detalle.cantidad,
-        peso: detalle.peso,
-        tipo_peso: detalle.tipo_peso,
+        peso: detalle.peso || 0,
+        tipo_peso: detalle.tipo_peso || "TOTAL", // Cambiado de "Total" a "TOTAL"
         lote_id: detalle.lote_id,
-        tipo_movimiento_animal_id: tipo_movimiento_animal_id, // Guardar en cada detalle
+        ...(tipo_movimiento_animal_id && { tipo_movimiento_animal_id }),
       }))
 
-      console.log("🔄 Actualizando tipo_movimiento_animal_id en cada detalle:", tipo_movimiento_animal_id)
+      console.log("🔄 [v0] Detalles a insertar:", JSON.stringify(detallesParaInsertar, null, 2))
 
       const { error: insertError } = await supabase.from("pd_actividad_animales").insert(detallesParaInsertar)
 
+      console.log("➕ [v0] Resultado inserción detalles:", insertError ? "ERROR" : "SUCCESS")
       if (insertError) {
-        console.error("❌ Error insertando nuevos detalles:", insertError)
+        console.error("❌ [v0] Error insertando nuevos detalles:", insertError)
         return NextResponse.json({ error: "Error al insertar nuevos detalles" }, { status: 500 })
       }
     }
 
-    console.log("✅ Actividad actualizada exitosamente")
+    console.log("✅ [v0] Actividad actualizada exitosamente con ID:", actividadId)
 
     return NextResponse.json({
       success: true,
       message: "Actividad actualizada correctamente",
+      actividad_id: actividadId,
     })
   } catch (error) {
-    console.error("❌ Error en API actividades-animales PUT:", error)
+    console.error("❌ [v0] Error en API actividades-animales PUT:", error)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
