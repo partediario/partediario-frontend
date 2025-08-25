@@ -36,6 +36,8 @@ import FaenaDrawer from "../../actividades/components/faena-drawer" // Importar 
 import LimpiezaBebederosDrawer from "../../actividades/components/limpieza-bebederos-drawer" // Importar LimpiezaBebederosDrawer
 import ReparacionAlambradosDrawer from "../../actividades/components/reparacion-alambrados-drawer"
 import SeñaladaDrawer from "../../actividades/components/senalada-drawer"
+import SanitacionDrawer from "../../actividades/components/sanitacion-drawer"
+import CastracionDrawer from "../../actividades/components/castracion-drawer" // Importar CastracionDrawer
 
 interface TipoActividad {
   id: number
@@ -85,6 +87,10 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
     useState<TipoActividad | null>(null)
   const [senaladadDrawerOpen, setSenaladadDrawerOpen] = useState(false)
   const [actividadSenaladadSeleccionada, setActividadSenaladadSeleccionada] = useState<TipoActividad | null>(null)
+  const [sanitacionDrawerOpen, setSanitacionDrawerOpen] = useState(false)
+  const [actividadSanitacionSeleccionada, setActividadSanitacionSeleccionada] = useState<TipoActividad | null>(null)
+  const [castracionDrawerOpen, setCastracionDrawerOpen] = useState(false) // Agregar estados para drawer de castración
+  const [actividadCastracionSeleccionada, setActividadCastracionSeleccionada] = useState<TipoActividad | null>(null) // Agregar estados para drawer de castración
 
   const { currentEstablishment } = useCurrentEstablishment()
 
@@ -191,6 +197,22 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         console.log("✅ Actividad de señalada detectada")
         setActividadSenaladadSeleccionada(actividad)
         setSenaladadDrawerOpen(true)
+        onClose()
+        return
+      }
+
+      if (actividad.id === 26 || actividad.nombre === "Sanitación") {
+        console.log("✅ Actividad de sanitación detectada")
+        setActividadSanitacionSeleccionada(actividad)
+        setSanitacionDrawerOpen(true)
+        onClose()
+        return
+      }
+
+      if (actividad.id === 12 || actividad.nombre === "Castración") {
+        console.log("✅ Actividad de castración detectada")
+        setActividadCastracionSeleccionada(actividad)
+        setCastracionDrawerOpen(true)
         onClose()
         return
       }
@@ -689,6 +711,26 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         actividadSeleccionada={actividadSenaladadSeleccionada}
         onSuccess={() => {
           console.log("Señalada guardada exitosamente")
+          onRefresh?.()
+        }}
+      />
+
+      <SanitacionDrawer
+        isOpen={sanitacionDrawerOpen}
+        onClose={() => setSanitacionDrawerOpen(false)}
+        actividadSeleccionada={actividadSanitacionSeleccionada}
+        onSuccess={() => {
+          console.log("Sanitación guardada exitosamente")
+          onRefresh?.()
+        }}
+      />
+
+      <CastracionDrawer
+        isOpen={castracionDrawerOpen}
+        onClose={() => setCastracionDrawerOpen(false)}
+        actividadSeleccionada={actividadCastracionSeleccionada}
+        onSuccess={() => {
+          console.log("Castración guardada exitosamente")
           onRefresh?.()
         }}
       />

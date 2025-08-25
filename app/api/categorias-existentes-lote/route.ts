@@ -9,16 +9,25 @@ export async function GET(request: NextRequest) {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     const { searchParams } = new URL(request.url)
     const loteId = searchParams.get("lote_id")
+    const sexo = searchParams.get("sexo")
+    const edad = searchParams.get("edad")
 
     if (!loteId) {
       return NextResponse.json({ error: "lote_id es requerido" }, { status: 400 })
     }
 
-    const { data, error } = await supabase
-      .from("categoria_animales_existentes_view")
-      .select("*")
-      .eq("lote_id", loteId)
-      .order("nombre_categoria_animal")
+    let query = supabase.from("categoria_animales_existentes_view").select("*").eq("lote_id", loteId)
+
+    // Aplicar filtros adicionales si se proporcionan
+    if (sexo) {
+      query = query.eq("sexo", sexo)
+    }
+
+    if (edad) {
+      query = query.eq("edad", edad)
+    }
+
+    const { data, error } = await query.order("nombre_categoria_animal")
 
     if (error) {
       console.error("Error fetching categorias existentes:", error)

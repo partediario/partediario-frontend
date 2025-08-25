@@ -33,6 +33,10 @@ import VerReparacionAlambradosDrawer from "./ver-reparacion-alambrados-drawer"
 import EditarReparacionAlambradosDrawer from "./editar-reparacion-alambrados-drawer"
 import VerSenaladaDrawer from "./ver-senalada-drawer"
 import EditarSenaladaDrawer from "./editar-senalada-drawer"
+import VerSanitacionDrawer from "./ver-sanitacion-drawer"
+import EditarSanitacionDrawer from "./editar-sanitacion-drawer"
+import VerCastracionDrawer from "./ver-castracion-drawer"
+import EditarCastracionDrawer from "./editar-castracion-drawer"
 
 interface ParteDiarioCardProps {
   parte: ParteDiario
@@ -73,6 +77,12 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
 
   const [isVerSenaladaDrawerOpen, setIsVerSenaladaDrawerOpen] = useState(false)
   const [isEditarSenaladaDrawerOpen, setIsEditarSenaladaDrawerOpen] = useState(false)
+
+  const [isVerSanitacionDrawerOpen, setIsVerSanitacionDrawerOpen] = useState(false)
+  const [isEditarSanitacionDrawerOpen, setIsEditarSanitacionDrawerOpen] = useState(false)
+
+  const [isVerCastracionDrawerOpen, setIsVerCastracionDrawerOpen] = useState(false)
+  const [isEditarCastracionDrawerOpen, setIsEditarCastracionDrawerOpen] = useState(false)
 
   const [tipoActividad, setTipoActividad] = useState<{ animales: string; insumos: string } | null>(null)
 
@@ -131,6 +141,10 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "bg-pink-100 text-pink-800 hover:bg-pink-200 border-pink-200"
       case "SEÑALADA":
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
+      case "SANITACION":
+        return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
+      case "CASTRACION":
+        return "bg-pink-100 text-pink-800 hover:bg-pink-200 border-pink-200"
       default:
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
     }
@@ -164,6 +178,10 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "Reparación de Alambrados"
       case "SEÑALADA":
         return "Señalada"
+      case "SANITACION":
+        return "Sanitación"
+      case "CASTRACION":
+        return "Castración"
       default:
         return tipo
     }
@@ -232,6 +250,16 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
 
       if (parte.pd_detalles.detalle_tipo_id === 8) {
         setIsVerSenaladaDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 26) {
+        setIsVerSanitacionDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 12) {
+        setIsVerCastracionDrawerOpen(true)
         return
       }
 
@@ -326,6 +354,16 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
 
       if (parte.pd_detalles.detalle_tipo_id === 8) {
         setIsEditarSenaladaDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 26) {
+        setIsEditarSanitacionDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 12) {
+        setIsEditarCastracionDrawerOpen(true)
         return
       }
 
@@ -592,6 +630,35 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       <EditarSenaladaDrawer
         isOpen={isEditarSenaladaDrawerOpen}
         onClose={() => setIsEditarSenaladaDrawerOpen(false)}
+        parte={parte}
+        onSuccess={() => {
+          window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+        }}
+      />
+
+      <VerSanitacionDrawer
+        isOpen={isVerSanitacionDrawerOpen}
+        onClose={() => setIsVerSanitacionDrawerOpen(false)}
+        parte={parte}
+      />
+      <EditarSanitacionDrawer
+        isOpen={isEditarSanitacionDrawerOpen}
+        onClose={() => setIsEditarSanitacionDrawerOpen(false)}
+        parte={parte}
+        onSuccess={() => {
+          window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+        }}
+      />
+
+      {/* Drawers de Castración */}
+      <VerCastracionDrawer
+        isOpen={isVerCastracionDrawerOpen}
+        onClose={() => setIsVerCastracionDrawerOpen(false)}
+        parte={parte}
+      />
+      <EditarCastracionDrawer
+        isOpen={isEditarCastracionDrawerOpen}
+        onClose={() => setIsEditarCastracionDrawerOpen(false)}
         parte={parte}
         onSuccess={() => {
           window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))

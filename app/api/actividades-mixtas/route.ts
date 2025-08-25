@@ -48,14 +48,25 @@ export async function POST(request: NextRequest) {
     // Insertar detalles de animales si existen
     if (detalles_animales && detalles_animales.length > 0) {
       console.log("💾 Insertando detalles de animales...")
-      const detallesAnimalesParaInsertar = detalles_animales.map((detalle: any) => ({
-        actividad_id: actividad.id,
-        categoria_animal_id: detalle.categoria_animal_id,
-        cantidad: detalle.cantidad,
-        peso: detalle.peso,
-        tipo_peso: detalle.tipo_peso,
-        lote_id: detalle.lote_id,
-      }))
+      const detallesAnimalesParaInsertar = detalles_animales.map((detalle: any) => {
+        const baseDetalle = {
+          actividad_id: actividad.id,
+          categoria_animal_id: detalle.categoria_animal_id,
+          cantidad: detalle.cantidad,
+          lote_id: detalle.lote_id,
+        }
+
+        // Only add peso and tipo_peso if they exist (for non-sanitación activities)
+        if (detalle.peso !== undefined) {
+          return {
+            ...baseDetalle,
+            peso: detalle.peso,
+            tipo_peso: detalle.tipo_peso,
+          }
+        }
+
+        return baseDetalle
+      })
 
       const { data: detallesAnimalesInsertados, error: detallesAnimalesError } = await supabase
         .from("pd_actividad_animales")
