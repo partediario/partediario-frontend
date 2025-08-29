@@ -37,6 +37,13 @@ import VerSanitacionDrawer from "./ver-sanitacion-drawer"
 import EditarSanitacionDrawer from "./editar-sanitacion-drawer"
 import VerCastracionDrawer from "./ver-castracion-drawer"
 import EditarCastracionDrawer from "./editar-castracion-drawer"
+import VerRecorridaDrawer from "./ver-recorrida-drawer"
+import EditarRecorridaDrawer from "./editar-recorrida-drawer"
+import VerCaneriasBebederosDrawer from "./ver-canerias-bebederos-drawer"
+import EditarCaneriasBebederosDrawer from "./editar-canerias-bebederos-drawer"
+import VerDesteteDrawer from "./ver-destete-drawer"
+import VerActividadVariasCorralDrawer from "./ver-actividad-varias-corral-drawer"
+import EditarActividadVariasCorralDrawer from "./editar-actividad-varias-corral-drawer"
 
 interface ParteDiarioCardProps {
   parte: ParteDiario
@@ -83,6 +90,21 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
 
   const [isVerCastracionDrawerOpen, setIsVerCastracionDrawerOpen] = useState(false)
   const [isEditarCastracionDrawerOpen, setIsEditarCastracionDrawerOpen] = useState(false)
+
+  // Nuevos estados para drawers de Recorrida
+  const [isVerRecorridaDrawerOpen, setIsVerRecorridaDrawerOpen] = useState(false)
+  const [isEditarRecorridaDrawerOpen, setIsEditarRecorridaDrawerOpen] = useState(false)
+
+  // Nuevos estados para drawers de Cañerías y Bebederos
+  const [isVerCaneriasBebederosDrawerOpen, setIsVerCaneriasBebederosDrawerOpen] = useState(false)
+  const [isEditarCaneriasBebederosDrawerOpen, setIsEditarCaneriasBebederosDrawerOpen] = useState(false)
+
+  // Nuevo estado para drawer de Destete
+  const [isVerDesteteDrawerOpen, setIsVerDesteteDrawerOpen] = useState(false)
+
+  // Nuevo estado para drawer de Actividad Varias de Corral
+  const [isVerActividadVariasCorralDrawerOpen, setIsVerActividadVariasCorralDrawerOpen] = useState(false)
+  const [isEditarActividadVariasCorralDrawerOpen, setIsEditarActividadVariasCorralDrawerOpen] = useState(false)
 
   const [tipoActividad, setTipoActividad] = useState<{ animales: string; insumos: string } | null>(null)
 
@@ -145,6 +167,14 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
       case "CASTRACION":
         return "bg-pink-100 text-pink-800 hover:bg-pink-200 border-pink-200"
+      case "RECORRIDA":
+        return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
+      case "CANERIAS Y BEBEDEROS":
+        return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
+      case "DESTETE":
+        return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
+      case "ACTIVIDAD VARIAS DE CORRAL":
+        return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
       default:
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
     }
@@ -182,6 +212,14 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "Sanitación"
       case "CASTRACION":
         return "Castración"
+      case "RECORRIDA":
+        return "Recorrida"
+      case "CANERIAS Y BEBEDEROS":
+        return "Cañerías y Bebederos"
+      case "DESTETE":
+        return "Destete"
+      case "ACTIVIDAD VARIAS DE CORRAL":
+        return "Actividad Varias de Corral"
       default:
         return tipo
     }
@@ -232,6 +270,26 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         setIsVerEntradaInsumosDrawerOpen(true)
       }
     } else if (parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id) {
+      if (parte.pd_detalles.detalle_tipo_id === 30) {
+        setIsVerActividadVariasCorralDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 19) {
+        setIsVerDesteteDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 4) {
+        setIsVerCaneriasBebederosDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 6) {
+        setIsVerRecorridaDrawerOpen(true)
+        return
+      }
+
       // Check if it's a Faena activity (detalle_tipo_id: 36)
       if (parte.pd_detalles.detalle_tipo_id === 36) {
         setIsVerFaenaDrawerOpen(true)
@@ -336,6 +394,26 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         })
       }
     } else if (parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id) {
+      if (parte.pd_detalles.detalle_tipo_id === 30) {
+        setIsEditarActividadVariasCorralDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 19) {
+        setIsVerDesteteDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 4) {
+        setIsEditarCaneriasBebederosDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 6) {
+        setIsEditarRecorridaDrawerOpen(true)
+        return
+      }
+
       // Check if it's a Faena activity (detalle_tipo_id: 36)
       if (parte.pd_detalles.detalle_tipo_id === 36) {
         setIsEditarFaenaDrawerOpen(true)
@@ -423,15 +501,16 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
                 parte.pd_tipo === "SALIDA" ||
                 parte.pd_tipo === "CLIMA" ||
                 parte.pd_tipo === "ACTIVIDAD" ||
-                parte.pd_tipo === "INSUMOS") && (
-                <button
-                  onClick={() => handleEdit(parte)}
-                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-                  title="Editar"
-                >
-                  <Edit className="h-4 w-4 text-gray-600" />
-                </button>
-              )}
+                parte.pd_tipo === "INSUMOS") &&
+                !(parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id === 19) && (
+                  <button
+                    onClick={() => handleEdit(parte)}
+                    className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                    title="Editar"
+                  >
+                    <Edit className="h-4 w-4 text-gray-600" />
+                  </button>
+                )}
             </PermissionWrapper>
           </div>
         </div>
@@ -659,6 +738,58 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
       <EditarCastracionDrawer
         isOpen={isEditarCastracionDrawerOpen}
         onClose={() => setIsEditarCastracionDrawerOpen(false)}
+        parte={parte}
+        onSuccess={() => {
+          window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+        }}
+      />
+
+      {/* Drawers de Recorrida */}
+      <VerRecorridaDrawer
+        isOpen={isVerRecorridaDrawerOpen}
+        onClose={() => setIsVerRecorridaDrawerOpen(false)}
+        parte={parte}
+      />
+      <EditarRecorridaDrawer
+        isOpen={isEditarRecorridaDrawerOpen}
+        onClose={() => setIsEditarRecorridaDrawerOpen(false)}
+        parte={parte}
+        onSuccess={() => {
+          window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+        }}
+      />
+
+      {/* Drawers de Cañerías y Bebederos */}
+      <VerCaneriasBebederosDrawer
+        isOpen={isVerCaneriasBebederosDrawerOpen}
+        onClose={() => setIsVerCaneriasBebederosDrawerOpen(false)}
+        parte={parte}
+      />
+      <EditarCaneriasBebederosDrawer
+        isOpen={isEditarCaneriasBebederosDrawerOpen}
+        onClose={() => setIsEditarCaneriasBebederosDrawerOpen(false)}
+        parte={parte}
+        onSuccess={() => {
+          window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+        }}
+      />
+
+      {/* Drawer de Destete */}
+      <VerDesteteDrawer
+        isOpen={isVerDesteteDrawerOpen}
+        onClose={() => setIsVerDesteteDrawerOpen(false)}
+        parte={parte}
+      />
+
+      {/* Drawers de Actividad Varias de Corral */}
+      <VerActividadVariasCorralDrawer
+        isOpen={isVerActividadVariasCorralDrawerOpen}
+        onClose={() => setIsVerActividadVariasCorralDrawerOpen(false)}
+        parte={parte}
+      />
+      <EditarActividadVariasCorralDrawer
+        isOpen={isEditarActividadVariasCorralDrawerOpen}
+        onClose={() => setIsEditarActividadVariasCorralDrawerOpen(false)}
         parte={parte}
         onSuccess={() => {
           window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))

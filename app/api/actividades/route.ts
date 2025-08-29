@@ -3,83 +3,243 @@ import { createClient } from "@supabase/supabase-js"
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-export async function POST(request: NextRequest) {
+// Función para formatear fechas sin conversión a Date
+const formatearFecha = (fechaStr: string) => {
+  if (!fechaStr) return ""
+
+  // Si la fecha viene en formato YYYY-MM-DD, la parseamos directamente
+  if (fechaStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const [year, month, day] = fechaStr.split("-")
+    return `${day}/${month}/${year}`
+  }
+
+  return fechaStr
+}
+
+// Función para formatear ubicaciones
+const formatearUbicacion = (ubicacion: string) => {
+  if (!ubicacion) return ""
+
+  const ubicacionLower = ubicacion.toLowerCase()
+  switch (ubicacionLower) {
+    case "campo":
+      return "Campo"
+    case "corral":
+      return "Corral"
+    case "administracion":
+      return "Administración"
+    default:
+      return ubicacion.charAt(0).toUpperCase() + ubicacion.slice(1).toLowerCase()
+  }
+}
+
+// Función para obtener rango de fechas con zona horaria correcta
+const obtenerRangoFechas = (periodo: string) => {
+  // Obtener fecha actual en zona horaria local (Argentina/Paraguay - UTC-3)
+  const ahora = new Date()
+
+  // Ajustar a zona horaria local (UTC-3)
+  const offsetLocal = -3 * 60 // -3 horas en minutos
+  const fechaLocal = new Date(ahora.getTime() + offsetLocal * 60 * 1000)
+
+  // Obtener fecha de hoy en formato YYYY-MM-DD
+  const año = fechaLocal.getFullYear()
+  const mes = String(fechaLocal.getMonth() + 1).padStart(2, "0")
+  const dia = String(fechaLocal.getDate()).padStart(2, "0")
+  const fechaHoy = `${año}-${mes}-${dia}`
+
+  switch (periodo) {
+    case "hoy":
+      return {
+        fechaInicio: fechaHoy,
+        fechaFin: fechaHoy,
+      }
+
+    case "semana":
+      // Calcular fecha de hace 7 días
+      const fechaInicioSemana = new Date(fechaLocal)
+      fechaInicioSemana.setDate(fechaLocal.getDate() - 6) // 7 días incluyendo hoy
+
+      const añoSemana = fechaInicioSemana.getFullYear()
+      const mesSemana = String(fechaInicioSemana.getMonth() + 1).padStart(2, "0")
+      const diaSemana = String(fechaInicioSemana.getDate()).padStart(2, "0")
+      const fechaInicioSemanaStr = `${añoSemana}-${mesSemana}-${diaSemana}`
+
+      return {
+        fechaInicio: fechaInicioSemanaStr,
+        fechaFin: fechaHoy,
+      }
+
+    case "mes":
+      // Calcular fecha de hace 30 días
+      const fechaInicioMes = new Date(fechaLocal)
+      fechaInicioMes.setDate(fechaLocal.getDate() - 29) // 30 días incluyendo hoy
+
+      const añoMes = fechaInicioMes.getFullYear()
+      const mesMes = String(fechaInicioMes.getMonth() + 1).padStart(2, "0")
+      const diaMes = String(fechaInicioMes.getDate()).padStart(2, "0")
+      const fechaInicioMesStr = `${añoMes}-${mesMes}-${diaMes}`
+
+      return {
+        fechaInicio: fechaInicioMesStr,
+        fechaFin: fechaHoy,
+      }
+
+    default:
+      // Sin filtro de fecha
+      return null
+  }
+}
+
+const agruparActividades = (actividades: any[]) => {
+  console.log("[v0] Total actividades antes de agrupar:", actividades.length)
+  console.log("[v0] Primeras 3 actividades:", actividades.slice(0, 3))
+
+  const actividadesAgrupadas = new Map()
+
+  actividades.forEach((actividad) => {
+    const actividadId = actividad.actividad_id
+
+    console.log("[v0] Procesando actividad_id:", actividadId, "categoria:", actividad.categoria_animal)
+
+    if (!actividadesAgrupadas.has(actividadId)) {
+      // Primera ocurrencia de esta actividad
+      actividadesAgrupadas.set(actividadId, {
+        ...actividad,
+        detalles_combinados: [],
+        detalles_completos: [],
+      })
+    }
+
+    // Agregar detalles de animales/insumos si existen
+    const actividadExistente = actividadesAgrupadas.get(actividadId)
+
+    if (actividad.categoria_animal && actividad.animal_cantidad) {
+      actividadExistente.detalles_combinados.push(`${actividad.categoria_animal} (${actividad.animal_cantidad})`)
+      actividadExistente.detalles_completos.push({
+        tipo: "animal",
+        categoria: actividad.categoria_animal,
+        cantidad: actividad.animal_cantidad,
+        peso_total: actividad.peso_total_animales,
+        peso_promedio: actividad.peso_promedio_animales,
+        categoria_id: actividad.categoria_animal_id,
+      })
+    }
+
+    if (actividad.insumo_nombre && actividad.insumo_cantidad) {
+      actividadExistente.detalles_combinados.push(`${actividad.insumo_nombre} (${actividad.insumo_cantidad})`)
+      actividadExistente.detalles_completos.push({
+        tipo: "insumo",
+        nombre: actividad.insumo_nombre,
+        cantidad: actividad.insumo_cantidad,
+        insumo_id: actividad.insumo_id,
+      })
+    }
+  })
+
+  console.log("[v0] Actividades agrupadas:", actividadesAgrupadas.size)
+
+  // Convertir Map a array y formatear detalles
+  const resultado = Array.from(actividadesAgrupadas.values()).map((actividad) => {
+    const detallesCombinados =
+      actividad.detalles_combinados.length > 0
+        ? actividad.detalles_combinados.join(", ")
+        : actividad.categoria_animal || actividad.insumo_nombre || ""
+
+    console.log("[v0] Actividad agrupada:", actividad.actividad_id, "detalles:", detallesCombinados)
+
+    return {
+      ...actividad,
+      detalle: detallesCombinados,
+      detalles_completos: actividad.detalles_completos,
+      // Remover campos temporales
+      detalles_combinados: undefined,
+    }
+  })
+
+  console.log("[v0] Total actividades después de agrupar:", resultado.length)
+
+  return resultado
+}
+
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json()
-    console.log("📝 Datos recibidos para actividad:", body)
+    const { searchParams } = new URL(request.url)
+    const establecimientoId = searchParams.get("establecimiento_id")
+    const ubicacion = searchParams.get("ubicacion")
+    const empleado = searchParams.get("empleado")
+    const busqueda = searchParams.get("busqueda")
+    const periodo = searchParams.get("periodo")
 
-    const { establecimiento_id, tipo_actividad_id, fecha, hora, nota, user_id, detalles, tipo_movimiento_animal_id } =
-      body
-
-    // Validaciones
-    if (!establecimiento_id || !tipo_actividad_id || !fecha || !hora) {
-      return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 })
+    if (!establecimientoId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "establecimiento_id es requerido",
+        },
+        { status: 400 },
+      )
     }
 
-    if (!detalles || detalles.length === 0) {
-      return NextResponse.json({ error: "Debe agregar al menos un detalle" }, { status: 400 })
+    // Construir la consulta base
+    let query = supabase.from("pd_actividades_view").select("*").eq("establecimiento_id", establecimientoId)
+
+    // Aplicar filtro de fecha si se especifica un período
+    if (periodo && periodo !== "todos") {
+      const rangoFechas = obtenerRangoFechas(periodo)
+      if (rangoFechas) {
+        query = query.gte("fecha", rangoFechas.fechaInicio).lte("fecha", rangoFechas.fechaFin)
+      }
     }
 
-    // Preparar datos para insertar en pd_actividades (sin tipo_movimiento_animal_id)
-    const actividadData = {
-      establecimiento_id,
-      tipo_actividad_id,
-      fecha,
-      hora,
-      nota: nota || null,
-      user_id,
+    // Aplicar otros filtros
+    if (ubicacion && ubicacion !== "todos") {
+      query = query.eq("tipo_actividad_ubicacion", ubicacion.toUpperCase())
     }
 
-    // Insertar cabecera de actividad
-    console.log("💾 Insertando cabecera de actividad...")
-    const { data: actividad, error: actividadError } = await supabase
-      .from("pd_actividades")
-      .insert(actividadData)
-      .select()
-      .single()
-
-    if (actividadError) {
-      console.error("❌ Error insertando actividad:", actividadError)
-      return NextResponse.json({ error: "Error al guardar la actividad" }, { status: 500 })
+    if (empleado && empleado !== "todos") {
+      query = query.eq("usuario", empleado)
     }
 
-    console.log("✅ Actividad creada:", actividad)
+    if (busqueda && busqueda.trim()) {
+      query = query.or(`tipo_actividad_nombre.ilike.%${busqueda}%,usuario.ilike.%${busqueda}%`)
+    }
 
-    // Insertar detalles de animales (ahora con tipo_movimiento_animal_id en cada detalle)
-    console.log("💾 Insertando detalles de animales...")
-    const detallesParaInsertar = detalles.map((detalle: any) => ({
-      actividad_id: actividad.id,
-      categoria_animal_id: detalle.categoria_animal_id,
-      cantidad: detalle.cantidad,
-      peso: detalle.peso,
-      tipo_peso: detalle.tipo_peso,
-      lote_id: detalle.lote_id,
-      tipo_movimiento_animal_id: tipo_movimiento_animal_id, // Ahora se guarda en cada detalle
+    // Ordenar por fecha y hora descendente
+    query = query.order("fecha", { ascending: false }).order("hora", { ascending: false })
+
+    const { data, error } = await query
+
+    if (error) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message,
+        },
+        { status: 500 },
+      )
+    }
+
+    const actividadesAgrupadas = agruparActividades(data || [])
+
+    // Formatear los datos agrupados
+    const actividadesFormateadas = actividadesAgrupadas.map((actividad: any) => ({
+      ...actividad,
+      fecha_formateada: formatearFecha(actividad.fecha),
+      tipo_actividad_ubicacion_formateada: formatearUbicacion(actividad.tipo_actividad_ubicacion),
     }))
-
-    console.log("🔄 Guardando tipo_movimiento_animal_id en cada detalle:", tipo_movimiento_animal_id)
-
-    const { data: detallesInsertados, error: detallesError } = await supabase
-      .from("pd_actividad_animales")
-      .insert(detallesParaInsertar)
-      .select()
-
-    if (detallesError) {
-      console.error("❌ Error insertando detalles:", detallesError)
-      // Si falla, eliminar la actividad creada
-      await supabase.from("pd_actividades").delete().eq("id", actividad.id)
-      return NextResponse.json({ error: "Error al guardar los detalles de la actividad" }, { status: 500 })
-    }
-
-    console.log("✅ Detalles insertados:", detallesInsertados)
 
     return NextResponse.json({
       success: true,
-      actividad,
-      detalles: detallesInsertados,
+      actividades: actividadesFormateadas,
     })
   } catch (error) {
-    console.error("❌ Error en API actividades-animales:", error)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Error interno del servidor",
+      },
+      { status: 500 },
+    )
   }
 }

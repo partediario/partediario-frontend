@@ -30,3 +30,5 @@ export { default as VerEntradaInsumosDrawer } from "./ver-entrada-insumos-drawer
 export { default as EditarEntradaInsumosDrawer } from "./editar-entrada-insumos-drawer"
 export { default as VerSalidaInsumosDrawer } from "./ver-salida-insumos-drawer"
 export { default as EditarSalidaInsumosDrawer } from "./editar-salida-insumos-drawer"
+export { default as VerActividadVariasCorralDrawer } from "./ver-actividad-varias-corral-drawer"
+export { default as EditarActividadVariasCorralDrawer } from "./editar-actividad-varias-corral-drawer"

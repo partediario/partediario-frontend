@@ -4,7 +4,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   try {
     const { id } = params
     const body = await request.json()
-    const { nombre, sexo, edad } = body
+    const { nombre, sexo, edad, categoria_animal_estandar_id } = body
 
     if (!nombre || !sexo || !edad) {
       return NextResponse.json({ error: "Todos los campos son requeridos" }, { status: 400 })
@@ -28,6 +28,19 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const url = `${supabaseUrl}/rest/v1/pd_categoria_animales?id=eq.${id}`
 
+    const updateData = {
+      nombre: nombre.trim(),
+      sexo,
+      edad,
+    }
+
+    if (categoria_animal_estandar_id !== undefined) {
+      updateData.categoria_animal_estandar_id =
+        categoria_animal_estandar_id && categoria_animal_estandar_id !== 0
+          ? Number.parseInt(categoria_animal_estandar_id)
+          : null
+    }
+
     const response = await fetch(url, {
       method: "PATCH",
       headers: {
@@ -36,11 +49,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         "Content-Type": "application/json",
         Prefer: "return=representation",
       },
-      body: JSON.stringify({
-        nombre: nombre.trim(),
-        sexo,
-        edad,
-      }),
+      body: JSON.stringify(updateData),
     })
 
     if (!response.ok) {

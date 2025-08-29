@@ -16,6 +16,7 @@ interface CategoriaAnimal {
   sexo: "HEMBRA" | "MACHO"
   edad: "JOVEN" | "ADULTO"
   empresa_id: number
+  categoria_animal_estandar_id?: number | null // Added standard category field
 }
 
 interface CategoriaAnimalDrawerProps {
@@ -43,8 +44,33 @@ export function CategoriaAnimalDrawer({
     nombre: "",
     sexo: "",
     edad: "",
+    categoria_animal_estandar_id: "", // Changed default to empty string to make validation work
   })
   const [errors, setErrors] = useState<string[]>([])
+  const [categoriasEstandar, setCategoriasEstandar] = useState<CategoriaAnimal[]>([])
+  const [loadingEstandar, setLoadingEstandar] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      loadCategoriasEstandar()
+    }
+  }, [isOpen])
+
+  const loadCategoriasEstandar = async () => {
+    try {
+      setLoadingEstandar(true)
+      const response = await fetch("/api/categorias-animales-crud?empresa_id=1")
+      const data = await response.json()
+
+      if (response.ok) {
+        setCategoriasEstandar(data.categorias || [])
+      }
+    } catch (error) {
+      console.error("Error loading standard categories:", error)
+    } finally {
+      setLoadingEstandar(false)
+    }
+  }
 
   // Cargar datos de la categoría cuando se abre el drawer
   useEffect(() => {
@@ -54,12 +80,14 @@ export function CategoriaAnimalDrawer({
           nombre: categoria.nombre || "",
           sexo: categoria.sexo || "",
           edad: categoria.edad || "",
+          categoria_animal_estandar_id: categoria.categoria_animal_estandar_id?.toString() || "", // Changed default to empty string
         })
       } else if (mode === "create") {
         setFormData({
           nombre: "",
           sexo: "",
           edad: "",
+          categoria_animal_estandar_id: "", // Changed default to empty string
         })
       }
       setErrors([])
@@ -70,7 +98,7 @@ export function CategoriaAnimalDrawer({
   // Limpiar formulario cuando se cierra el drawer
   useEffect(() => {
     if (!isOpen) {
-      setFormData({ nombre: "", sexo: "", edad: "" })
+      setFormData({ nombre: "", sexo: "", edad: "", categoria_animal_estandar_id: "" }) // Changed default to empty string
       setErrors([])
       setMostrarExito(false)
     }
@@ -93,6 +121,10 @@ export function CategoriaAnimalDrawer({
       newErrors.push("La edad es requerida")
     }
 
+    if (!formData.categoria_animal_estandar_id) {
+      newErrors.push("La categoría estándar es requerida")
+    }
+
     if (!empresaId) {
       newErrors.push("No se ha seleccionado una empresa")
     }
@@ -108,6 +140,13 @@ export function CategoriaAnimalDrawer({
     try {
       let response
 
+      const submitData = {
+        ...formData,
+        categoria_animal_estandar_id: formData.categoria_animal_estandar_id
+          ? Number.parseInt(formData.categoria_animal_estandar_id)
+          : null,
+      }
+
       if (mode === "create") {
         response = await fetch("/api/categorias-animales-crud", {
           method: "POST",
@@ -115,7 +154,7 @@ export function CategoriaAnimalDrawer({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            ...formData,
+            ...submitData,
             empresa_id: empresaId,
           }),
         })
@@ -125,7 +164,7 @@ export function CategoriaAnimalDrawer({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(submitData),
         })
       }
 
@@ -229,6 +268,31 @@ export function CategoriaAnimalDrawer({
                 className="mt-1"
               />
               <p className="text-sm text-gray-500 mt-1">Mínimo 3 caracteres</p>
+            </div>
+
+            <div>
+              <Label htmlFor="categoria-estandar" className="text-sm font-medium text-gray-700">
+                Categoría estándar * {/* Added asterisk to show it's required */}
+              </Label>
+              <Select
+                value={formData.categoria_animal_estandar_id}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, categoria_animal_estandar_id: value }))}
+                disabled={loading || loadingEstandar}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder={loadingEstandar ? "Cargando..." : "Seleccionar categoría estándar"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoriasEstandar.map((categoria) => (
+                    <SelectItem key={categoria.id} value={categoria.id.toString()}>
+                      {categoria.nombre} ({categoria.sexo === "HEMBRA" ? "Hembra" : "Macho"} -{" "}
+                      {categoria.edad === "JOVEN" ? "Joven" : "Adulto"})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-gray-500 mt-1">Selecciona una categoría estándar del sistema</p>{" "}
+              {/* Updated help text to reflect it's required */}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

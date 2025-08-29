@@ -88,7 +88,7 @@ export default function LoginPage() {
     <div
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: "url(/images/login-background.png)",
+        backgroundImage: "url('/login-background.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -100,12 +100,9 @@ export default function LoginPage() {
           <CardHeader className="space-y-4 text-center">
             {/* Logo */}
             <div className="flex justify-center">
-              <Image src="/images/logo-icon.png" alt="Parte Diario Pro" width={80} height={80} className="rounded-lg" />
+              <Image src="/logo-icon.png" alt="Parte Diario Pro" width={80} height={80} className="rounded-lg" />
             </div>
-            <div>
-              
-              
-            </div>
+            <div></div>
             <div>
               <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
               <CardDescription>Ingrese sus credenciales para acceder</CardDescription>

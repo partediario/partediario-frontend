@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Configuración de Supabase no encontrada" }, { status: 500 })
     }
 
-    const url = `${supabaseUrl}/rest/v1/pd_categoria_animales?select=id,nombre,sexo,edad,empresa_id&empresa_id=eq.${empresaId}&order=id.asc`
+    const url = `${supabaseUrl}/rest/v1/pd_categoria_animales?select=id,nombre,sexo,edad,empresa_id,categoria_animal_estandar_id,categoria_estandar:categoria_animal_estandar_id(nombre)&empresa_id=eq.${empresaId}&order=id.asc`
 
     const response = await fetch(url, {
       headers: {
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { nombre, sexo, edad, empresa_id } = body
+    const { nombre, sexo, edad, empresa_id, categoria_animal_estandar_id } = body
 
     if (!nombre || !sexo || !edad || !empresa_id) {
       return NextResponse.json({ error: "Todos los campos son requeridos" }, { status: 400 })
@@ -74,6 +74,18 @@ export async function POST(request: NextRequest) {
 
     const url = `${supabaseUrl}/rest/v1/pd_categoria_animales`
 
+    const insertData = {
+      nombre: nombre.trim(),
+      sexo,
+      edad,
+      empresa_id: Number.parseInt(empresa_id),
+    }
+
+    // Only add categoria_animal_estandar_id if it's provided and not null/0
+    if (categoria_animal_estandar_id && categoria_animal_estandar_id !== 0) {
+      insertData.categoria_animal_estandar_id = Number.parseInt(categoria_animal_estandar_id)
+    }
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -82,12 +94,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
         Prefer: "return=representation",
       },
-      body: JSON.stringify({
-        nombre: nombre.trim(),
-        sexo,
-        edad,
-        empresa_id: Number.parseInt(empresa_id),
-      }),
+      body: JSON.stringify(insertData),
     })
 
     if (!response.ok) {

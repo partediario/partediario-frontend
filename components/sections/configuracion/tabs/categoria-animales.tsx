@@ -19,6 +19,7 @@ interface CategoriaAnimal {
   sexo: "HEMBRA" | "MACHO"
   edad: "JOVEN" | "ADULTO"
   empresa_id: number
+  categoria_estandar?: { nombre: string } | null
 }
 
 export function CategoriaAnimales() {
@@ -257,6 +258,7 @@ export function CategoriaAnimales() {
                   <TableHead>Nombre</TableHead>
                   <TableHead>Sexo</TableHead>
                   <TableHead>Edad</TableHead>
+                  <TableHead>Categoría Estándar</TableHead>
                   <TableHead className="w-20">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -266,6 +268,7 @@ export function CategoriaAnimales() {
                     <TableCell className="font-medium">{categoria.nombre}</TableCell>
                     <TableCell>{formatSexo(categoria.sexo)}</TableCell>
                     <TableCell>{formatEdad(categoria.edad)}</TableCell>
+                    <TableCell>{categoria.categoria_estandar?.nombre || "-"}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         {/* Solo mostrar botón editar si NO es consultor */}

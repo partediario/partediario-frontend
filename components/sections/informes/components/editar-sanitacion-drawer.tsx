@@ -166,20 +166,46 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
         }))
         setDetallesAnimales(animales)
 
-        const vacunas = (actividadData.pd_actividades_insumos_detalle || []).map((insumo: any) => ({
-          insumo_id: insumo.insumo_id || 0,
-          insumo_nombre: insumo.pd_insumos?.nombre || "",
-          cantidad: insumo.cantidad || 0,
-          unidad_medida:
-            insumo.pd_insumos?.pd_unidad_medida_insumos?.nombre ||
-            insumo.pd_insumos?.unidad_medida ||
-            insumo.unidad_medida ||
-            "",
-          cantidad_disponible: 0,
-          es_original: true,
-          cantidad_original: insumo.cantidad || 0,
-        }))
-        setDetallesInsumos(vacunas)
+        let insumosData = []
+
+        if (parte.pd_detalles?.detalles_insumos && parte.pd_detalles.detalles_insumos.length > 0) {
+          // Usar datos de pd_detalles que ya incluyen unidad_medida
+          console.log("Usando unidades de medida desde pd_detalles:", parte.pd_detalles.detalles_insumos)
+
+          insumosData = parte.pd_detalles.detalles_insumos.map((insumo: any) => ({
+            insumo_id: insumo.insumo_id || 0,
+            insumo_nombre: insumo.insumo || "",
+            cantidad: insumo.cantidad || 0,
+            unidad_medida: insumo.unidad_medida || "", // Ya viene en pd_detalles
+            cantidad_disponible: 0,
+            es_original: true,
+            cantidad_original: insumo.cantidad || 0,
+          }))
+        } else {
+          // Fallback: usar datos de la API
+          insumosData = (actividadData.pd_actividades_insumos_detalle || []).map((insumo: any) => ({
+            insumo_id: insumo.insumo_id || 0,
+            insumo_nombre: insumo.pd_insumos?.nombre || "",
+            cantidad: insumo.cantidad || 0,
+            unidad_medida: insumo.pd_insumos?.pd_unidad_medida_insumos?.nombre || "",
+            cantidad_disponible: 0,
+            es_original: true,
+            cantidad_original: insumo.cantidad || 0,
+          }))
+        }
+
+        setDetallesInsumos(insumosData)
+
+        console.log("Datos cargados desde API:", {
+          animales: animales.length,
+          insumos: insumosData.length,
+          insumosOriginales: insumosData.filter((i) => i.es_original).length,
+          insumosConUnidades: insumosData.map((i) => ({
+            nombre: i.insumo_nombre,
+            unidad: i.unidad_medida,
+            esOriginal: i.es_original,
+          })),
+        })
       } else {
         const animales = (parte.pd_detalles?.detalles_animales || []).map((animal: any) => ({
           categoria_animal_id: animal.categoria_animal_id || 0,
@@ -194,12 +220,22 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
           insumo_id: insumo.insumo_id || 0,
           insumo_nombre: insumo.insumo || "",
           cantidad: insumo.cantidad || 0,
-          unidad_medida: insumo.unidad_medida || insumo.unidad_medida_nombre || "",
+          unidad_medida: insumo.unidad_medida || "", // Usar directamente desde pd_detalles
           cantidad_disponible: 0,
           es_original: true,
           cantidad_original: insumo.cantidad || 0,
         }))
         setDetallesInsumos(vacunas)
+
+        console.log("Datos cargados desde pd_detalles (fallback):", {
+          animales: animales.length,
+          insumos: vacunas.length,
+          insumosConUnidades: vacunas.map((i) => ({
+            nombre: i.insumo_nombre,
+            unidad: i.unidad_medida,
+            esOriginal: i.es_original,
+          })),
+        })
       }
     } catch (error) {
       console.error("Error loading initial data:", error)
