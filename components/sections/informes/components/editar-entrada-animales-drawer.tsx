@@ -34,6 +34,7 @@ interface DetalleItem {
   cantidad: number
   peso: number
   tipo_peso: "TOTAL" | "PROMEDIO"
+  deleteable?: boolean
 }
 
 interface Lote {
@@ -103,6 +104,10 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
 
   // Datos del usuario
   const { usuario, loading: loadingUsuario } = useUser()
+
+  // Estado para controlar eliminación
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Obtener establecimiento_id y empresa_id actual del localStorage
   useEffect(() => {}, [])
@@ -220,6 +225,7 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
           cantidad: detalle.detalle_cantidad || 0,
           peso: detalle.detalle_peso || 0,
           tipo_peso: (detalle.detalle_tipo_peso as "TOTAL" | "PROMEDIO") || "TOTAL",
+          deleteable: detalle.deleteable || false,
         }))
 
         setDetalles(detallesFormateados)
@@ -431,6 +437,7 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
         cantidad: nuevoDetalle.cantidad,
         peso: nuevoDetalle.peso,
         tipo_peso: nuevoDetalle.tipo_peso,
+        deleteable: nuevoDetalle.deleteable || false,
       }
       setDetalles([...detalles, detalle])
     }
@@ -628,6 +635,71 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
     onClose()
   }
 
+  const eliminarParteDiario = async () => {
+    if (!parte || !usuario?.id) return
+
+    setDeleting(true)
+    try {
+      const response = await fetch(`/api/movimientos-animales/${parte.pd_id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_user_id: usuario.id,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Error al eliminar el parte diario")
+      }
+
+      toast({
+        title: "Parte Diario Eliminado",
+        description: "El parte diario ha sido eliminado correctamente",
+      })
+
+      window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+      onSuccess?.()
+      onClose()
+    } catch (error) {
+      console.error("Error eliminando parte diario:", error)
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el parte diario",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
+  const puedeEliminar = () => {
+    if (!parte) return false
+
+    try {
+      let detalles
+      if (typeof parte.pd_detalles === "string") {
+        detalles = JSON.parse(parte.pd_detalles)
+      } else {
+        detalles = parte.pd_detalles
+      }
+
+      // Si es un array, tomar el primer elemento y buscar detalle_deleteable
+      if (Array.isArray(detalles) && detalles.length > 0) {
+        return detalles[0].detalle_deleteable === true
+      }
+
+      // Si es un objeto directo, buscar detalle_deleteable
+      return detalles?.detalle_deleteable === true
+    } catch {
+      return false
+    }
+  }
+
   // Efecto para actualizar detalles cuando se cargan categorías y tipos
   useEffect(() => {
     if (categorias.length > 0 && tiposMovimiento.length > 0 && detalles.length > 0) {
@@ -727,7 +799,7 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
               <div>
                 <Label className="text-sm font-medium text-gray-700">Tipo</Label>
                 <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                 Entrada
+                  Entrada
                 </div>
               </div>
 
@@ -993,14 +1065,48 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
         </div>
 
         {/* Footer */}
-        <div className="border-t p-6 flex gap-3 justify-end">
-          <Button onClick={cancelar} variant="outline">
-            Cancelar
-          </Button>
-          <Button onClick={actualizar} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
-            {loading ? "Actualizando..." : "Actualizar"}
-          </Button>
+        <div className="border-t p-6 flex gap-3 justify-between">
+          <div>
+            {puedeEliminar() ? (
+              <Button onClick={() => setShowDeleteConfirm(true)} variant="destructive" disabled={deleting}>
+                {deleting ? "Eliminando..." : "Eliminar"}
+              </Button>
+            ) : (
+              <div className="flex flex-col">
+                <Button variant="outline" disabled className="text-gray-400 cursor-not-allowed bg-transparent">
+                  Eliminar
+                </Button>
+                <span className="text-xs text-gray-500 mt-1">Este parte diario no puede ser eliminado</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <Button onClick={cancelar} variant="outline">
+              Cancelar
+            </Button>
+            <Button onClick={actualizar} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+              {loading ? "Actualizando..." : "Actualizar"}
+            </Button>
+          </div>
         </div>
+
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+              <p className="text-gray-600 mb-6">¿Seguro que quiere eliminar el Parte Diario?</p>
+              <div className="flex gap-3 justify-end">
+                <Button onClick={() => setShowDeleteConfirm(false)} variant="outline">
+                  No
+                </Button>
+                <Button onClick={eliminarParteDiario} variant="destructive" disabled={deleting}>
+                  {deleting ? "Eliminando..." : "Sí"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )

@@ -112,3 +112,72 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     )
   }
 }
+
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const { id } = params
+    const body = await request.json()
+    console.log("Soft delete para movimiento ID:", id, "con datos:", body)
+
+    const { deleted, deleted_at, deleted_user_id } = body
+
+    // Validar datos requeridos para soft delete
+    if (typeof deleted !== "boolean" || !deleted_at || !deleted_user_id) {
+      return NextResponse.json(
+        { error: "Faltan datos requeridos: deleted, deleted_at y deleted_user_id son obligatorios" },
+        { status: 400 },
+      )
+    }
+
+    const supabaseUrl = process.env.SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json({ error: "Configuración de Supabase no encontrada" }, { status: 500 })
+    }
+
+    // Actualizar el registro con soft delete
+    const updateData = {
+      deleted: deleted,
+      deleted_at: deleted_at,
+      deleted_user_id: deleted_user_id,
+    }
+
+    console.log("Actualizando registro con soft delete:", updateData)
+
+    const response = await fetch(`${supabaseUrl}/rest/v1/pd_movimientos_animales?id=eq.${id}`, {
+      method: "PATCH",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify(updateData),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("Error en soft delete:", errorText)
+      throw new Error(`Error en soft delete: ${errorText}`)
+    }
+
+    const updatedRecord = await response.json()
+    console.log("Registro actualizado con soft delete:", updatedRecord)
+
+    return NextResponse.json({
+      success: true,
+      message: "Parte diario eliminado correctamente",
+      data: updatedRecord,
+    })
+  } catch (error) {
+    console.error("Error completo en soft delete:", error)
+    return NextResponse.json(
+      {
+        error: "Error interno del servidor",
+        details: error instanceof Error ? error.message : "Error desconocido",
+      },
+      { status: 500 },
+    )
+  }
+}
