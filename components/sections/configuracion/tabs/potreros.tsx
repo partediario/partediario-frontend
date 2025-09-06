@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useEstablishment } from "@/contexts/establishment-context"
 import { PotreroDrawer } from "../components/potrero-drawer"
 import { usePermissions } from "@/hooks/use-permissions"
+import { formatNumber } from "@/lib/utils"
 
 interface Potrero {
   id: number
@@ -107,9 +108,7 @@ export function Potreros() {
     // Convertir unidad de API a label de display
     const unidadLabel = unidad === "KILOS" ? "Kg" : unidad === "UG" ? "Ug" : unidad
 
-    // Formatear número con coma decimal si tiene decimales
-    const numeroFormateado =
-      receptividad % 1 === 0 ? receptividad.toString() : receptividad.toString().replace(".", ",")
+    const numeroFormateado = formatNumber(receptividad).replace(".", ",")
 
     return `${numeroFormateado} ${unidadLabel}`
   }
@@ -189,8 +188,8 @@ export function Potreros() {
                 {potreros.map((potrero) => (
                   <TableRow key={potrero.id}>
                     <TableCell className="font-medium">{potrero.nombre}</TableCell>
-                    <TableCell>{potrero.superficie_total} ha</TableCell>
-                    <TableCell>{potrero.superfice_util ? `${potrero.superfice_util} ha` : "-"}</TableCell>
+                    <TableCell>{formatNumber(potrero.superficie_total)} ha</TableCell>
+                    <TableCell>{potrero.superfice_util ? `${formatNumber(potrero.superfice_util)} ha` : "-"}</TableCell>
                     <TableCell>{potrero.recurso_forrajero || "-"}</TableCell>
                     <TableCell>{formatReceptividad(potrero.receptividad, potrero.receptividad_unidad)}</TableCell>
                     <TableCell>
