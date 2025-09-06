@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         *,
         insumo:pd_insumos(nombre),
         tipo_movimiento:pd_tipo_movimiento_insumos(nombre, direccion),
-        usuario:pd_usuarios(nombres, apellidos)
+        usuario:user_id(nombres, apellidos)
       `)
       .eq("establecimiento_id", establecimientoId)
       .order("created_at", { ascending: false })
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         *,
         insumo:pd_insumos(nombre),
         tipo_movimiento:pd_tipo_movimiento_insumos(nombre, direccion),
-        usuario:pd_usuarios(nombres, apellidos)
+        usuario:user_id(nombres, apellidos)
       `)
       .single()
 
@@ -109,7 +109,7 @@ export async function PUT(request: NextRequest) {
         *,
         insumo:pd_insumos(nombre),
         tipo_movimiento:pd_tipo_movimiento_insumos(nombre, direccion),
-        usuario:pd_usuarios(nombres, apellidos)
+        usuario:user_id(nombres, apellidos)
       `)
       .single()
 

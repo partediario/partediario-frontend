@@ -11,6 +11,7 @@ import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Package, AlertCircle, X } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { useUser } from "@/contexts/user-context"
 import type { ParteDiario } from "@/lib/types"
 
 interface EditarEntradaInsumosDrawerProps {
@@ -69,6 +70,8 @@ export default function EditarEntradaInsumosDrawer({
   const [loadingInsumos, setLoadingInsumos] = useState(false)
   const [loadingTipos, setLoadingTipos] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   // Formulario
   const [fecha, setFecha] = useState<Date>(new Date())
@@ -80,6 +83,8 @@ export default function EditarEntradaInsumosDrawer({
 
   // Errores
   const [errores, setErrores] = useState<string[]>([])
+
+  const { usuario, loading: loadingUsuario } = useUser()
 
   useEffect(() => {
     if (isOpen && parte.pd_detalles?.detalle_id) {
@@ -176,7 +181,7 @@ export default function EditarEntradaInsumosDrawer({
       const response = await fetch(`/api/insumos-disponibles?establecimiento_id=${establecimientoId}`)
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = await response.json()
         throw new Error(errorData.error || "Error al cargar insumos")
       }
 
@@ -272,9 +277,73 @@ export default function EditarEntradaInsumosDrawer({
     }
   }
 
+  const puedeEliminar = (): boolean => {
+    return parte.pd_detalles?.detalle_deleteable === true
+  }
+
+  const eliminarMovimiento = async () => {
+    console.log("[v0] eliminarMovimiento iniciado")
+    console.log("[v0] movimiento:", movimiento)
+    console.log("[v0] usuario:", usuario)
+
+    if (!movimiento || !usuario?.id) {
+      console.log("[v0] Validación fallida - movimiento o usuario faltante")
+      return
+    }
+
+    console.log("[v0] Iniciando eliminación...")
+    setDeleting(true)
+    try {
+      console.log("[v0] Haciendo PATCH a:", `/api/movimientos-insumos/${movimiento.id}`)
+      const response = await fetch(`/api/movimientos-insumos/${movimiento.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_user_id: usuario.id,
+        }),
+      })
+
+      console.log("[v0] Response status:", response.status)
+      console.log("[v0] Response ok:", response.ok)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.log("[v0] Error data:", errorData)
+        throw new Error("Error al eliminar el movimiento")
+      }
+
+      console.log("[v0] Eliminación exitosa")
+      toast({
+        title: "Movimiento Eliminado",
+        description: "El movimiento de entrada ha sido eliminado correctamente",
+      })
+
+      console.log("[v0] Disparando evento reloadPartesDiarios")
+      window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+      onSuccess?.()
+      handleClose()
+    } catch (error) {
+      console.error("[v0] Error eliminando movimiento:", error)
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el movimiento",
+        variant: "destructive",
+      })
+    } finally {
+      console.log("[v0] Finalizando eliminación")
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
   const handleClose = () => {
     onClose?.()
     setErrores([])
+    setShowDeleteConfirm(false)
     // Limpiar formulario
     setMovimiento(null)
     setFecha(new Date())
@@ -319,7 +388,7 @@ export default function EditarEntradaInsumosDrawer({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {loading ? (
+          {loading || loadingUsuario ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-gray-500">Cargando movimiento...</div>
             </div>
@@ -459,14 +528,48 @@ export default function EditarEntradaInsumosDrawer({
         </div>
 
         {/* Footer */}
-        <div className="border-t p-4 flex justify-end gap-3">
-          <Button variant="outline" onClick={handleClose} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={saving || loading} className="bg-green-600 hover:bg-green-700">
-            {saving ? "Guardando..." : "Guardar"}
-          </Button>
+        <div className="border-t p-6 flex gap-3 justify-between">
+          <div>
+            {puedeEliminar() ? (
+              <Button onClick={() => setShowDeleteConfirm(true)} variant="destructive" disabled={deleting}>
+                {deleting ? "Eliminando..." : "Eliminar"}
+              </Button>
+            ) : (
+              <div className="flex flex-col">
+                <Button variant="outline" disabled className="text-gray-400 cursor-not-allowed bg-transparent">
+                  Eliminar
+                </Button>
+                <span className="text-xs text-gray-500 mt-1">Este movimiento no puede ser eliminado</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleClose} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmit} disabled={saving || loading} className="bg-green-600 hover:bg-green-700">
+              {saving ? "Guardando..." : "Guardar"}
+            </Button>
+          </div>
         </div>
+
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+              <p className="text-gray-600 mb-6">¿Seguro que quiere eliminar este movimiento de entrada?</p>
+              <div className="flex gap-3 justify-end">
+                <Button onClick={() => setShowDeleteConfirm(false)} variant="outline">
+                  No
+                </Button>
+                <Button onClick={eliminarMovimiento} variant="destructive" disabled={deleting}>
+                  {deleting ? "Eliminando..." : "Sí"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )

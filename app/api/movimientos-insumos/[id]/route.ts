@@ -175,3 +175,38 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
+
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const movimientoId = params.id
+    const body = await request.json()
+
+    const { deleted, deleted_at, deleted_user_id } = body
+
+    // Soft delete the movimiento
+    const { data: movimientoEliminado, error } = await supabase
+      .from("pd_movimiento_insumos")
+      .update({
+        deleted,
+        deleted_at,
+        deleted_user_id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", movimientoId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Error en soft delete:", error)
+      return NextResponse.json({ error: "Error al eliminar el movimiento", details: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      message: "Movimiento eliminado exitosamente",
+      movimiento: movimientoEliminado,
+    })
+  } catch (error) {
+    console.error("Error in PATCH /api/movimientos-insumos/[id]:", error)
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+  }
+}
