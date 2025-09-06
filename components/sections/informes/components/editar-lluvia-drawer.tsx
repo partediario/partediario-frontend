@@ -27,6 +27,8 @@ export default function EditarLluviaDrawer({ isOpen, onClose, parte, onSuccess }
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
   const [mostrarExito, setMostrarExito] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const { establecimientoSeleccionado } = useEstablishment()
 
   // Estados del formulario
@@ -52,6 +54,7 @@ export default function EditarLluviaDrawer({ isOpen, onClose, parte, onSuccess }
       setNota("")
       setErrors([])
       setMostrarExito(false)
+      setShowDeleteConfirm(false)
     }
   }, [isOpen])
 
@@ -221,8 +224,68 @@ export default function EditarLluviaDrawer({ isOpen, onClose, parte, onSuccess }
     }
   }
 
+  const eliminarRegistro = async () => {
+    console.log("[v0] eliminarRegistro iniciado")
+    console.log("[v0] parte:", parte)
+    console.log("[v0] usuario:", usuario)
+
+    if (!parte?.pd_id || !usuario?.id) {
+      console.log("[v0] Validación fallida - parte o usuario faltante")
+      return
+    }
+
+    console.log("[v0] Iniciando eliminación...")
+    setDeleting(true)
+    try {
+      console.log("[v0] Haciendo PATCH a:", `/api/clima/${parte.pd_id}`)
+      const response = await fetch(`/api/clima/${parte.pd_id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_user_id: usuario.id,
+        }),
+      })
+
+      console.log("[v0] Response status:", response.status)
+      console.log("[v0] Response ok:", response.ok)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.log("[v0] Error data:", errorData)
+        throw new Error("Error al eliminar el registro")
+      }
+
+      console.log("[v0] Eliminación exitosa")
+      toast({
+        title: "Registro Eliminado",
+        description: "El registro de lluvia ha sido eliminado correctamente",
+      })
+
+      console.log("[v0] Disparando evento reloadPartesDiarios")
+      window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+      onSuccess?.()
+      onClose()
+    } catch (error) {
+      console.error("[v0] Error eliminando registro:", error)
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el registro",
+        variant: "destructive",
+      })
+    } finally {
+      console.log("[v0] Finalizando eliminación")
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
   const cancelar = () => {
     onClose()
+    setShowDeleteConfirm(false)
   }
 
   // Solo mostrar el drawer para tipos CLIMA
@@ -354,14 +417,40 @@ export default function EditarLluviaDrawer({ isOpen, onClose, parte, onSuccess }
         </div>
 
         {/* Footer */}
-        <div className="border-t p-6 flex gap-3 justify-end">
-          <Button onClick={cancelar} variant="outline">
-            Cancelar
-          </Button>
-          <Button onClick={actualizar} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
-            {loading ? "Actualizando..." : "Actualizar"}
-          </Button>
+        <div className="border-t p-6 flex gap-3 justify-between">
+          <div>
+            <Button onClick={() => setShowDeleteConfirm(true)} variant="destructive" disabled={deleting}>
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </Button>
+          </div>
+
+          <div className="flex gap-3">
+            <Button onClick={cancelar} variant="outline">
+              Cancelar
+            </Button>
+            <Button onClick={actualizar} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+              {loading ? "Actualizando..." : "Actualizar"}
+            </Button>
+          </div>
         </div>
+
+        {/* Delete confirmation modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+              <p className="text-gray-600 mb-6">¿Seguro que quiere eliminar este registro de lluvia?</p>
+              <div className="flex gap-3 justify-end">
+                <Button onClick={() => setShowDeleteConfirm(false)} variant="outline">
+                  No
+                </Button>
+                <Button onClick={eliminarRegistro} variant="destructive" disabled={deleting}>
+                  {deleting ? "Eliminando..." : "Sí"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )
