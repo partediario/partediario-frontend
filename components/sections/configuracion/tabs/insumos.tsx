@@ -12,7 +12,6 @@ import { useToast } from "@/hooks/use-toast"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { InsumoDrawer } from "../components/insumo-drawer"
 import { usePermissions } from "@/hooks/use-permissions"
-import { formatNumber } from "@/lib/utils"
 
 interface Insumo {
   id: number
@@ -205,11 +204,11 @@ export function Insumos() {
                       <Badge variant="secondary">{insumo.pd_tipos_insumo?.nombre || "Sin tipo"}</Badge>
                     </TableCell>
                     <TableCell>
-                      {formatNumber(insumo.contenido)} {insumo.pd_unidad_medida_producto?.nombre || ""}
+                      {insumo.contenido} {insumo.pd_unidad_medida_producto?.nombre || ""}
                     </TableCell>
                     <TableCell>
                       <Badge variant={insumo.stock?.cantidad ? "default" : "destructive"}>
-                        {formatNumber(insumo.stock?.cantidad || 0)} {insumo.pd_unidad_medida_uso?.nombre || "unidades"}
+                        {insumo.stock?.cantidad || 0} {insumo.pd_unidad_medida_uso?.nombre || "unidades"}
                       </Badge>
                     </TableCell>
                     <TableCell>
