@@ -116,7 +116,15 @@ export function useInsumosData(claseInsumoId?: number, insumoId?: number) {
       }
     >()
 
+    if (!allData || !Array.isArray(allData)) {
+      return []
+    }
+
     allData.forEach((insumo) => {
+      if (!insumo?.pd_detalles?.movimientos_asociados || !Array.isArray(insumo.pd_detalles.movimientos_asociados)) {
+        return
+      }
+
       const movimientosDelMes = insumo.pd_detalles.movimientos_asociados.filter((mov) => {
         const fechaMov = new Date(mov.fecha)
         return (

@@ -144,6 +144,10 @@ export function GestionInsumoEspecifico({
   }, [filtrosAvanzados.tipoInsumo])
 
   const opcionesInsumos = useMemo(() => {
+    if (!insumosData || !Array.isArray(insumosData)) {
+      return []
+    }
+
     return insumosData.map((insumo) => ({
       id: insumo.pd_id.toString(),
       tipo: insumo.pd_tipo,
@@ -153,21 +157,31 @@ export function GestionInsumoEspecifico({
 
   const usuariosDisponibles = useMemo(() => {
     const usuarios = new Set<string>()
-    insumosData.forEach((insumo) => {
-      insumo.pd_detalles.movimientos_asociados.forEach((mov) => {
-        usuarios.add(mov.usuario)
+    if (insumosData && Array.isArray(insumosData)) {
+      insumosData.forEach((insumo) => {
+        if (insumo?.pd_detalles?.movimientos_asociados && Array.isArray(insumo.pd_detalles.movimientos_asociados)) {
+          insumo.pd_detalles.movimientos_asociados.forEach((mov) => {
+            if (mov?.usuario) {
+              usuarios.add(mov.usuario)
+            }
+          })
+        }
       })
-    })
+    }
     return Array.from(usuarios).sort()
   }, [insumosData])
 
   const movimientosParaTabla = useMemo(() => {
     let movimientos: any[] = []
 
+    if (!insumosData || !Array.isArray(insumosData)) {
+      return []
+    }
+
     if (insumoSeleccionado) {
       // Si hay insumo seleccionado, mostrar solo sus movimientos
       const insumo = insumosData.find((i) => i.pd_id === insumoSeleccionado)
-      if (insumo) {
+      if (insumo?.pd_detalles?.movimientos_asociados && Array.isArray(insumo.pd_detalles.movimientos_asociados)) {
         movimientos = insumo.pd_detalles.movimientos_asociados.map((mov) => ({
           ...mov,
           insumo_nombre: insumo.pd_nombre,
@@ -178,13 +192,15 @@ export function GestionInsumoEspecifico({
     } else {
       // Si no hay insumo seleccionado, mostrar todos los movimientos de la clase
       insumosData.forEach((insumo) => {
-        const movimientosInsumo = insumo.pd_detalles.movimientos_asociados.map((mov) => ({
-          ...mov,
-          insumo_nombre: insumo.pd_nombre,
-          insumo_id: insumo.pd_id,
-          unidad_medida: insumo.unidad_medida_nombre,
-        }))
-        movimientos.push(...movimientosInsumo)
+        if (insumo?.pd_detalles?.movimientos_asociados && Array.isArray(insumo.pd_detalles.movimientos_asociados)) {
+          const movimientosInsumo = insumo.pd_detalles.movimientos_asociados.map((mov) => ({
+            ...mov,
+            insumo_nombre: insumo.pd_nombre,
+            insumo_id: insumo.pd_id,
+            unidad_medida: insumo.unidad_medida_nombre,
+          }))
+          movimientos.push(...movimientosInsumo)
+        }
       })
     }
 
