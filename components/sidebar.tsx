@@ -96,7 +96,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: Package,
       label: "Insumos",
       key: "insumos",
-      visible: false, // Cambiado de permissions.canViewDashboard("insumos") a false
+      visible: true, // Cambiado de permissions.canViewDashboard("insumos") a false
       requiresAuth: true,
     },
     {
