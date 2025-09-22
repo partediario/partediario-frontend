@@ -112,3 +112,75 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     )
   }
 }
+
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const parteId = Number.parseInt(params.id)
+    const body = await request.json()
+    const { deleted, deleted_at, deleted_user_id } = body
+
+    console.log("🗑️ Eliminando recorrida (soft delete):")
+    console.log("📋 Parte ID recibido:", parteId)
+    console.log("📋 Body recibido:", JSON.stringify(body, null, 2))
+
+    // Validaciones básicas
+    if (!parteId || isNaN(parteId)) {
+      console.log("❌ ID de parte inválido:", parteId)
+      return NextResponse.json({ error: "ID de parte inválido" }, { status: 400 })
+    }
+
+    if (deleted === undefined || !deleted_at || !deleted_user_id) {
+      console.log("❌ Faltan campos requeridos para eliminación:", { deleted, deleted_at, deleted_user_id })
+      return NextResponse.json({ error: "Faltan campos requeridos para eliminación" }, { status: 400 })
+    }
+
+    console.log("🔍 Buscando actividad asociada al parte diario...")
+    const { data: actividadData, error: actividadError } = await supabase
+      .from("pd_actividades")
+      .select("id")
+      .eq("id", parteId)
+      .single()
+
+    if (actividadError || !actividadData) {
+      console.log("❌ Error buscando actividad:", actividadError)
+      return NextResponse.json({ error: "No se encontró la actividad asociada" }, { status: 404 })
+    }
+
+    const actividadId = actividadData.id
+    console.log("✅ ID de actividad encontrado:", actividadId)
+
+    console.log("🔄 Marcando actividad como eliminada...")
+    const { error: updateError } = await supabase
+      .from("pd_actividades")
+      .update({
+        deleted: deleted,
+        deleted_at: deleted_at,
+        deleted_user_id: deleted_user_id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", actividadId)
+
+    if (updateError) {
+      console.log("❌ Error marcando actividad como eliminada:", updateError)
+      return NextResponse.json({ error: "Error al eliminar actividad" }, { status: 500 })
+    }
+
+    console.log("✅ Recorrida eliminada exitosamente")
+
+    return NextResponse.json({
+      message: "Recorrida eliminada exitosamente",
+      parte_id: parteId,
+      actividad_id: actividadId,
+    })
+  } catch (error) {
+    console.error("❌ Error al eliminar recorrida:", error)
+    console.error("❌ Stack trace:", error instanceof Error ? error.stack : "No stack trace")
+    return NextResponse.json(
+      {
+        error: "Error interno del servidor al eliminar recorrida",
+        details: error instanceof Error ? error.message : "Error desconocido",
+      },
+      { status: 500 },
+    )
+  }
+}

@@ -44,6 +44,8 @@ interface EditarCastracionDrawerProps {
 
 export default function EditarCastracionDrawer({ isOpen, onClose, onSuccess, parte }: EditarCastracionDrawerProps) {
   const [loading, setLoading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [loadingData, setLoadingData] = useState(false)
 
   // Datos para animales
@@ -312,6 +314,57 @@ export default function EditarCastracionDrawer({ isOpen, onClose, onSuccess, par
     }
   }
 
+  const eliminarActividad = async () => {
+    if (!parte?.pd_id || !usuario?.id) {
+      toast({
+        title: "❌ Error",
+        description: "No se pudo identificar la actividad o el usuario",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/actividades-mixtas/${parte.pd_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_user_id: usuario.id,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Error al eliminar castración")
+      }
+
+      toast({
+        title: "✅ Castración Eliminada",
+        description: "La castración ha sido eliminada correctamente",
+        duration: 4000,
+      })
+
+      // Disparar evento para recargar partes diarios
+      window.dispatchEvent(new Event("reloadPartesDiarios"))
+
+      handleClose()
+      onSuccess?.()
+    } catch (error) {
+      console.error("Error deleting castración:", error)
+      toast({
+        title: "❌ Error",
+        description: error instanceof Error ? error.message : "Error al eliminar castración",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
   const handleClose = () => {
     onClose?.()
     // Reset form
@@ -564,14 +617,39 @@ export default function EditarCastracionDrawer({ isOpen, onClose, onSuccess, par
           )}
         </div>
 
-        {/* Footer */}
-        <div className="border-t p-4 flex justify-end gap-3">
-          <Button variant="outline" onClick={handleClose} disabled={loading}>
-            Cancelar
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+              <p className="text-gray-600 mb-6">
+                ¿Está seguro que desea eliminar esta castración? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={eliminarActividad} disabled={deleting}>
+                  {deleting ? "Eliminando..." : "Eliminar"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="border-t p-4 flex justify-between">
+          {/* Botón Eliminar en el lado izquierdo */}
+          <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} disabled={loading || deleting}>
+            Eliminar
           </Button>
-          <Button onClick={handleSubmit} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
-            {loading ? "Actualizando..." : "Actualizar Actividad"}
-          </Button>
+
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleClose} disabled={loading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmit} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+              {loading ? "Actualizando..." : "Actualizar Actividad"}
+            </Button>
+          </div>
         </div>
       </DrawerContent>
     </Drawer>

@@ -55,6 +55,8 @@ export default function EditarRecorridaDrawer({
   const [loadingData, setLoadingData] = useState(false)
   const [potreros, setPotreros] = useState<Potrero[]>([])
   const [loadingPotreros, setLoadingPotreros] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   // Formulario principal
   const [fecha, setFecha] = useState<Date>(new Date())
@@ -342,6 +344,65 @@ export default function EditarRecorridaDrawer({
     }
   }
 
+  const eliminarRecorrida = async () => {
+    console.log("[v0] eliminarRecorrida iniciado")
+    console.log("[v0] parte:", parte)
+    console.log("[v0] usuario:", usuario)
+
+    if (!parte?.pd_id || !usuario?.id) {
+      console.log("[v0] Validación fallida - parte o usuario faltante")
+      return
+    }
+
+    console.log("[v0] Iniciando eliminación...")
+    setDeleting(true)
+    try {
+      console.log("[v0] Haciendo PATCH a:", `/api/recorrida/${parte.pd_id}`)
+      const response = await fetch(`/api/recorrida/${parte.pd_id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_user_id: usuario.id,
+        }),
+      })
+
+      console.log("[v0] Response status:", response.status)
+      console.log("[v0] Response ok:", response.ok)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.log("[v0] Error data:", errorData)
+        throw new Error("Error al eliminar la recorrida")
+      }
+
+      console.log("[v0] Eliminación exitosa")
+      toast({
+        title: "Recorrida Eliminada",
+        description: "La recorrida ha sido eliminada correctamente",
+      })
+
+      console.log("[v0] Disparando evento reloadPartesDiarios")
+      window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+      onSuccess?.()
+      handleClose()
+    } catch (error) {
+      console.error("[v0] Error eliminando recorrida:", error)
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la recorrida",
+        variant: "destructive",
+      })
+    } finally {
+      console.log("[v0] Finalizando eliminación")
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
   const handleClose = () => {
     onClose?.()
     // Reset form
@@ -351,6 +412,7 @@ export default function EditarRecorridaDrawer({
     setDetalles([])
     limpiarFormularioDetalle()
     setErrores([])
+    setShowDeleteConfirm(false)
   }
 
   // Filtrar potreros que ya están agregados
@@ -683,14 +745,43 @@ export default function EditarRecorridaDrawer({
         </div>
 
         {/* Footer */}
-        <div className="border-t p-4 flex justify-end gap-3">
-          <Button variant="outline" onClick={handleClose} disabled={loading}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={loading || loadingData} className="bg-green-600 hover:bg-green-700">
-            {loading ? "Actualizando..." : "Actualizar Recorrida"}
-          </Button>
+        <div className="border-t p-6 flex gap-3 justify-between">
+          <div>
+            <Button onClick={() => setShowDeleteConfirm(true)} variant="destructive" disabled={deleting}>
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </Button>
+          </div>
+
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleClose} disabled={loading}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={loading || loadingData}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {loading ? "Actualizando..." : "Actualizar Recorrida"}
+            </Button>
+          </div>
         </div>
+
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+              <p className="text-gray-600 mb-6">¿Seguro que quiere eliminar esta recorrida?</p>
+              <div className="flex gap-3 justify-end">
+                <Button onClick={() => setShowDeleteConfirm(false)} variant="outline">
+                  No
+                </Button>
+                <Button onClick={eliminarRecorrida} variant="destructive" disabled={deleting}>
+                  {deleting ? "Eliminando..." : "Sí"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )
