@@ -266,10 +266,8 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
       newErrors.push("Debe seleccionar la unidad de medida de uso")
     }
 
-    if (!stockData.cantidad) {
-      newErrors.push("La cantidad de stock es requerida")
-    } else if (Number.parseInt(stockData.cantidad) <= 0) {
-      newErrors.push("La cantidad de stock debe ser mayor a 0")
+    if (stockData.cantidad && Number.parseInt(stockData.cantidad) < 0) {
+      newErrors.push("La cantidad de stock no puede ser negativa")
     }
 
     if (!establecimientoId) {
@@ -307,24 +305,30 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
 
       const nuevoInsumoId = data.insumo.id
 
-      // Crear stock del insumo
-      await fetch("/api/insumos-stock", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          insumo_id: nuevoInsumoId,
-          cantidad: Number.parseInt(stockData.cantidad),
-        }),
-      })
+      if (stockData.cantidad && Number.parseInt(stockData.cantidad) > 0) {
+        await fetch("/api/insumos-stock", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            insumo_id: nuevoInsumoId,
+            cantidad: Number.parseInt(stockData.cantidad),
+          }),
+        })
+      }
 
       setMostrarExito(true)
 
       setTimeout(() => {
+        const stockMessage =
+          stockData.cantidad && Number.parseInt(stockData.cantidad) > 0
+            ? ` con stock inicial de ${stockData.cantidad}`
+            : " sin stock inicial"
+
         toast({
           title: "✅ Insumo creado",
-          description: `Se creó el insumo "${formData.nombre}" correctamente con stock inicial de ${stockData.cantidad}`,
+          description: `Se creó el insumo "${formData.nombre}" correctamente${stockMessage}`,
           duration: 4000,
         })
       }, 500)
@@ -368,30 +372,31 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
         throw new Error(data.error || "Error al actualizar insumo")
       }
 
-      // Actualizar o crear stock
-      if (insumo?.stock?.id) {
-        // Actualizar stock existente
-        await fetch(`/api/insumos-stock/${insumo.stock.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            cantidad: Number.parseInt(stockData.cantidad),
-          }),
-        })
-      } else {
-        // Crear nuevo stock
-        await fetch("/api/insumos-stock", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            insumo_id: insumo?.id,
-            cantidad: Number.parseInt(stockData.cantidad),
-          }),
-        })
+      if (stockData.cantidad && Number.parseInt(stockData.cantidad) >= 0) {
+        if (insumo?.stock?.id) {
+          // Actualizar stock existente
+          await fetch(`/api/insumos-stock/${insumo.stock.id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              cantidad: Number.parseInt(stockData.cantidad),
+            }),
+          })
+        } else {
+          // Crear nuevo stock
+          await fetch("/api/insumos-stock", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              insumo_id: insumo?.id,
+              cantidad: Number.parseInt(stockData.cantidad),
+            }),
+          })
+        }
       }
 
       setMostrarExito(true)
@@ -650,19 +655,19 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
 
             <div>
               <Label htmlFor="cantidad" className="text-sm font-medium text-gray-700">
-                Cantidad en stock *
+                Cantidad en stock
               </Label>
               <Input
                 id="cantidad"
                 type="number"
                 value={stockData.cantidad}
                 onChange={(e) => setStockData((prev) => ({ ...prev, cantidad: e.target.value }))}
-                placeholder="Ej: 100"
+                placeholder="Ej: 100 (opcional)"
                 disabled={loading}
                 className="mt-1"
-                min="1"
+                min="0"
               />
-              <p className="text-sm text-gray-500 mt-1">Debe ser mayor a 0</p>
+              <p className="text-sm text-gray-500 mt-1">Opcional - Deja vacío para crear sin stock inicial</p>
             </div>
           </div>
 
