@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
 
     console.log("📡 [API] Consultando vista pd_user_profile_view...")
 
-    // Usar la vista personalizada que ya tienes creada
     const { data, error } = await supabase.from("pd_user_profile_view").select("*").eq("id", userId).single()
 
     if (error) {
@@ -43,7 +42,7 @@ export async function GET(request: NextRequest) {
       id: data.id,
       nombreCompleto,
       email: data.email,
-      empresas: data.empresas?.length || 0,
+      establecimientos: data.establecimientos?.length || 0,
     })
 
     return NextResponse.json({
@@ -55,8 +54,10 @@ export async function GET(request: NextRequest) {
         nombreCompleto,
         email: data.email,
         phone: data.phone,
-        roles: data.roles || [],
-        empresas: data.empresas || [],
+        establecimientos: data.establecimientos || [],
+        // Mantener compatibilidad temporal con el sistema anterior
+        roles: [], // Vacío porque ahora los roles están por establecimiento
+        empresas: [], // Vacío porque ahora usamos establecimientos directamente
       },
     })
   } catch (error) {

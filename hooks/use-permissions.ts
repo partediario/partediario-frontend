@@ -1,11 +1,13 @@
 "use client"
 
 import { useUser } from "@/contexts/user-context"
+import { useEstablishment } from "@/contexts/establishment-context"
 import { createPermissions } from "@/lib/permissions"
 import { useMemo } from "react"
 
 export function usePermissions() {
   const { usuario, loading } = useUser()
+  const { establecimientoSeleccionado } = useEstablishment()
 
   const permissions = useMemo(() => {
     if (loading || !usuario) {
@@ -34,7 +36,7 @@ export function usePermissions() {
     }
 
     return createPermissions(usuario)
-  }, [usuario, loading])
+  }, [usuario, loading, establecimientoSeleccionado]) // Agregar establecimientoSeleccionado como dependencia
 
   return permissions
 }

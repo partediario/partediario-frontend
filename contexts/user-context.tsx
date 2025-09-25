@@ -12,8 +12,7 @@ interface User {
   nombreCompleto?: string
   activo?: boolean
   profile?: any
-  roles?: any[]
-  empresas?: any[]
+  establecimientos?: any[]
   phone?: string
 }
 
@@ -53,35 +52,29 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         console.log("✅ [USER_CONTEXT] Perfil completo obtenido:")
         console.log("📋 [PROFILE_DATA] Datos completos del perfil:", JSON.stringify(result.usuario, null, 2))
 
-        // Mostrar información específica de roles
-        if (result.usuario.roles && result.usuario.roles.length > 0) {
-          console.log("👤 [ROLES] Roles del usuario:")
-          result.usuario.roles.forEach((role: any, index: number) => {
-            console.log(`   ${index + 1}. ${role.nombre} (ID: ${role.id})`)
-            if (role.privilegios && role.privilegios.length > 0) {
-              console.log(`      Privilegios: ${role.privilegios.join(", ")}`)
-            }
-          })
-        } else {
-          console.log("👤 [ROLES] El usuario no tiene roles asignados")
-        }
-
-        // Mostrar información específica de empresas
-        if (result.usuario.empresas && result.usuario.empresas.length > 0) {
-          console.log("🏢 [EMPRESAS] Empresas del usuario:")
-          result.usuario.empresas.forEach((empresa: any, index: number) => {
-            console.log(`   ${index + 1}. ${empresa.nombre} (ID: ${empresa.id})`)
-            if (empresa.establecimientos && empresa.establecimientos.length > 0) {
-              console.log(`      Establecimientos:`)
-              empresa.establecimientos.forEach((est: any, estIndex: number) => {
-                console.log(`         ${estIndex + 1}. ${est.nombre} (ID: ${est.id})`)
+        if (result.usuario.establecimientos && result.usuario.establecimientos.length > 0) {
+          console.log("🏭 [ESTABLECIMIENTOS] Establecimientos del usuario:")
+          result.usuario.establecimientos.forEach((establecimiento: any, index: number) => {
+            console.log(`   ${index + 1}. ${establecimiento.nombre} (ID: ${establecimiento.id})`)
+            console.log(`      Es propietario: ${establecimiento.is_owner ? "Sí" : "No"}`)
+            if (establecimiento.roles && establecimiento.roles.length > 0) {
+              console.log(`      Roles:`)
+              establecimiento.roles.forEach((role: any, roleIndex: number) => {
+                console.log(`         ${roleIndex + 1}. ${role.nombre} (ID: ${role.id})`)
               })
             } else {
-              console.log(`      Sin establecimientos asignados`)
+              console.log(`      Sin roles asignados`)
+            }
+            if (establecimiento.privilegios && establecimiento.privilegios.length > 0) {
+              console.log(
+                `      Privilegios (${establecimiento.privilegios.length}): ${establecimiento.privilegios.slice(0, 3).join(", ")}${establecimiento.privilegios.length > 3 ? "..." : ""}`,
+              )
+            } else {
+              console.log(`      Sin privilegios asignados`)
             }
           })
         } else {
-          console.log("🏢 [EMPRESAS] El usuario no tiene empresas asignadas")
+          console.log("🏭 [ESTABLECIMIENTOS] El usuario no tiene establecimientos asignados")
         }
 
         // Mostrar información básica
@@ -127,7 +120,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           console.log("✅ [USER_CONTEXT] Usuario básico cargado:", parsedUser.email)
 
           // Si ya tiene datos del perfil completo, usar esos datos
-          if (parsedUser.roles && parsedUser.empresas) {
+          if (parsedUser.establecimientos) {
             console.log("📋 [USER_CONTEXT] Usando datos del perfil en caché")
             setUsuario(parsedUser)
             setError(null)
@@ -148,8 +141,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 id: completeUser.id,
                 email: completeUser.email,
                 nombreCompleto: completeUser.nombreCompleto,
-                rolesCount: completeUser.roles?.length || 0,
-                empresasCount: completeUser.empresas?.length || 0,
+                establecimientosCount: completeUser.establecimientos?.length || 0,
               })
 
               setUsuario(completeUser)

@@ -107,12 +107,13 @@ export async function POST(request: NextRequest) {
 
       console.log("✅ [CREATE_USER_EMAIL] Datos de usuario guardados en pd_usuarios")
 
-      // Paso 3: Crear asignación a la empresa y establecimiento
+      // Paso 3: Crear asignación a la empresa y establecimiento CON rol
       const establecimientoIdNumerico = Number.parseInt(establecimientoId)
       const empresaIdNumerico = Number.parseInt(empresaId)
+      const rolIdNumerico = Number.parseInt(rolId)
 
-      if (isNaN(establecimientoIdNumerico) || isNaN(empresaIdNumerico)) {
-        console.error("❌ [CREATE_USER_EMAIL] IDs inválidos:", { establecimientoId, empresaId })
+      if (isNaN(establecimientoIdNumerico) || isNaN(empresaIdNumerico) || isNaN(rolIdNumerico)) {
+        console.error("❌ [CREATE_USER_EMAIL] IDs inválidos:", { establecimientoId, empresaId, rolId })
 
         // Rollback
         try {
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json(
-          { success: false, error: "IDs de empresa o establecimiento inválidos" },
+          { success: false, error: "IDs de empresa, establecimiento o rol inválidos" },
           { status: 400 },
         )
       }
@@ -138,6 +139,8 @@ export async function POST(request: NextRequest) {
         usuario_id: userId,
         empresa_id: empresaIdNumerico,
         establecimiento_id: establecimientoIdNumerico,
+        rol_id: rolIdNumerico,
+        is_owner: false, // Los usuarios creados no son owners por defecto
       })
 
       if (asignacionError) {
@@ -163,39 +166,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      console.log("✅ [CREATE_USER_EMAIL] Usuario asignado a la empresa y establecimiento")
-
-      // Paso 4: Asignar rol al usuario
-      const { error: rolError } = await supabaseServer.from("pd_usuario_roles").insert({
-        usuario_id: userId,
-        rol_id: Number.parseInt(rolId),
-      })
-
-      if (rolError) {
-        console.error("❌ [CREATE_USER_EMAIL] Error assigning role:", rolError)
-
-        // Rollback
-        try {
-          await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
-            method: "DELETE",
-            headers: {
-              apikey: supabaseServiceKey,
-              Authorization: `Bearer ${supabaseServiceKey}`,
-            },
-          })
-          await supabaseServer.from("pd_usuarios").delete().eq("id", userId)
-          await supabaseServer.from("pd_asignacion_usuarios").delete().eq("usuario_id", userId)
-        } catch (rollbackError) {
-          console.error("❌ Error en rollback:", rollbackError)
-        }
-
-        return NextResponse.json(
-          { success: false, error: `Error al asignar rol: ${rolError.message}` },
-          { status: 500 },
-        )
-      }
-
-      console.log("✅ [CREATE_USER_EMAIL] Rol asignado correctamente")
+      console.log("✅ [CREATE_USER_EMAIL] Usuario asignado a la empresa, establecimiento y rol")
 
       // Paso 5: Actualizar teléfono (ahora requerido)
       try {
@@ -240,7 +211,6 @@ export async function POST(request: NextRequest) {
             })
             await supabaseServer.from("pd_usuarios").delete().eq("id", userId)
             await supabaseServer.from("pd_asignacion_usuarios").delete().eq("usuario_id", userId)
-            await supabaseServer.from("pd_usuario_roles").delete().eq("usuario_id", userId)
           } catch (rollbackError) {
             console.error("❌ Error en rollback:", rollbackError)
           }
@@ -266,7 +236,6 @@ export async function POST(request: NextRequest) {
           })
           await supabaseServer.from("pd_usuarios").delete().eq("id", userId)
           await supabaseServer.from("pd_asignacion_usuarios").delete().eq("usuario_id", userId)
-          await supabaseServer.from("pd_usuario_roles").delete().eq("usuario_id", userId)
         } catch (rollbackError) {
           console.error("❌ Error en rollback:", rollbackError)
         }
@@ -285,7 +254,7 @@ export async function POST(request: NextRequest) {
           telefono: telefono,
           empresa_id: empresaIdNumerico,
           establecimiento_id: establecimientoIdNumerico,
-          rol_id: Number.parseInt(rolId),
+          rol_id: rolIdNumerico,
         },
       })
     } catch (error) {

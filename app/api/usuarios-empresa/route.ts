@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Usar la vista pd_user_profile_view para obtener usuarios con sus datos completos
     const { data: userProfiles, error: profilesError } = await supabase.from("pd_user_profile_view").select("*")
 
     if (profilesError) {
@@ -32,50 +31,61 @@ export async function GET(request: NextRequest) {
 
     console.log("✅ User profiles found:", userProfiles?.length || 0)
 
-    // Filtrar usuarios que pertenecen a la empresa seleccionada
+    const { data: empresaInfo, error: empresaError } = await supabase
+      .from("pd_empresas")
+      .select("id, nombre")
+      .eq("id", empresaId)
+      .single()
+
+    if (empresaError || !empresaInfo) {
+      console.error("❌ Error fetching empresa info:", empresaError)
+      return NextResponse.json({ success: false, error: "Empresa no encontrada" }, { status: 404 })
+    }
+
+    const { data: establecimientosEmpresa, error: establecimientosError } = await supabase
+      .from("pd_establecimientos")
+      .select("id, nombre")
+      .eq("empresa_id", empresaId)
+
+    if (establecimientosError) {
+      console.error("❌ Error fetching establecimientos:", establecimientosError)
+      return NextResponse.json({ success: false, error: "Error al obtener establecimientos" }, { status: 500 })
+    }
+
+    const establecimientosIds = establecimientosEmpresa?.map((est) => est.id) || []
+    console.log("🏢 Establecimientos de la empresa:", establecimientosIds)
+
     const usuariosEmpresa = []
 
     for (const profile of userProfiles || []) {
-      // Parsear empresas si viene como string JSON
-      let empresas = profile.empresas
-      if (typeof empresas === "string") {
+      let establecimientos = profile.establecimientos
+      if (typeof establecimientos === "string") {
         try {
-          empresas = JSON.parse(empresas)
+          establecimientos = JSON.parse(establecimientos)
         } catch (e) {
-          console.error("Error parsing empresas JSON:", e)
-          empresas = []
+          console.error("Error parsing establecimientos JSON:", e)
+          establecimientos = []
         }
       }
 
-      // Parsear roles si viene como string JSON
-      let roles = profile.roles
-      if (typeof roles === "string") {
-        try {
-          roles = JSON.parse(roles)
-        } catch (e) {
-          console.error("Error parsing roles JSON:", e)
-          roles = []
-        }
-      }
+      const establecimientosDeEmpresa = Array.isArray(establecimientos)
+        ? establecimientos.filter((est: any) => establecimientosIds.includes(est.id))
+        : []
 
-      // Verificar si el usuario tiene asignaciones en la empresa seleccionada
-      const empresaActual = Array.isArray(empresas)
-        ? empresas.find((emp: any) => emp.id === Number.parseInt(empresaId))
-        : null
-
-      if (empresaActual) {
-        // Extraer establecimientos de esta empresa con nombres
-        const establecimientos = empresaActual.establecimientos || []
-        const establecimientosConNombres = establecimientos.map((est: any) => ({
+      if (establecimientosDeEmpresa.length > 0) {
+        const establecimientosConNombres = establecimientosDeEmpresa.map((est: any) => ({
           id: est.id,
           nombre: est.nombre,
+          roles: est.roles || [],
+          privilegios: est.privilegios || [],
+          is_owner: est.is_owner || false,
         }))
 
-        // Obtener el primer rol del usuario
-        const primerRol = Array.isArray(roles) && roles.length > 0 ? roles[0] : null
+        const primerRol = establecimientosDeEmpresa
+          .flatMap((est: any) => est.roles || [])
+          .find((rol: any) => rol && rol.nombre)
 
-        // Verificar si tiene is_owner en alguno de sus roles
-        const isOwner = Array.isArray(roles) && roles.some((rol: any) => rol.is_owner === true)
+        const isOwner = establecimientosDeEmpresa.some((est: any) => est.is_owner === true)
 
         const usuario = {
           id: profile.id,
@@ -83,8 +93,11 @@ export async function GET(request: NextRequest) {
           apellidos: profile.apellidos,
           telefono: profile.phone || "Sin teléfono",
           email: profile.email || "Sin email",
-          empresa_id: empresaActual.id,
-          establecimientos: establecimientosConNombres,
+          empresa_id: Number.parseInt(empresaId),
+          establecimientos: establecimientosConNombres.map((est) => ({
+            id: est.id,
+            nombre: est.nombre,
+          })),
           rol: primerRol ? primerRol.nombre : "Sin rol",
           rol_id: primerRol ? primerRol.id : null,
           is_owner: isOwner,
@@ -103,6 +116,8 @@ export async function GET(request: NextRequest) {
           primerRol ? primerRol.nombre : "Sin rol",
           "is_owner:",
           isOwner,
+          "Establecimientos:",
+          establecimientosConNombres.length,
         )
       }
     }

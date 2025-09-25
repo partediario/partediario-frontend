@@ -127,7 +127,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
         peso: 0,
         tipo_peso: "TOTAL",
       })
-      console.log("Formulario limpiado al cerrar el drawer")
+      // console.log("Formulario limpiado al cerrar el drawer")
     }
   }, [isOpen])
 

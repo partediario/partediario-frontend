@@ -127,13 +127,47 @@ export async function POST(request: NextRequest) {
 
     console.log("✅ [REGISTER] Empresa creada con ID:", empresaId)
 
-    // Paso 5: Insertar en pd_asignacion_usuarios
-    console.log("🔐 [REGISTER] Creando asignación de usuario...")
+    console.log("🏭 [REGISTER] Creando establecimiento por defecto...")
+    const { data: establecimientoData, error: establecimientoError } = await supabaseServer
+      .from("pd_establecimientos")
+      .insert({
+        nombre: `${empresa} - Establecimiento 1`,
+        empresa_id: empresaId,
+      })
+      .select()
+
+    if (establecimientoError) {
+      console.log("❌ [REGISTER] Error al crear establecimiento:", establecimientoError)
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Error al crear establecimiento por defecto",
+        },
+        { status: 400 },
+      )
+    }
+
+    const establecimientoId = establecimientoData[0]?.id
+    if (!establecimientoId) {
+      console.log("❌ [REGISTER] No se pudo obtener el ID del establecimiento")
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Error al obtener ID del establecimiento",
+        },
+        { status: 400 },
+      )
+    }
+
+    console.log("✅ [REGISTER] Establecimiento creado con ID:", establecimientoId)
+
+    console.log("🔐 [REGISTER] Creando asignación de usuario con rol...")
     const { error: asignacionError } = await supabaseServer.from("pd_asignacion_usuarios").insert({
       empresa_id: empresaId,
       usuario_id: userId,
-      establecimiento_id: null,
+      establecimiento_id: establecimientoId,
       is_owner: true,
+      rol_id: 4, // ADMINISTRADOR
     })
 
     if (asignacionError) {
@@ -147,27 +181,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log("✅ [REGISTER] Asignación creada")
-
-    // Paso 6: Insertar en pd_usuario_roles
-    console.log("🔐 [REGISTER] Asignando rol...")
-    const { error: rolError } = await supabaseServer.from("pd_usuario_roles").insert({
-      usuario_id: userId,
-      rol_id: 4,
-    })
-
-    if (rolError) {
-      console.log("❌ [REGISTER] Error al asignar rol:", rolError)
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Error al asignar rol",
-        },
-        { status: 400 },
-      )
-    }
-
-    console.log("✅ [REGISTER] Rol asignado correctamente")
+    console.log("✅ [REGISTER] Asignación creada con rol ADMINISTRADOR")
 
     // Paso 7: Actualizar teléfono usando la API externa
     console.log("📱 [REGISTER] Actualizando teléfono...")

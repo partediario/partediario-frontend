@@ -335,7 +335,7 @@ export default function EditarSalidaAnimalesDrawer({
       setMovimientoOriginal(null)
       cargaInicialRef.current = true // Resetear bandera de carga inicial
       limpiarFormularioDetalle() // Usar la función de limpieza
-      console.log("Formulario limpiado al cerrar el drawer")
+      // console.log("Formulario limpiado al cerrar el drawer")
     }
   }, [isOpen])
 
@@ -1394,7 +1394,7 @@ export default function EditarSalidaAnimalesDrawer({
               </div>
             )}
 
-            {/* Tabla de detalles */}
+            {/*Tabla de detalles */}
             <div className="border rounded-lg">
               <Table>
                 <TableHeader>

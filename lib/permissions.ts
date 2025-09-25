@@ -36,6 +36,13 @@ export type PrivilegioId = (typeof PRIVILEGIOS)[keyof typeof PRIVILEGIOS]
 export interface UserRole {
   id: number
   nombre: string
+}
+
+export interface UserEstablishment {
+  id: number
+  nombre: string
+  is_owner: boolean
+  roles: UserRole[]
   privilegios: string[]
 }
 
@@ -61,8 +68,49 @@ export interface UserPermissions {
   getPermissionsSummary: () => object
 }
 
+function getActiveEstablishmentId(): string | null {
+  if (typeof window === "undefined") return null
+
+  try {
+    const selectedEstablishment = localStorage.getItem("selected_establishment")
+    if (selectedEstablishment) {
+      const parsed = JSON.parse(selectedEstablishment)
+      return parsed.id?.toString() || null
+    }
+  } catch (error) {
+    console.error("Error obteniendo establecimiento activo:", error)
+  }
+
+  return null
+}
+
 export function createPermissions(usuario: any): UserPermissions {
-  const roles: UserRole[] = usuario?.roles || []
+  const activeEstablishmentId = getActiveEstablishmentId()
+
+  let roles: UserRole[] = []
+  let privilegios: string[] = []
+
+  if (usuario?.establecimientos && activeEstablishmentId) {
+    const activeEstablishment = usuario.establecimientos.find(
+      (est: UserEstablishment) => est.id.toString() === activeEstablishmentId,
+    )
+
+    if (activeEstablishment) {
+      roles = activeEstablishment.roles || []
+      privilegios = activeEstablishment.privilegios || []
+
+      // console.log("🏭 [PERMISSIONS] Establecimiento activo:", {
+      //   id: activeEstablishment.id,
+      //   nombre: activeEstablishment.nombre,
+      //   roles: roles.map((r) => r.nombre),
+      //   privilegiosCount: privilegios.length,
+      // })
+    } else {
+      console.warn("⚠️ [PERMISSIONS] No se encontró el establecimiento activo:", activeEstablishmentId)
+    }
+  } else {
+    console.warn("⚠️ [PERMISSIONS] No hay establecimiento activo o datos de establecimientos")
+  }
 
   // Verificar roles específicos
   const isAdmin = roles.some((role) => role.id === ROLES.ADMINISTRADOR)
@@ -77,13 +125,13 @@ export function createPermissions(usuario: any): UserPermissions {
   // - OPERATIVO: puede editar según sus privilegios específicos
   const canEdit = isAdmin || (!isConsultor && (isGerente || isOperativo))
 
-  // Función para verificar si tiene un privilegio específico
   const hasPrivilege = (privilegeId: PrivilegioId): boolean => {
     // Los administradores tienen todos los privilegios
     if (isAdmin) return true
 
-    // Verificar en los privilegios del usuario
-    return roles.some((role) => role.privilegios && role.privilegios.includes(getPrivilegeNameById(privilegeId)))
+    // Verificar en los privilegios del establecimiento activo
+    const privilegeName = getPrivilegeNameById(privilegeId)
+    return privilegios.includes(privilegeName)
   }
 
   // Función para obtener el nombre del privilegio por ID
@@ -164,7 +212,7 @@ export function createPermissions(usuario: any): UserPermissions {
     // OPERATIVO: NO puede acceder a configuración
     if (isOperativo) return false
 
-    // Para otros roles, verificar privilegios espec��ficos
+    // Para otros roles, verificar privilegios específicos
     return (
       hasPrivilege(PRIVILEGIOS.CONF) ||
       hasPrivilege(PRIVILEGIOS.CONF_VER_EMPRESA) ||
@@ -291,7 +339,6 @@ export function createPermissions(usuario: any): UserPermissions {
     return hasPrivilege(PRIVILEGIOS.PD_AGREGAR_INSUMO)
   }
 
-  // Obtener nombre del rol principal
   const getUserRoleName = (): string => {
     if (roles.length === 0) return "Sin rol"
     return roles[0].nombre || "Rol desconocido"

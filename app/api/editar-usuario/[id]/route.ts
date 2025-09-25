@@ -18,11 +18,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ success: false, error: "Nombres y apellidos son requeridos" }, { status: 400 })
     }
 
-    // Verificar el rol actual del usuario para determinar si es maestro
-    const { data: usuarioRolData, error: rolCheckError } = await supabaseServer
-      .from("pd_usuario_roles")
+    const { data: asignacionData, error: asignacionCheckError } = await supabaseServer
+      .from("pd_asignacion_usuarios")
       .select(`
         rol_id,
+        is_owner,
         pd_roles (
           id,
           nombre
@@ -31,32 +31,32 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       .eq("usuario_id", userId)
       .single()
 
-    if (rolCheckError) {
-      console.error("❌ [EDIT_USER] Error checking user role:", rolCheckError)
+    if (asignacionCheckError) {
+      console.error("❌ [EDIT_USER] Error checking user assignment:", asignacionCheckError)
       return NextResponse.json(
-        { success: false, error: `Error al verificar rol del usuario: ${rolCheckError.message}` },
+        { success: false, error: `Error al verificar asignación del usuario: ${asignacionCheckError.message}` },
         { status: 500 },
       )
     }
 
-    // Log para inspeccionar los datos del rol tal como vienen de Supabase
-    console.log("DEBUG: usuarioRolData (raw):", JSON.stringify(usuarioRolData, null, 2))
+    // Log para inspeccionar los datos de la asignación tal como vienen de Supabase
+    console.log("DEBUG: asignacionData (raw):", JSON.stringify(asignacionData, null, 2))
 
-    // Determinar si es un usuario maestro basado en el nombre del rol, insensible a mayúsculas/minúsculas
-    // Se considera "MAESTRO" o "ADMINISTRADOR" como roles de maestro para mayor flexibilidad
-    const currentRoleName = usuarioRolData?.pd_roles?.nombre?.toUpperCase()
-    const isMaestro = currentRoleName === "MAESTRO" || currentRoleName === "ADMINISTRADOR"
+    // Determinar si es un usuario owner o maestro basado en is_owner o el nombre del rol
+    const currentRoleName = asignacionData?.pd_roles?.nombre?.toUpperCase()
+    const isOwner = asignacionData?.is_owner === true
+    const isMaestro = currentRoleName === "MAESTRO"
 
     console.log("🔍 [EDIT_USER] Verificación de rol:", {
-      rolActual: usuarioRolData?.pd_roles?.nombre,
+      rolActual: asignacionData?.pd_roles?.nombre,
+      isOwner,
       isMaestro,
     })
 
     // Lógica de validación del rol:
-    // Solo validar rol si NO es usuario maestro y no se proporcionó rolId
-    // Si es un usuario maestro, no se requiere rolId para la actualización.
-    if (!isMaestro && (rolId === undefined || rolId === null)) {
-      console.error("❌ [EDIT_USER] Validación fallida: Rol requerido para usuario no maestro sin rolId.")
+    // Solo validar rol si NO es owner/maestro y no se proporcionó rolId
+    if (!isOwner && !isMaestro && (rolId === undefined || rolId === null)) {
+      console.error("❌ [EDIT_USER] Validación fallida: Rol requerido para usuario no owner/maestro sin rolId.")
       return NextResponse.json({ success: false, error: "El rol es requerido" }, { status: 400 })
     }
 
@@ -80,10 +80,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     console.log("✅ [EDIT_USER] Datos de usuario actualizados en pd_usuarios")
 
-    // Solo actualizar rol si NO es usuario maestro y se proporcionó un rolId válido
-    if (!isMaestro && rolId !== undefined && rolId !== null) {
+    if (!isOwner && !isMaestro && rolId !== undefined && rolId !== null) {
       const { error: rolError } = await supabaseServer
-        .from("pd_usuario_roles")
+        .from("pd_asignacion_usuarios")
         .update({
           rol_id: Number.parseInt(rolId),
         })
@@ -98,8 +97,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
 
       console.log("✅ [EDIT_USER] Rol de usuario actualizado correctamente")
-    } else if (isMaestro) {
-      console.log("ℹ️ [EDIT_USER] Usuario maestro - rol no modificado")
+    } else if (isOwner || isMaestro) {
+      console.log("ℹ️ [EDIT_USER] Usuario owner/maestro - rol no modificado")
     }
 
     return NextResponse.json({
@@ -109,8 +108,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         id: userId,
         nombres: nombres.trim(),
         apellidos: apellidos.trim(),
-        rol_id: rolId ? Number.parseInt(rolId) : usuarioRolData?.rol_id, // Devolver el rol_id actual si no se actualizó
-        rol: usuarioRolData?.pd_roles?.nombre, // Devolver el nombre del rol actual
+        rol_id: rolId ? Number.parseInt(rolId) : asignacionData?.rol_id, // Devolver el rol_id actual si no se actualizó
+        rol: asignacionData?.pd_roles?.nombre, // Devolver el nombre del rol actual
+        is_owner: isOwner,
       },
     })
   } catch (error) {
