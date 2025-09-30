@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Search,
   ChevronDown,
@@ -22,6 +23,7 @@ import {
   ChevronRight,
   Package,
   Box,
+  Info,
 } from "lucide-react"
 import { FiltroSelectorInsumos } from "./filtro-selector-insumos"
 import { categoriasConfig } from "@/lib/data"
@@ -508,7 +510,21 @@ export function GestionInsumoEspecifico({
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">Consumo Diario Promedio</p>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1 cursor-help">
+                                <p className="text-sm font-medium text-gray-600">Consumo Diario Promedio</p>
+                                <Info className="w-3 h-3 text-gray-400" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="text-sm">
+                                Calculado sumando todas las salidas de los últimos 30 días y dividiendo entre 30
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         <p className="text-2xl font-bold text-orange-600">{consumoDiarioPromedio.toLocaleString()}</p>
                         <p className="text-xs text-gray-500">{insumoData.unidad_medida_uso_nombre}</p>
                       </div>
