@@ -20,6 +20,8 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
+  Package,
+  Box,
 } from "lucide-react"
 import { FiltroSelectorInsumos } from "./filtro-selector-insumos"
 import { categoriasConfig } from "@/lib/data"
@@ -82,6 +84,16 @@ const categoriaToId: Record<string, number> = {
   semillas: 6,
 }
 
+const formatearFechaLocal = (fechaISO: string): string => {
+  // Parsear la fecha como local sin conversión de zona horaria
+  const partes = fechaISO.split("-")
+  if (partes.length === 3) {
+    const [año, mes, dia] = partes
+    return `${dia}/${mes}/${año}`
+  }
+  return fechaISO
+}
+
 export function GestionInsumoEspecifico({
   categoria,
   categoriaNombre,
@@ -98,14 +110,8 @@ export function GestionInsumoEspecifico({
   const [loadingTipos, setLoadingTipos] = useState(false)
   const [loadingSubtipos, setLoadingSubtipos] = useState(false)
 
-  const {
-    data: insumosData,
-    loading,
-    error,
-    top3InsumosMes,
-  } = useInsumosData(claseInsumoSeleccionada, insumoSeleccionado)
+  const { data: insumosData, loading, error, top3InsumosMes } = useInsumosData(claseInsumoSeleccionada, undefined)
 
-  // Estados para filtros avanzados
   const [filtrosAvanzados, setFiltrosAvanzados] = useState({
     fechaDesde: undefined as Date | undefined,
     fechaHasta: undefined as Date | undefined,
@@ -123,7 +129,7 @@ export function GestionInsumoEspecifico({
   useEffect(() => {
     const nuevaClaseId = categoriaToId[categoria]
     setClaseInsumoSeleccionada(nuevaClaseId)
-    setInsumoSeleccionado(undefined) // Limpiar selección de insumo
+    setInsumoSeleccionado(undefined)
     if (nuevaClaseId) {
       cargarTiposInsumo(nuevaClaseId)
     }
@@ -179,7 +185,6 @@ export function GestionInsumoEspecifico({
     }
 
     if (insumoSeleccionado) {
-      // Si hay insumo seleccionado, mostrar solo sus movimientos
       const insumo = insumosData.find((i) => i.pd_id === insumoSeleccionado)
       if (insumo?.pd_detalles?.movimientos_asociados && Array.isArray(insumo.pd_detalles.movimientos_asociados)) {
         movimientos = insumo.pd_detalles.movimientos_asociados.map((mov) => ({
@@ -190,7 +195,6 @@ export function GestionInsumoEspecifico({
         }))
       }
     } else {
-      // Si no hay insumo seleccionado, mostrar todos los movimientos de la clase
       insumosData.forEach((insumo) => {
         if (insumo?.pd_detalles?.movimientos_asociados && Array.isArray(insumo.pd_detalles.movimientos_asociados)) {
           const movimientosInsumo = insumo.pd_detalles.movimientos_asociados.map((mov) => ({
@@ -204,17 +208,15 @@ export function GestionInsumoEspecifico({
       })
     }
 
-    // Aplicar filtros avanzados
     let movimientosFiltrados = movimientos
 
-    // Filtro por fechas
     if (filtrosAvanzados.fechaDesde) {
       const fechaDesdeStr = filtrosAvanzados.fechaDesde.toISOString().split("T")[0]
       movimientosFiltrados = movimientosFiltrados.filter((mov) => mov.fecha >= fechaDesdeStr)
     }
     if (filtrosAvanzados.fechaHasta) {
       const fechaHasta = new Date(filtrosAvanzados.fechaHasta)
-      fechaHasta.setDate(fechaHasta.getDate() + 1) // Agregar un día para incluir todo el día seleccionado
+      fechaHasta.setDate(fechaHasta.getDate() + 1)
       const fechaHastaStr = fechaHasta.toISOString().split("T")[0]
       movimientosFiltrados = movimientosFiltrados.filter((mov) => mov.fecha < fechaHastaStr)
     }
@@ -223,7 +225,6 @@ export function GestionInsumoEspecifico({
       movimientosFiltrados = movimientosFiltrados.filter((mov) => mov.usuario === filtrosAvanzados.usuarioEspecifico)
     }
 
-    // Filtro por tipo de movimiento
     if (filtrosAvanzados.tipoMovimiento.length > 0) {
       movimientosFiltrados = movimientosFiltrados.filter((mov) =>
         filtrosAvanzados.tipoMovimiento.includes(mov.tipo_movimiento),
@@ -247,23 +248,20 @@ export function GestionInsumoEspecifico({
     }
 
     return movimientosFiltrados.sort((a, b) => {
-      // Primero comparar por fecha
       const fechaA = new Date(a.fecha).getTime()
       const fechaB = new Date(b.fecha).getTime()
 
       if (fechaA !== fechaB) {
-        return fechaB - fechaA // Fecha más reciente primero
+        return fechaB - fechaA
       }
 
-      // Si las fechas son iguales, comparar por hora
       const horaA = a.hora ? new Date(`1970-01-01T${a.hora}`).getTime() : 0
       const horaB = b.hora ? new Date(`1970-01-01T${b.hora}`).getTime() : 0
 
-      return horaB - horaA // Hora más reciente primero
+      return horaB - horaA
     })
   }, [insumosData, insumoSeleccionado, filtrosAvanzados, busqueda])
 
-  // Paginación
   const totalRegistros = movimientosParaTabla.length
   const totalPaginas = Math.ceil(totalRegistros / registrosPorPagina)
   const indiceInicio = (paginaActual - 1) * registrosPorPagina
@@ -295,14 +293,12 @@ export function GestionInsumoEspecifico({
   const handleTipoMovimientoChange = (tipo: string, checked: boolean) => {
     setFiltrosAvanzados((prev) => {
       if (checked) {
-        // Si se marca uno, desmarcar el otro
         const otroTipo = tipo === "ENTRADA" ? "SALIDA" : "ENTRADA"
         return {
           ...prev,
-          tipoMovimiento: [tipo], // Solo el tipo seleccionado
+          tipoMovimiento: [tipo],
         }
       } else {
-        // Si se desmarca, quitar de la lista
         return {
           ...prev,
           tipoMovimiento: prev.tipoMovimiento.filter((t) => t !== tipo),
@@ -412,6 +408,233 @@ export function GestionInsumoEspecifico({
         </div>
       </div>
 
+      {insumoSeleccionado &&
+        (() => {
+          const insumoData = insumosData?.find((i) => i.pd_id === insumoSeleccionado)
+          if (!insumoData) return null
+
+          const movimientos = insumoData.pd_detalles?.movimientos_asociados || []
+
+          // Calcular totales de entradas y salidas
+          const totalEntradas = movimientos
+            .filter((mov) => mov.tipo_movimiento === "ENTRADA")
+            .reduce((sum, mov) => sum + mov.cantidad, 0)
+
+          const totalSalidas = movimientos
+            .filter((mov) => mov.tipo_movimiento === "SALIDA")
+            .reduce((sum, mov) => sum + mov.cantidad, 0)
+
+          // Obtener último movimiento
+          const ultimoMovimiento =
+            movimientos.length > 0
+              ? movimientos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())[0]
+              : null
+
+          const fechaUltimoMovimiento = ultimoMovimiento
+            ? formatearFechaLocal(ultimoMovimiento.fecha)
+            : "Sin movimientos"
+
+          // Calcular consumo diario promedio (basado en salidas de los últimos 30 días)
+          const fechaHace30Dias = new Date()
+          fechaHace30Dias.setDate(fechaHace30Dias.getDate() - 30)
+
+          const salidasUltimos30Dias = movimientos
+            .filter((mov) => mov.tipo_movimiento === "SALIDA" && new Date(mov.fecha) >= fechaHace30Dias)
+            .reduce((sum, mov) => sum + mov.cantidad, 0)
+
+          const consumoDiarioPromedio = salidasUltimos30Dias > 0 ? Math.round(salidasUltimos30Dias / 30) : 0
+
+          // Calcular días restantes
+          const stockActual = insumoData.stock_total || 0
+          const diasRestantes =
+            consumoDiarioPromedio > 0 ? Math.round(stockActual / consumoDiarioPromedio) : stockActual > 0 ? 999 : 0
+
+          return (
+            <div className="space-y-6">
+              <div className="border-b pb-4">
+                <h3 className="text-xl font-bold text-gray-900">{insumoData.pd_nombre}</h3>
+                <p className="text-gray-600">Detalle completo del insumo</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Stock Total</p>
+                        <p className="text-2xl font-bold text-gray-900">{stockActual.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_producto_nombre}</p>
+                      </div>
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Package className="w-6 h-6 text-blue-600" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Total Entradas</p>
+                        <p className="text-2xl font-bold text-green-600">{totalEntradas.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_producto_nombre}</p>
+                      </div>
+                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                        <TrendingUp className="w-6 h-6 text-green-600" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Total Salidas</p>
+                        <p className="text-2xl font-bold text-red-600">{totalSalidas.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_producto_nombre}</p>
+                      </div>
+                      <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                        <div className="w-6 h-6 text-red-600 transform rotate-180">
+                          <TrendingUp className="w-6 h-6" />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Consumo Diario Promedio</p>
+                        <p className="text-2xl font-bold text-orange-600">{consumoDiarioPromedio.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_uso_nombre}</p>
+                      </div>
+                      <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <div className="w-6 h-6 text-orange-600">
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Días Restantes</p>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {diasRestantes === 999 ? "∞" : diasRestantes.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-gray-500">estimados</p>
+                      </div>
+                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <div className="w-6 h-6 text-purple-600 border-2 border-current rounded-full flex items-center justify-center">
+                          <div className="w-1 h-1 bg-current rounded-full"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Box className="w-5 h-5 text-gray-600" />
+                    Información Detallada
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Clase de Insumo</p>
+                      <p className="text-base font-semibold text-gray-900">
+                        {insumoData.insumo_clase_nombre || "No especificado"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Tipo de Insumo</p>
+                      <p className="text-base font-semibold text-gray-900">
+                        {insumoData.insumo_tipo_nombre || "No especificado"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Subtipo de Insumo</p>
+                      <p className="text-base font-semibold text-gray-900">
+                        {insumoData.insumo_subtipo_nombre || "No especificado"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Unidad de Medida del Producto</p>
+                      <p className="text-base font-semibold text-gray-900">
+                        {insumoData.unidad_medida_producto_nombre || "No especificado"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Unidad de Medida de Uso</p>
+                      <p className="text-base font-semibold text-gray-900">
+                        {insumoData.unidad_medida_uso_nombre || "No especificado"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Último Movimiento</p>
+                      <p className="text-base font-semibold text-gray-900">{fechaUltimoMovimiento}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Resumen de Movimientos</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Total de movimientos:</span>
+                      <span className="font-bold text-gray-900">{movimientos.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-600">Total entradas:</span>
+                      <span className="font-bold text-green-600">{totalEntradas.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-red-600">Total salidas:</span>
+                      <span className="font-bold text-red-600">{totalSalidas.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="text-gray-900 font-medium">Balance neto:</span>
+                      <span
+                        className={`font-bold ${(totalEntradas - totalSalidas) >= 0 ? "text-green-600" : "text-red-600"}`}
+                      >
+                        {(totalEntradas - totalSalidas).toLocaleString()}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Información Adicional</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Último movimiento:</span>
+                      <span className="font-bold text-gray-900">{fechaUltimoMovimiento}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )
+        })()}
+
       {!insumoSeleccionado && (
         <Card>
           <CardHeader>
@@ -425,12 +648,12 @@ export function GestionInsumoEspecifico({
               {top3InsumosMes.map((insumo, index) => {
                 const getEmojiPorClase = (claseId: number) => {
                   const claseMap: Record<number, string> = {
-                    1: "🧂", // Sales, Balanceados y Forrajes
-                    2: "💉", // Insumos Veterinarios
-                    3: "🌿", // Insumos Agrícolas
-                    4: "🏗️", // Materiales
-                    5: "⛽", // Combustibles y Lubricantes
-                    6: "🌱", // Semillas
+                    1: "🧂",
+                    2: "💉",
+                    3: "🌿",
+                    4: "🏗️",
+                    5: "⛽",
+                    6: "🌱",
                   }
                   return claseMap[claseId] || "📦"
                 }
@@ -486,7 +709,6 @@ export function GestionInsumoEspecifico({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Filtros básicos */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -515,7 +737,6 @@ export function GestionInsumoEspecifico({
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Fecha desde */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Fecha desde</label>
                   <CustomDatePicker
@@ -526,7 +747,6 @@ export function GestionInsumoEspecifico({
                   />
                 </div>
 
-                {/* Fecha hasta */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Fecha hasta</label>
                   <CustomDatePicker
@@ -537,7 +757,6 @@ export function GestionInsumoEspecifico({
                   />
                 </div>
 
-                {/* Usuario específico */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Usuario específico</label>
                   <Select
@@ -566,7 +785,7 @@ export function GestionInsumoEspecifico({
                       setFiltrosAvanzados((prev) => ({
                         ...prev,
                         tipoInsumo: value,
-                        subtipoInsumo: "", // Resetear subtipo a vacío
+                        subtipoInsumo: "",
                       }))
                     }}
                     disabled={loadingTipos}
@@ -607,7 +826,6 @@ export function GestionInsumoEspecifico({
                 </div>
               </div>
 
-              {/* Tipo de movimiento */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Tipo de movimiento</label>
                 <div className="flex gap-4">
@@ -632,7 +850,6 @@ export function GestionInsumoEspecifico({
             </CollapsibleContent>
           </Collapsible>
 
-          {/* Tabla de movimientos */}
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -696,7 +913,6 @@ export function GestionInsumoEspecifico({
             </Table>
           </div>
 
-          {/* Paginación */}
           {totalPaginas > 1 && (
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-600">
