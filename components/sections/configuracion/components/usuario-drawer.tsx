@@ -10,7 +10,15 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { useEstablishment } from "@/contexts/establishment-context"
-import { User, Mail, Lock, Shield, Loader2, Eye, EyeOff, Phone, KeyRound } from "lucide-react"
+import { User, Mail, Lock, Shield, Loader2, Eye, EyeOff, Phone, KeyRound, AlertTriangle } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface Usuario {
   id: string
@@ -74,6 +82,15 @@ export function UsuarioDrawer({
     newPassword: "",
     confirmNewPassword: "",
   })
+
+  const [showEmailConfirmDialog, setShowEmailConfirmDialog] = useState(false)
+  const [usuarioExistente, setUsuarioExistente] = useState<{
+    id: string
+    nombres: string
+    apellidos: string
+    email: string
+    telefono: string
+  } | null>(null)
 
   // Cargar roles
   const fetchRoles = async () => {
@@ -217,6 +234,8 @@ export function UsuarioDrawer({
         })
         return
       }
+
+      await validarYCrearUsuario()
     } else {
       // En modo edición, validar que se seleccione un rol (solo si no es owner)
       if (!usuario?.is_owner && !formData.rolId) {
@@ -227,90 +246,216 @@ export function UsuarioDrawer({
         })
         return
       }
-    }
 
+      await actualizarUsuario()
+    }
+  }
+
+  const validarYCrearUsuario = async () => {
     try {
       setLoading(true)
 
-      if (mode === "create") {
-        console.log("🔄 Creando usuario con datos:", {
+      console.log("🔍 [VALIDAR] Validando usuario existente...")
+
+      // Paso 1: Validar si existe un usuario con el mismo email o teléfono
+      const validacionResponse = await fetch("/api/validar-usuario-existente", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          telefono: formData.telefono.trim(),
+        }),
+      })
+
+      const validacionData = await validacionResponse.json()
+
+      if (!validacionResponse.ok || !validacionData.success) {
+        throw new Error(validacionData.error || "Error al validar usuario")
+      }
+
+      // Si existe un usuario con el mismo email, mostrar popup de confirmación (PRIORIDAD)
+      if (validacionData.existe && validacionData.tipo === "email") {
+        console.log("⚠️ [VALIDAR] Usuario existente con email:", validacionData.usuario)
+        setUsuarioExistente(validacionData.usuario)
+        setShowEmailConfirmDialog(true)
+        setLoading(false)
+        return
+      }
+
+      // Si existe un usuario con el mismo teléfono, mostrar error
+      if (validacionData.existe && validacionData.tipo === "telefono") {
+        toast({
+          title: "Error",
+          description: "Ya existe un usuario con el teléfono que deseas agregar",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      // Si no existe ningún usuario, proceder con la creación normal
+      await crearNuevoUsuario()
+    } catch (error) {
+      console.error("Error validating user:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      })
+      setLoading(false)
+    }
+  }
+
+  const crearNuevoUsuario = async () => {
+    try {
+      console.log("🔄 Creando usuario con datos:", {
+        nombres: formData.nombres.trim(),
+        apellidos: formData.apellidos.trim(),
+        email: formData.email.trim(),
+        telefono: formData.telefono.trim(),
+        rolId: formData.rolId,
+        empresaId,
+        usuarioCreadorId,
+        establecimientoId: establecimientoSeleccionado,
+      })
+
+      const response = await fetch("/api/crear-usuario-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password,
           nombres: formData.nombres.trim(),
           apellidos: formData.apellidos.trim(),
-          email: formData.email.trim(),
           telefono: formData.telefono.trim(),
           rolId: formData.rolId,
           empresaId,
           usuarioCreadorId,
           establecimientoId: establecimientoSeleccionado,
-        })
+        }),
+      })
 
-        // Crear nuevo usuario
-        const response = await fetch("/api/crear-usuario-email", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: formData.email.trim(),
-            password: formData.password,
-            nombres: formData.nombres.trim(),
-            apellidos: formData.apellidos.trim(),
-            telefono: formData.telefono.trim(),
-            rolId: formData.rolId,
-            empresaId,
-            usuarioCreadorId,
-            establecimientoId: establecimientoSeleccionado,
-          }),
-        })
+      const data = await response.json()
 
-        const data = await response.json()
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || "Error al crear usuario")
-        }
-
-        toast({
-          title: "Usuario creado exitosamente",
-          description: `${formData.nombres} ${formData.apellidos} ha sido creado. Revise el email ${formData.email} para validar su cuenta.`,
-        })
-      } else {
-        // Editar usuario existente
-        if (!usuario) return
-
-        const updateData: any = {
-          nombres: formData.nombres.trim(),
-          apellidos: formData.apellidos.trim(),
-        }
-
-        // Solo incluir rolId si el usuario NO es owner
-        if (!usuario.is_owner) {
-          updateData.rolId = formData.rolId
-        }
-
-        const response = await fetch(`/api/editar-usuario/${usuario.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updateData),
-        })
-
-        const data = await response.json()
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || "Error al actualizar usuario")
-        }
-
-        toast({
-          title: "Usuario actualizado",
-          description: `Los datos de ${formData.nombres} ${formData.apellidos} han sido actualizados`,
-        })
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Error al crear usuario")
       }
+
+      toast({
+        title: "Usuario creado exitosamente",
+        description: `${formData.nombres} ${formData.apellidos} ha sido creado. Revise el email ${formData.email} para validar su cuenta.`,
+      })
 
       onSuccess()
       onClose()
     } catch (error) {
-      console.error("Error saving user:", error)
+      console.error("Error creating user:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const asignarUsuarioExistente = async () => {
+    if (!usuarioExistente) return
+
+    try {
+      setLoading(true)
+      setShowEmailConfirmDialog(false)
+
+      console.log("🔄 Asignando usuario existente:", {
+        usuarioId: usuarioExistente.id,
+        empresaId,
+        establecimientoId: establecimientoSeleccionado,
+        rolId: formData.rolId,
+      })
+
+      const response = await fetch("/api/asignar-usuario-existente", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          usuarioId: usuarioExistente.id,
+          empresaId,
+          establecimientoId: establecimientoSeleccionado,
+          rolId: formData.rolId,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Error al asignar usuario")
+      }
+
+      toast({
+        title: "Usuario asignado exitosamente",
+        description: `${usuarioExistente.nombres} ${usuarioExistente.apellidos} ha sido asignado a la empresa y establecimiento.`,
+      })
+
+      onSuccess()
+      onClose()
+    } catch (error) {
+      console.error("Error assigning user:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+      setUsuarioExistente(null)
+    }
+  }
+
+  const actualizarUsuario = async () => {
+    if (!usuario) return
+
+    try {
+      setLoading(true)
+
+      const updateData: any = {
+        nombres: formData.nombres.trim(),
+        apellidos: formData.apellidos.trim(),
+      }
+
+      // Solo incluir rolId si el usuario NO es owner
+      if (!usuario.is_owner) {
+        updateData.rolId = formData.rolId
+      }
+
+      const response = await fetch(`/api/editar-usuario/${usuario.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Error al actualizar usuario")
+      }
+
+      toast({
+        title: "Usuario actualizado",
+        description: `Los datos de ${formData.nombres} ${formData.apellidos} han sido actualizados`,
+      })
+
+      onSuccess()
+      onClose()
+    } catch (error) {
+      console.error("Error updating user:", error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error desconocido",
@@ -444,311 +589,369 @@ export function UsuarioDrawer({
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <User className="w-5 h-5 text-green-600" />
-            {mode === "create" ? "Nuevo Usuario" : "Editar Usuario"}
-          </SheetTitle>
-          <SheetDescription>
-            {mode === "create"
-              ? "Crea un nuevo usuario con acceso por email y contraseña"
-              : "Modifica los datos del usuario (email y teléfono no se pueden cambiar)"}
-          </SheetDescription>
-        </SheetHeader>
+    <>
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-green-600" />
+              {mode === "create" ? "Nuevo Usuario" : "Editar Usuario"}
+            </SheetTitle>
+            <SheetDescription>
+              {mode === "create"
+                ? "Crea un nuevo usuario con acceso por email y contraseña"
+                : "Modifica los datos del usuario (email y teléfono no se pueden cambiar)"}
+            </SheetDescription>
+          </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 mt-6">
-          {/* Datos Personales */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Datos Personales
-            </h4>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nombres">Nombres *</Label>
-                <Input
-                  id="nombres"
-                  value={formData.nombres}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, nombres: e.target.value }))}
-                  placeholder="Ej: Juan Carlos"
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="apellidos">Apellidos *</Label>
-                <Input
-                  id="apellidos"
-                  value={formData.apellidos}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, apellidos: e.target.value }))}
-                  placeholder="Ej: González Pérez"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Información de Contacto */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              Información de Contacto
-            </h4>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email {mode === "create" ? "*" : "(no se puede modificar)"}</Label>
-              {mode === "create" ? (
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                  placeholder="usuario@ejemplo.com"
-                  disabled={loading}
-                />
-              ) : (
-                <div className="p-3 bg-gray-50 rounded-md border">
-                  <span className="text-gray-700">{formData.email}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="telefono">Teléfono {mode === "create" ? "*" : "(no se puede modificar)"}</Label>
-              {mode === "create" ? (
-                <Input
-                  id="telefono"
-                  value={formData.telefono}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, telefono: e.target.value }))}
-                  placeholder="0987123456 o +595987123456"
-                  disabled={loading}
-                />
-              ) : (
-                <div className="p-3 bg-gray-50 rounded-md border flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-700">{formatPhoneForDisplay(formData.telefono)}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Cambiar Contraseña (solo para editar) */}
-          {mode === "edit" && usuario && (
+          <form onSubmit={handleSubmit} className="space-y-6 mt-6">
+            {/* Datos Personales */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                <KeyRound className="w-4 h-4" />
-                Cambiar Contraseña
+                <User className="w-4 h-4" />
+                Datos Personales
               </h4>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">Nueva Contraseña</Label>
-                  <div className="relative">
-                    <Input
-                      id="newPassword"
-                      type={showNewPassword ? "text" : "password"}
-                      value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData((prev) => ({ ...prev, newPassword: e.target.value }))}
-                      placeholder="Mínimo 6 caracteres"
-                      disabled={loadingPassword}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      disabled={loadingPassword}
-                    >
-                      {showNewPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-400" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-gray-400" />
-                      )}
-                    </Button>
-                  </div>
+                  <Label htmlFor="nombres">Nombres *</Label>
+                  <Input
+                    id="nombres"
+                    value={formData.nombres}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, nombres: e.target.value }))}
+                    placeholder="Ej: Juan Carlos"
+                    disabled={loading}
+                  />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmNewPassword">Confirmar Nueva Contraseña</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmNewPassword"
-                      type={showConfirmNewPassword ? "text" : "password"}
-                      value={passwordData.confirmNewPassword}
-                      onChange={(e) => setPasswordData((prev) => ({ ...prev, confirmNewPassword: e.target.value }))}
-                      placeholder="Repita la nueva contraseña"
-                      disabled={loadingPassword}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
-                      disabled={loadingPassword}
-                    >
-                      {showConfirmNewPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-400" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-gray-400" />
-                      )}
-                    </Button>
+                  <Label htmlFor="apellidos">Apellidos *</Label>
+                  <Input
+                    id="apellidos"
+                    value={formData.apellidos}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, apellidos: e.target.value }))}
+                    placeholder="Ej: González Pérez"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Información de Contacto */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Información de Contacto
+              </h4>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email {mode === "create" ? "*" : "(no se puede modificar)"}</Label>
+                {mode === "create" ? (
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                    placeholder="usuario@ejemplo.com"
+                    disabled={loading}
+                  />
+                ) : (
+                  <div className="p-3 bg-gray-50 rounded-md border">
+                    <span className="text-gray-700">{formData.email}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="telefono">Teléfono {mode === "create" ? "*" : "(no se puede modificar)"}</Label>
+                {mode === "create" ? (
+                  <Input
+                    id="telefono"
+                    value={formData.telefono}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, telefono: e.target.value }))}
+                    placeholder="0987123456 o +595987123456"
+                    disabled={loading}
+                  />
+                ) : (
+                  <div className="p-3 bg-gray-50 rounded-md border flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-700">{formatPhoneForDisplay(formData.telefono)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Cambiar Contraseña (solo para editar) */}
+            {mode === "edit" && usuario && (
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <KeyRound className="w-4 h-4" />
+                  Cambiar Contraseña
+                </h4>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">Nueva Contraseña</Label>
+                    <div className="relative">
+                      <Input
+                        id="newPassword"
+                        type={showNewPassword ? "text" : "password"}
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData((prev) => ({ ...prev, newPassword: e.target.value }))}
+                        placeholder="Mínimo 6 caracteres"
+                        disabled={loadingPassword}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        disabled={loadingPassword}
+                      >
+                        {showNewPassword ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmNewPassword">Confirmar Nueva Contraseña</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmNewPassword"
+                        type={showConfirmNewPassword ? "text" : "password"}
+                        value={passwordData.confirmNewPassword}
+                        onChange={(e) => setPasswordData((prev) => ({ ...prev, confirmNewPassword: e.target.value }))}
+                        placeholder="Repita la nueva contraseña"
+                        disabled={loadingPassword}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                        disabled={loadingPassword}
+                      >
+                        {showConfirmNewPassword ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePasswordChange}
+                  disabled={loadingPassword || !passwordData.newPassword || !passwordData.confirmNewPassword}
+                  className="w-full bg-transparent"
+                >
+                  {loadingPassword ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Cambiando contraseña...
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound className="w-4 h-4 mr-2" />
+                      Cambiar Contraseña
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Contraseña (solo para crear) */}
+            {mode === "create" && (
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  Credenciales de Acceso
+                </h4>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Contraseña *</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+                        placeholder="Mínimo 6 caracteres"
+                        disabled={loading}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={loading}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirmar Contraseña *</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                        placeholder="Repita su contraseña"
+                        disabled={loading}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        disabled={loading}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
+            )}
 
+            {/* Rol */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <Shield className={`w-4 h-4 ${usuario?.is_owner ? "text-amber-500" : "text-blue-500"}`} />
+                Permisos y Rol
+              </h4>
+
+              <div className="space-y-2">
+                <Label htmlFor="rol">Rol *</Label>
+                {usuario?.is_owner && (
+                  <div className="mb-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                    <p className="text-sm text-amber-800 flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-amber-600" />
+                      Este es el usuario administrador principal del sistema. Su rol no puede ser modificado.
+                    </p>
+                  </div>
+                )}
+                <Select
+                  value={formData.rolId}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, rolId: value }))}
+                  disabled={loading || loadingRoles || usuario?.is_owner}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={loadingRoles ? "Cargando roles..." : "Seleccionar rol"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((rol) => (
+                      <SelectItem key={rol.id} value={rol.id.toString()}>
+                        {rol.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Botones */}
+            <div className="flex gap-3 pt-4">
               <Button
-                type="button"
-                variant="outline"
-                onClick={handlePasswordChange}
-                disabled={loadingPassword || !passwordData.newPassword || !passwordData.confirmNewPassword}
-                className="w-full bg-transparent"
+                type="submit"
+                disabled={loading || (mode === "create" && !establecimientoSeleccionado)}
+                className="flex-1 bg-green-700 hover:bg-green-800"
               >
-                {loadingPassword ? (
+                {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Cambiando contraseña...
+                    {mode === "create" ? "Creando..." : "Guardando..."}
                   </>
                 ) : (
-                  <>
-                    <KeyRound className="w-4 h-4 mr-2" />
-                    Cambiar Contraseña
-                  </>
+                  <>{mode === "create" ? "Crear Usuario" : "Guardar Cambios"}</>
                 )}
               </Button>
+              <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+                Cancelar
+              </Button>
             </div>
-          )}
+          </form>
+        </SheetContent>
+      </Sheet>
 
-          {/* Contraseña (solo para crear) */}
-          {mode === "create" && (
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                Credenciales de Acceso
-              </h4>
+      <Dialog open={showEmailConfirmDialog} onOpenChange={setShowEmailConfirmDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Usuario Existente
+            </DialogTitle>
+            <DialogDescription>
+              El email con el que quiere crear el usuario ya existe. ¿Desea agregarlo igualmente?
+            </DialogDescription>
+          </DialogHeader>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña *</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                      placeholder="Mínimo 6 caracteres"
-                      disabled={loading}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={loading}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-400" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-gray-400" />
-                      )}
-                    </Button>
-                  </div>
+          {usuarioExistente && (
+            <div className="space-y-3 py-4">
+              <div className="p-4 bg-gray-50 rounded-lg border space-y-2">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-gray-500" />
+                  <span className="font-semibold text-gray-900">
+                    {usuarioExistente.nombres} {usuarioExistente.apellidos}
+                  </span>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmar Contraseña *</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={formData.confirmPassword}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                      placeholder="Repita su contraseña"
-                      disabled={loading}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      disabled={loading}
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-400" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-gray-400" />
-                      )}
-                    </Button>
-                  </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-700">{usuarioExistente.email}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-700">{formatPhoneForDisplay(usuarioExistente.telefono)}</span>
                 </div>
               </div>
+
+              <p className="text-sm text-gray-600">
+                Si continúa, este usuario será asignado a su empresa y establecimiento sin crear una nueva cuenta.
+              </p>
             </div>
           )}
 
-          {/* Rol */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <Shield className={`w-4 h-4 ${usuario?.is_owner ? "text-amber-500" : "text-blue-500"}`} />
-              Permisos y Rol
-            </h4>
-
-            <div className="space-y-2">
-              <Label htmlFor="rol">Rol *</Label>
-              {usuario?.is_owner && (
-                <div className="mb-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                  <p className="text-sm text-amber-800 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-amber-600" />
-                    Este es el usuario administrador principal del sistema. Su rol no puede ser modificado.
-                  </p>
-                </div>
-              )}
-              <Select
-                value={formData.rolId}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, rolId: value }))}
-                disabled={loading || loadingRoles || usuario?.is_owner}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={loadingRoles ? "Cargando roles..." : "Seleccionar rol"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((rol) => (
-                    <SelectItem key={rol.id} value={rol.id.toString()}>
-                      {rol.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Botones */}
-          <div className="flex gap-3 pt-4">
+          <DialogFooter className="flex gap-2">
             <Button
-              type="submit"
-              disabled={loading || (mode === "create" && !establecimientoSeleccionado)}
-              className="flex-1 bg-green-700 hover:bg-green-800"
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowEmailConfirmDialog(false)
+                setUsuarioExistente(null)
+                setLoading(false)
+              }}
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {mode === "create" ? "Creando..." : "Guardando..."}
-                </>
-              ) : (
-                <>{mode === "create" ? "Crear Usuario" : "Guardar Cambios"}</>
-              )}
+              No
             </Button>
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-              Cancelar
+            <Button type="button" onClick={asignarUsuarioExistente} className="bg-green-700 hover:bg-green-800">
+              Sí, agregar
             </Button>
-          </div>
-        </form>
-      </SheetContent>
-    </Sheet>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

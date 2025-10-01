@@ -7,11 +7,21 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { Users, Plus, Edit, Phone, Calendar, Building, HelpCircle, X, Mail, Shield } from "lucide-react"
+import { Users, Plus, Edit, Phone, Calendar, Building, HelpCircle, X, Mail, Shield, Trash2 } from "lucide-react"
 import { UsuarioDrawer } from "../components/usuario-drawer"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { useUser } from "@/contexts/user-context"
 import { usePermissions } from "@/hooks/use-permissions"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Usuario {
   id: string
@@ -43,6 +53,9 @@ export function Usuarios() {
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null)
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [usuarioToDelete, setUsuarioToDelete] = useState<Usuario | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const fetchUsuarios = async () => {
     if (!empresaSeleccionada) {
@@ -65,7 +78,6 @@ export function Usuarios() {
         console.log("✅ Usuarios loaded:", data.usuarios?.length || 0)
         console.log("📊 Raw usuarios data:", data.usuarios)
 
-        // Los datos ya vienen procesados de la API, solo necesitamos mapearlos
         const usuariosProcesados = (data.usuarios || []).map((usuario: any) => ({
           id: usuario.id,
           nombres: usuario.nombres,
@@ -81,7 +93,6 @@ export function Usuarios() {
           last_sign_in: usuario.last_sign_in,
         }))
 
-        // Ordenar usuarios por fecha de creación (más viejo primero)
         const usuariosOrdenados = usuariosProcesados.sort((a, b) => {
           const fechaA = new Date(a.created_at)
           const fechaB = new Date(b.created_at)
@@ -134,11 +145,62 @@ export function Usuarios() {
   }
 
   const handleEditUsuario = (usuario: Usuario) => {
-    // Los usuarios maestros pueden editar sus datos pero no cambiar de rol
-    // Los demás usuarios pueden ser editados normalmente por administradores
     setSelectedUsuario(usuario)
     setDrawerMode("edit")
     setDrawerOpen(true)
+  }
+
+  const handleDeleteUsuario = (usuario: Usuario) => {
+    setUsuarioToDelete(usuario)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDeleteUsuario = async () => {
+    if (!usuarioToDelete || !empresaSeleccionada || !usuario?.id) return
+
+    setDeleting(true)
+
+    try {
+      const response = await fetch("/api/eliminar-usuario", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          usuarioId: usuarioToDelete.id,
+          empresaId: empresaSeleccionada,
+          usuarioEliminadorId: usuario.id,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        toast({
+          title: "Usuario eliminado",
+          description: data.message,
+          variant: "default",
+        })
+        fetchUsuarios()
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "No se pudo eliminar el usuario",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("❌ Error al eliminar usuario:", error)
+      toast({
+        title: "Error",
+        description: "Error al conectar con el servidor",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleting(false)
+      setDeleteDialogOpen(false)
+      setUsuarioToDelete(null)
+    }
   }
 
   const handleDrawerSuccess = () => {
@@ -156,10 +218,8 @@ export function Usuarios() {
   const formatPhone = (phone: string) => {
     if (!phone || phone === "Sin teléfono" || phone === null) return "Sin teléfono"
 
-    // Limpiar el número de espacios, guiones y otros caracteres
     const cleanPhone = phone.replace(/[\s\-$$$$]/g, "")
 
-    // Si empieza con +595
     if (cleanPhone.startsWith("+595")) {
       const number = cleanPhone.substring(4)
       if (number.length >= 9) {
@@ -167,15 +227,13 @@ export function Usuarios() {
       }
     }
 
-    // Si empieza con 595 sin el +
     if (cleanPhone.startsWith("595") && cleanPhone.length >= 12) {
       const number = cleanPhone.substring(3)
       return `+595 ${number.substring(0, 3)}-${number.substring(3, 6)}-${number.substring(6)}`
     }
 
-    // Si es un número local que empieza con 09
     if (cleanPhone.startsWith("09") && cleanPhone.length === 10) {
-      const number = cleanPhone.substring(1) // Quitar el 0
+      const number = cleanPhone.substring(1)
       return `+595 ${number.substring(0, 3)}-${number.substring(3, 6)}-${number.substring(6)}`
     }
 
@@ -196,7 +254,6 @@ export function Usuarios() {
     }
   }
 
-  // Debug: mostrar estado actual
   console.log("🏢 Empresa seleccionada:", empresaSeleccionada)
   console.log("👥 Usuarios count:", usuarios.length)
 
@@ -212,13 +269,11 @@ export function Usuarios() {
 
   return (
     <div className="relative space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h2>
           <p className="text-gray-600">Administra los usuarios del sistema y sus permisos de acceso</p>
         </div>
-        {/* Solo mostrar botón Nuevo Usuario si NO es consultor */}
         {!permissions.isConsultor && (
           <Button onClick={handleCreateUsuario} className="bg-green-700 hover:bg-green-800">
             <Plus className="w-4 h-4 mr-2" />
@@ -227,7 +282,6 @@ export function Usuarios() {
         )}
       </div>
 
-      {/* Lista de usuarios */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -257,7 +311,6 @@ export function Usuarios() {
               <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay usuarios registrados</h3>
               <p className="text-gray-500 mb-4">Comienza creando el primer usuario de la empresa</p>
-              {/* Solo mostrar botón si NO es consultor */}
               {!permissions.isConsultor && (
                 <Button onClick={handleCreateUsuario} className="bg-green-700 hover:bg-green-800">
                   <Plus className="w-4 h-4 mr-2" />
@@ -308,7 +361,6 @@ export function Usuarios() {
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-2">
-                          {/* Ícono dorado para usuarios maestros, azul para los demás */}
                           <Shield className={`w-4 h-4 ${usuario.is_owner ? "text-amber-500" : "text-blue-500"}`} />
                           <Badge variant="secondary" className="text-xs">
                             {usuario.rol}
@@ -335,18 +387,30 @@ export function Usuarios() {
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        {/* Solo mostrar botón editar si NO es consultor */}
-                        {!permissions.isConsultor && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditUsuario(usuario)}
-                            className="text-gray-600 hover:text-gray-900"
-                            title="Editar usuario"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {!permissions.isConsultor && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditUsuario(usuario)}
+                                className="text-gray-600 hover:text-gray-900"
+                                title="Editar usuario"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteUsuario(usuario)}
+                                className="text-red-600 hover:text-red-900 hover:bg-red-50"
+                                title="Eliminar usuario"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -357,7 +421,6 @@ export function Usuarios() {
         </CardContent>
       </Card>
 
-      {/* Drawer para crear/editar usuario */}
       <UsuarioDrawer
         usuario={selectedUsuario}
         isOpen={drawerOpen}
@@ -368,7 +431,43 @@ export function Usuarios() {
         usuarioCreadorId={usuario?.id || "current-user-id"}
       />
 
-      {/* Tooltip manual */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro de eliminar este usuario?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {usuarioToDelete && (
+                <div className="space-y-3 mt-4">
+                  <p className="text-gray-700">
+                    Estás a punto de eliminar al usuario:{" "}
+                    <span className="font-semibold">
+                      {usuarioToDelete.nombres} {usuarioToDelete.apellidos}
+                    </span>
+                  </p>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <p className="text-sm text-amber-800">
+                      <strong>Importante:</strong> Si este usuario solo pertenece a esta empresa, se eliminará
+                      completamente del sistema. Si pertenece a otras empresas, solo se eliminará su acceso a esta
+                      empresa.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteUsuario}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? "Eliminando..." : "Eliminar Usuario"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {activeTooltip === "usuarios-registrados" && tooltipPosition && (
         <div
           className="fixed w-96 bg-white border border-gray-200 rounded-lg shadow-xl p-5 z-[9999]"
@@ -405,7 +504,6 @@ export function Usuarios() {
         </div>
       )}
 
-      {/* Overlay para cerrar tooltip al hacer clic fuera */}
       {activeTooltip && <div className="fixed inset-0 z-40" onClick={() => setActiveTooltip(null)} />}
     </div>
   )
