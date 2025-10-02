@@ -438,18 +438,18 @@ export function Usuarios() {
             <AlertDialogDescription>
               {usuarioToDelete && (
                 <div className="space-y-3 mt-4">
-                  <p className="text-gray-700">
+                  <div className="text-gray-700">
                     Estás a punto de eliminar al usuario:{" "}
                     <span className="font-semibold">
                       {usuarioToDelete.nombres} {usuarioToDelete.apellidos}
                     </span>
-                  </p>
+                  </div>
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p className="text-sm text-amber-800">
+                    <div className="text-sm text-amber-800">
                       <strong>Importante:</strong> Si este usuario solo pertenece a esta empresa, se eliminará
                       completamente del sistema. Si pertenece a otras empresas, solo se eliminará su acceso a esta
                       empresa.
-                    </p>
+                    </div>
                   </div>
                 </div>
               )}
