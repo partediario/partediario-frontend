@@ -161,56 +161,11 @@ export function UsuarioDrawer({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.nombres.trim() || !formData.apellidos.trim()) {
-      toast({
-        title: "Error",
-        description: "Nombres y apellidos son requeridos",
-        variant: "destructive",
-      })
-      return
-    }
-
     if (mode === "create") {
-      if (!formData.email.trim()) {
+      if (!formData.email.trim() && !formData.telefono.trim()) {
         toast({
           title: "Error",
-          description: "El email es requerido para crear un usuario",
-          variant: "destructive",
-        })
-        return
-      }
-
-      if (!formData.telefono.trim()) {
-        toast({
-          title: "Error",
-          description: "El teléfono es requerido para crear un usuario",
-          variant: "destructive",
-        })
-        return
-      }
-
-      if (!formData.password.trim()) {
-        toast({
-          title: "Error",
-          description: "La contraseña es requerida",
-          variant: "destructive",
-        })
-        return
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        toast({
-          title: "Error",
-          description: "Las contraseñas no coinciden",
-          variant: "destructive",
-        })
-        return
-      }
-
-      if (formData.password.length < 6) {
-        toast({
-          title: "Error",
-          description: "La contraseña debe tener al menos 6 caracteres",
+          description: "Debe proporcionar al menos un email o teléfono",
           variant: "destructive",
         })
         return
@@ -275,20 +230,68 @@ export function UsuarioDrawer({
         throw new Error(validacionData.error || "Error al validar usuario")
       }
 
-      // Si existe un usuario con el mismo email, mostrar popup de confirmación (PRIORIDAD)
-      if (validacionData.existe && validacionData.tipo === "email") {
-        console.log("⚠️ [VALIDAR] Usuario existente con email:", validacionData.usuario)
+      if (validacionData.existe) {
+        console.log("⚠️ [VALIDAR] Usuario existente encontrado:", validacionData.usuario)
         setUsuarioExistente(validacionData.usuario)
         setShowEmailConfirmDialog(true)
         setLoading(false)
         return
       }
 
-      // Si existe un usuario con el mismo teléfono, mostrar error
-      if (validacionData.existe && validacionData.tipo === "telefono") {
+      if (!formData.nombres.trim() || !formData.apellidos.trim()) {
         toast({
           title: "Error",
-          description: "Ya existe un usuario con el teléfono que deseas agregar",
+          description: "Para crear un nuevo usuario, debe completar nombres y apellidos",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      if (!formData.email.trim()) {
+        toast({
+          title: "Error",
+          description: "Para crear un nuevo usuario, el email es requerido",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      if (!formData.telefono.trim()) {
+        toast({
+          title: "Error",
+          description: "Para crear un nuevo usuario, el teléfono es requerido",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      if (!formData.password.trim()) {
+        toast({
+          title: "Error",
+          description: "Para crear un nuevo usuario, la contraseña es requerida",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        toast({
+          title: "Error",
+          description: "Las contraseñas no coinciden",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      if (formData.password.length < 6) {
+        toast({
+          title: "Error",
+          description: "La contraseña debe tener al menos 6 caracteres",
           variant: "destructive",
         })
         setLoading(false)
@@ -905,7 +908,7 @@ export function UsuarioDrawer({
               Usuario Existente
             </DialogTitle>
             <DialogDescription>
-              El email con el que quiere crear el usuario ya existe. ¿Desea agregarlo igualmente?
+              Se encontró un usuario existente con el email o teléfono proporcionado. ¿Desea asignarlo a esta empresa?
             </DialogDescription>
           </DialogHeader>
 
@@ -929,7 +932,7 @@ export function UsuarioDrawer({
               </div>
 
               <p className="text-sm text-gray-600">
-                Si continúa, este usuario será asignado a su empresa y establecimiento sin crear una nueva cuenta.
+                Si continúa, este usuario será asignado a su empresa y establecimiento con el rol seleccionado.
               </p>
             </div>
           )}

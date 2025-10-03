@@ -254,6 +254,20 @@ export function Usuarios() {
     }
   }
 
+  const canDeleteUsuario = (usuarioAEliminar: Usuario): boolean => {
+    // 1. Un usuario no puede eliminarse a sí mismo
+    if (usuario?.id === usuarioAEliminar.id) {
+      return false
+    }
+
+    // 2. No se puede eliminar al administrador principal (is_owner)
+    if (usuarioAEliminar.is_owner) {
+      return false
+    }
+
+    return true
+  }
+
   console.log("🏢 Empresa seleccionada:", empresaSeleccionada)
   console.log("👥 Usuarios count:", usuarios.length)
 
@@ -399,15 +413,17 @@ export function Usuarios() {
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteUsuario(usuario)}
-                                className="text-red-600 hover:text-red-900 hover:bg-red-50"
-                                title="Eliminar usuario"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              {canDeleteUsuario(usuario) && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteUsuario(usuario)}
+                                  className="text-red-600 hover:text-red-900 hover:bg-red-50"
+                                  title="Eliminar usuario"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>
