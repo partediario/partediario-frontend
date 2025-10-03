@@ -3,13 +3,13 @@ import { type NextRequest, NextResponse } from "next/server"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { nombre, latitud, longitud, empresa_id, usuario_id } = body
+    const { nombre, latitud, longitud, empresa_id, usuario_id, rol_id } = body
 
     console.log("🏭 [API] Creating establecimiento with assignment:", body)
 
-    // Validaciones - solo nombre y empresa_id son requeridos
-    if (!nombre || !empresa_id || !usuario_id) {
-      return NextResponse.json({ error: "El nombre, empresa_id y usuario_id son requeridos" }, { status: 400 })
+    // Validaciones - nombre, empresa_id, usuario_id y rol_id son requeridos
+    if (!nombre || !empresa_id || !usuario_id || !rol_id) {
+      return NextResponse.json({ error: "El nombre, empresa_id, usuario_id y rol_id son requeridos" }, { status: 400 })
     }
 
     if (nombre.length < 3) {
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const nuevoEstablecimiento = establecimientoResponseData[0]
     console.log("✅ [API] Establecimiento creado:", nuevoEstablecimiento)
 
-    // 2. Crear la asignación de usuario
+    // 2. Crear la asignación de usuario CON rol
     const asignacionUrl = `${baseUrl}/rest/v1/pd_asignacion_usuarios`
     const asignacionRes = await fetch(asignacionUrl, {
       method: "POST",
@@ -74,6 +74,8 @@ export async function POST(request: NextRequest) {
         empresa_id: Number.parseInt(empresa_id),
         establecimiento_id: nuevoEstablecimiento.id,
         usuario_id: usuario_id,
+        rol_id: Number.parseInt(rol_id), // Incluir rol_id en el insert
+        is_owner: false,
       }),
     })
 
@@ -83,7 +85,7 @@ export async function POST(request: NextRequest) {
       // Si falla la asignación, podrías considerar eliminar el establecimiento creado
       // Por ahora solo logueamos el error
     } else {
-      console.log("✅ [API] Asignación de usuario creada:", asignacionData)
+      console.log("✅ [API] Asignación de usuario creada con rol:", asignacionData)
     }
 
     return NextResponse.json({

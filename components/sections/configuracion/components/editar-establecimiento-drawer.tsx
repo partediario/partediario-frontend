@@ -39,7 +39,7 @@ export function EditarEstablecimientoDrawer({
   usuarioId,
 }: EditarEstablecimientoDrawerProps) {
   const { toast } = useToast()
-  const { empresaSeleccionada } = useEstablishment()
+  const { empresaSeleccionada, establecimientoSeleccionado } = useEstablishment()
   const { usuario } = useUser()
 
   const [loading, setLoading] = useState(false)
@@ -54,6 +54,34 @@ export function EditarEstablecimientoDrawer({
   // Obtener empresa y usuario de los contextos
   const empresaIdFinal = empresaId || empresaSeleccionada
   const usuarioIdFinal = usuarioId || usuario?.id
+
+  const obtenerRolUsuario = (): number => {
+    // Si el usuario tiene establecimientos con roles, obtener el rol del establecimiento actual
+    if (usuario?.establecimientos && usuario.establecimientos.length > 0) {
+      // Buscar el establecimiento seleccionado
+      const establecimientoActual = usuario.establecimientos.find(
+        (est: any) => est.id?.toString() === establecimientoSeleccionado,
+      )
+
+      // Si encontramos el establecimiento y tiene roles, usar el primer rol
+      if (establecimientoActual?.roles && establecimientoActual.roles.length > 0) {
+        const rolId = establecimientoActual.roles[0].id
+        console.log("🔑 [DRAWER] Usando rol del establecimiento actual:", rolId)
+        return rolId
+      }
+
+      // Si no hay establecimiento seleccionado pero hay establecimientos, usar el rol del primero
+      if (usuario.establecimientos[0]?.roles && usuario.establecimientos[0].roles.length > 0) {
+        const rolId = usuario.establecimientos[0].roles[0].id
+        console.log("🔑 [DRAWER] Usando rol del primer establecimiento:", rolId)
+        return rolId
+      }
+    }
+
+    // Por defecto, usar rol ADMINISTRADOR (4) si no se encuentra ningún rol
+    console.log("🔑 [DRAWER] Usando rol por defecto: ADMINISTRADOR (4)")
+    return 4
+  }
 
   // Cargar datos del establecimiento cuando se abre el drawer
   useEffect(() => {
@@ -136,6 +164,8 @@ export function EditarEstablecimientoDrawer({
       let response
 
       if (mode === "create") {
+        const rolId = obtenerRolUsuario()
+
         response = await fetch("/api/establecimientos-create", {
           method: "POST",
           headers: {
@@ -145,6 +175,7 @@ export function EditarEstablecimientoDrawer({
             ...formData,
             empresa_id: empresaIdFinal,
             usuario_id: usuarioIdFinal,
+            rol_id: rolId, // Incluir rol_id en el request
           }),
         })
       } else {
