@@ -1,30 +1,63 @@
-# PARTE DIARIO 
+# ParteDiario Frontend
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+Este proyecto contiene el frontend de la aplicación ParteDiario, construido con Next.js y preparado para ser ejecutado en contenedores Docker.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/admin-9386s-projects/v0-parte-diario-variables)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/VN6kGxW4OeF)
+## Ejecución con Docker
 
-## Overview
+A continuación se detallan los pasos para configurar y ejecutar la aplicación en entornos de desarrollo y producción utilizando Docker.
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+### Prerrequisitos
 
-## Deployment
+-   [Docker](https://www.docker.com/products/docker-desktop/) instalado y en ejecución.
 
-Your project is live at:
+### 1. Configuración del Entorno
 
-**[https://vercel.com/admin-9386s-projects/v0-parte-diario-variables](https://vercel.com/admin-9386s-projects/v0-parte-diario-variables)**
+Antes de construir los contenedores, es necesario configurar las variables de entorno.
 
-## Build your app
+1.  **Crear el archivo de entorno:**
+    Cree un archivo llamado `.env` en la raíz del proyecto. Puede copiar el contenido de `.env.example` si existe, o usar la siguiente plantilla:
 
-Continue building your app on:
+    ```env
+    # Variables de entorno para Docker
+    NEXT_PUBLIC_SUPABASE_URL=SU_URL_PUBLICA_DE_SUPABASE
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=SU_LLAVE_ANONIMA_PUBLICA
+    SUPABASE_SERVICE_ROLE_KEY=SU_LLAVE_SECRETA_DE_SERVICIO
+    NEXT_PUBLIC_API_URL=http://localhost:3000
+    ```
 
-**[https://v0.dev/chat/projects/VN6kGxW4OeF](https://v0.dev/chat/projects/VN6kGxW4OeF)**
+2.  **Completar los valores:**
+    Reemplace los valores de placeholder (`SU_...`) con sus credenciales reales de Supabase.
 
-## How It Works
+### 2. Entorno de Desarrollo (Local)
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+Este entorno está configurado con **hot-reload**, lo que significa que cualquier cambio en el código fuente se reflejará automáticamente en el navegador sin necesidad de reconstruir la imagen.
+
+**Para iniciar:**
+Ejecute el siguiente comando en la raíz del proyecto:
+```bash
+docker compose -f docker-compose.dev.yml up --build -d
+```
+
+**Para detener:**
+```bash
+docker compose -f docker-compose.dev.yml down
+```
+
+Una vez iniciado, la aplicación estará disponible en `http://localhost:3000`.
+
+### 3. Entorno de Producción
+
+Este entorno construye una imagen optimizada, ligera y segura, lista para ser desplegada.
+
+**Para iniciar:**
+Ejecute el siguiente comando en la raíz del proyecto:
+```bash
+docker compose up --build -d
+```
+
+**Para detener:**
+```bash
+docker compose down
+```
+
+La aplicación también estará disponible en `http://localhost:3000`.
