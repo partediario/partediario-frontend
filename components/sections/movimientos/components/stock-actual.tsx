@@ -60,7 +60,7 @@ interface StockActualProps {
   onRowClick?: (id: string) => void
 }
 
-const POTREROS_PER_PAGE = 5
+const POTREROS_PER_PAGE = 3 // Cambiado de 5 a 3 potreros por página
 
 function calcPromedio(pesoTotal: number | null | undefined, cantidad: number | null | undefined): number {
   const total = Number(pesoTotal ?? 0)
@@ -149,7 +149,11 @@ export default function StockActual({ onRowClick }: StockActualProps) {
     if (!searchTerm) {
       return stockPorPotrero
     }
-    return stockPorPotrero.filter((p) => p.potrero.toLowerCase().includes(searchTerm.toLowerCase()))
+    return stockPorPotrero.filter(
+      (p) =>
+        p.potrero.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.categorias.some((cat) => cat.lotes.some((lote) => lote.toLowerCase().includes(searchTerm.toLowerCase()))),
+    )
   }, [stockPorPotrero, searchTerm])
 
   // Paginación
@@ -530,7 +534,7 @@ export default function StockActual({ onRowClick }: StockActualProps) {
                 onClick={() => setViewMode("potrero")}
               >
                 <MapPin className="w-3 h-3 mr-1" />
-                Por Potrero
+                Por Potrero - Lote
               </Button>
             </div>
 
@@ -644,7 +648,7 @@ export default function StockActual({ onRowClick }: StockActualProps) {
               <div className="relative mb-4">
                 <Input
                   type="text"
-                  placeholder="Buscar potrero..."
+                  placeholder="Buscar potrero o lote..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value)
@@ -752,7 +756,9 @@ export default function StockActual({ onRowClick }: StockActualProps) {
                         aria-disabled={currentPage === 1}
                         tabIndex={currentPage === 1 ? -1 : undefined}
                         className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
-                      />
+                      >
+                        Anterior
+                      </PaginationPrevious>
                     </PaginationItem>
                     {Array.from({ length: totalPages }, (_, i) => (
                       <PaginationItem key={i}>
@@ -778,7 +784,9 @@ export default function StockActual({ onRowClick }: StockActualProps) {
                         aria-disabled={currentPage === totalPages}
                         tabIndex={currentPage === totalPages ? -1 : undefined}
                         className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
-                      />
+                      >
+                        Siguiente
+                      </PaginationNext>
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>

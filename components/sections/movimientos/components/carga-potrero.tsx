@@ -6,10 +6,9 @@ import { useState, useEffect, useMemo, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Table, TableHead, TableRow, TableHeader, TableCell, TableBody } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
-  MilkIcon as Cow,
+  Cog as Cow,
   TableIcon,
   BarChart3,
   Download,
@@ -572,7 +571,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                       <TableHead className="font-semibold">Has Ganaderas</TableHead>
                       <TableHead className="font-semibold">Kg/Has</TableHead>
                       <TableHead className="font-semibold">UG/Has</TableHead>
-                      <TableHead className="font-semibold">Estado</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -593,9 +591,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                           <TableCell>{potrero.hectareas_utiles}</TableCell>
                           <TableCell>{(potrero.kg_por_ha || 0).toFixed(2)}</TableCell>
                           <TableCell>{(potrero.ug_por_ha || 0).toFixed(2)}</TableCell>
-                          <TableCell>
-                            <Badge className={getEstadoColor(estado)}>{getEstadoText(estado)}</Badge>
-                          </TableCell>
                         </TableRow>
                       )
                     })}
