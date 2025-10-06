@@ -27,6 +27,46 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Configuración de Supabase no encontrada" }, { status: 500 })
     }
 
+    const getPotreroUrl = `${supabaseUrl}/rest/v1/pd_potreros?select=establecimiento_id&id=eq.${params.id}`
+    const getPotreroResponse = await fetch(getPotreroUrl, {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!getPotreroResponse.ok) {
+      throw new Error("No se pudo obtener el potrero")
+    }
+
+    const potreroData = await getPotreroResponse.json()
+    if (potreroData.length === 0) {
+      return NextResponse.json({ error: "Potrero no encontrado" }, { status: 404 })
+    }
+
+    const establecimiento_id = potreroData[0].establecimiento_id
+
+    const checkUrl = `${supabaseUrl}/rest/v1/pd_potreros?select=id&establecimiento_id=eq.${establecimiento_id}&nombre=eq.${encodeURIComponent(nombre.trim())}&id=neq.${params.id}`
+
+    const checkResponse = await fetch(checkUrl, {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (checkResponse.ok) {
+      const existingPotreros = await checkResponse.json()
+      if (existingPotreros.length > 0) {
+        return NextResponse.json(
+          { error: `Ya existe otro potrero con el nombre "${nombre.trim()}" en este establecimiento` },
+          { status: 400 },
+        )
+      }
+    }
+
     const url = `${supabaseUrl}/rest/v1/pd_potreros?id=eq.${params.id}`
 
     // Preparar datos para actualizar - usar Number() para preservar decimales

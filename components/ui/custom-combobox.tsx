@@ -36,6 +36,7 @@ export function CustomCombobox({
 }: CustomComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [searchValue, setSearchValue] = React.useState("")
+  const [openUpward, setOpenUpward] = React.useState(false)
   const dropdownRef = React.useRef<HTMLDivElement>(null)
   const buttonRef = React.useRef<HTMLButtonElement>(null)
 
@@ -54,6 +55,54 @@ export function CustomCombobox({
 
   const toggleOpen = () => {
     if (!disabled && !loading) {
+      if (!open && buttonRef.current) {
+        const buttonRect = buttonRef.current.getBoundingClientRect()
+
+        // Buscar el contenedor scrollable más cercano
+        let scrollContainer = buttonRef.current.parentElement
+        while (scrollContainer) {
+          const overflowY = window.getComputedStyle(scrollContainer).overflowY
+          if (overflowY === "auto" || overflowY === "scroll") {
+            break
+          }
+          scrollContainer = scrollContainer.parentElement
+        }
+
+        const searchHeight = 60 // Altura del input de búsqueda con padding
+        const optionHeight = 36 // Altura aproximada de cada opción
+        const maxVisibleOptions = 6 // Máximo de opciones visibles antes de scroll
+        const visibleOptions = Math.min(options.length, maxVisibleOptions)
+        const dropdownHeight = searchHeight + visibleOptions * optionHeight + 8 // +8 para padding
+
+        console.log(
+          "[v0] Opciones:",
+          options.length,
+          "Opciones visibles:",
+          visibleOptions,
+          "Altura calculada:",
+          dropdownHeight,
+        )
+
+        if (scrollContainer) {
+          // Calcular espacio dentro del contenedor scrollable
+          const containerRect = scrollContainer.getBoundingClientRect()
+          const spaceBelow = containerRect.bottom - buttonRect.bottom
+          const spaceAbove = buttonRect.top - containerRect.top
+
+          console.log("[v0] Espacio debajo:", spaceBelow, "Espacio arriba:", spaceAbove)
+
+          // Si no hay espacio suficiente debajo pero sí arriba, abrir hacia arriba
+          setOpenUpward(spaceBelow < dropdownHeight && spaceAbove > dropdownHeight)
+        } else {
+          // Fallback: usar la ventana completa
+          const spaceBelow = window.innerHeight - buttonRect.bottom
+          const spaceAbove = buttonRect.top
+
+          console.log("[v0] Usando ventana - Espacio debajo:", spaceBelow, "Espacio arriba:", spaceAbove)
+
+          setOpenUpward(spaceBelow < dropdownHeight && spaceAbove > dropdownHeight)
+        }
+      }
       setOpen(!open)
     }
   }
@@ -83,7 +132,7 @@ export function CustomCombobox({
       <Button
         ref={buttonRef}
         variant="outline"
-        className="w-full justify-between"
+        className="w-full justify-between bg-transparent"
         disabled={disabled || loading}
         onClick={toggleOpen}
         type="button"
@@ -97,7 +146,10 @@ export function CustomCombobox({
       {open && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-hidden"
+          className={cn(
+            "absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-hidden",
+            openUpward ? "bottom-full mb-1 flex flex-col-reverse" : "top-full mt-1 flex flex-col",
+          )}
         >
           <div className="p-2 border-b">
             <div className="relative">

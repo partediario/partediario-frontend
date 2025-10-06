@@ -63,6 +63,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Configuración de Supabase no encontrada" }, { status: 500 })
     }
 
+    const checkNombreUrl = `${supabaseUrl}/rest/v1/pd_lotes?select=id&establecimiento_id=eq.${establecimiento_id}&nombre=eq.${encodeURIComponent(nombre.trim())}`
+
+    const checkNombreResponse = await fetch(checkNombreUrl, {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (checkNombreResponse.ok) {
+      const existingLotes = await checkNombreResponse.json()
+      if (existingLotes.length > 0) {
+        return NextResponse.json(
+          { error: `Ya existe un lote con el nombre "${nombre.trim()}" en este establecimiento` },
+          { status: 400 },
+        )
+      }
+    }
+
+    const checkPotreroUrl = `${supabaseUrl}/rest/v1/pd_lotes?select=id,nombre&potrero_id=eq.${potrero_id}`
+
+    const checkPotreroResponse = await fetch(checkPotreroUrl, {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (checkPotreroResponse.ok) {
+      const lotesEnPotrero = await checkPotreroResponse.json()
+      if (lotesEnPotrero.length > 0) {
+        return NextResponse.json(
+          { error: `El potrero seleccionado ya tiene asignado el lote "${lotesEnPotrero[0].nombre}"` },
+          { status: 400 },
+        )
+      }
+    }
+
     const url = `${supabaseUrl}/rest/v1/pd_lotes`
 
     const response = await fetch(url, {

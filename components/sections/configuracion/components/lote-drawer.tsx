@@ -61,6 +61,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
   const [loadingPotreros, setLoadingPotreros] = useState(false)
   const [mostrarExito, setMostrarExito] = useState(false)
   const [potreros, setPotreros] = useState<Potrero[]>([])
+  const [lotesExistentes, setLotesExistentes] = useState<Lote[]>([])
   const [formData, setFormData] = useState({
     nombre: "",
     potrero_id: "",
@@ -86,6 +87,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
   useEffect(() => {
     if (isOpen && establecimientoId) {
       fetchPotreros()
+      fetchLotesExistentes()
     }
   }, [isOpen, establecimientoId])
 
@@ -155,6 +157,36 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
     } finally {
       setLoadingPotreros(false)
     }
+  }
+
+  const fetchLotesExistentes = async () => {
+    try {
+      const response = await fetch(`/api/lotes-crud?establecimiento_id=${establecimientoId}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al cargar lotes")
+      }
+
+      setLotesExistentes(data.lotes || [])
+    } catch (error) {
+      console.error("Error fetching lotes existentes:", error)
+    }
+  }
+
+  const getPotrerosDisponibles = () => {
+    // Obtener IDs de potreros que ya tienen lotes asignados
+    const potrerosOcupados = lotesExistentes.map((lote) => lote.potrero_id)
+
+    // Filtrar potreros
+    return potreros.filter((potrero) => {
+      // Si estamos en modo edición y este es el potrero actual del lote, incluirlo
+      if (mode === "edit" && lote && potrero.id === lote.potrero_id) {
+        return true
+      }
+      // Si el potrero no está ocupado, incluirlo
+      return !potrerosOcupados.includes(potrero.id)
+    })
   }
 
   const validateForm = () => {
@@ -608,16 +640,18 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
                   <SelectValue placeholder={loadingPotreros ? "Cargando potreros..." : "Seleccionar potrero"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {potreros.map((potrero) => (
+                  {getPotrerosDisponibles().map((potrero) => (
                     <SelectItem key={potrero.id} value={potrero.id.toString()}>
                       {potrero.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {potreros.length === 0 && !loadingPotreros && (
+              {getPotrerosDisponibles().length === 0 && !loadingPotreros && (
                 <p className="text-sm text-amber-600 mt-1">
-                  No hay potreros disponibles. Crea potreros primero en la pestaña Potreros.
+                  {potreros.length === 0
+                    ? "No hay potreros disponibles. Crea potreros primero en la pestaña Potreros."
+                    : "Todos los potreros tienen lotes asignados. Libera un potrero o crea uno nuevo."}
                 </p>
               )}
             </div>
@@ -782,10 +816,12 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {stockItem.pd_categoria_animales?.nombre || "Sin categoría"}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{stockItem.cantidad}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {stockItem.cantidad.toLocaleString("es-AR")}
+                          </td>
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {stockItem.peso_total !== null && stockItem.peso_total !== undefined
-                              ? `${stockItem.peso_total} kg`
+                              ? `${stockItem.peso_total.toLocaleString("es-AR")} kg`
                               : "No especificado"}
                           </td>
                           <td className="px-4 py-3 text-sm">
@@ -821,6 +857,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
               <li>• Los lotes son grupos de animales ubicados en un potrero específico</li>
               <li>• Cada lote debe estar asignado a un potrero del establecimiento</li>
               <li>• El nombre del lote debe ser descriptivo y único</li>
+              <li>• Cada potrero solo puede tener un lote asignado a la vez</li>
               <li>
                 • <strong>Peso Total:</strong> Se guarda el peso tal como se ingresa
               </li>

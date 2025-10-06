@@ -389,7 +389,10 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
       errores.push("La cantidad debe ser mayor a 0")
     }
 
-    if (!nuevoDetalle.peso || nuevoDetalle.peso <= 0) {
+    const tipoMovimientoId = Number.parseInt(nuevoDetalle.tipo_movimiento_id)
+    const esNacimiento = tipoMovimientoId === 2
+
+    if (!esNacimiento && (!nuevoDetalle.peso || nuevoDetalle.peso <= 0)) {
       errores.push("El peso debe ser mayor a 0")
     }
 
@@ -936,7 +939,10 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium text-gray-700">Peso (kg) *</Label>
+                    <Label className="text-sm font-medium text-gray-700">
+                      Peso (kg){" "}
+                      {nuevoDetalle.tipo_movimiento_id && Number.parseInt(nuevoDetalle.tipo_movimiento_id) !== 2 && "*"}
+                    </Label>
                     <Input
                       type="number"
                       min="0"
@@ -944,9 +950,17 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
                       value={nuevoDetalle.peso || ""}
                       onChange={(e) => setNuevoDetalle({ ...nuevoDetalle, peso: Number.parseInt(e.target.value) || 0 })}
                       className="mt-1"
-                      placeholder="Ej: 250"
-                      required
+                      placeholder={
+                        nuevoDetalle.tipo_movimiento_id && Number.parseInt(nuevoDetalle.tipo_movimiento_id) === 2
+                          ? "Dejar vacío para usar promedio"
+                          : "Ej: 250"
+                      }
                     />
+                    {nuevoDetalle.tipo_movimiento_id && Number.parseInt(nuevoDetalle.tipo_movimiento_id) === 2 && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Si no ingresa un peso, se calculará automáticamente el promedio del lote
+                      </p>
+                    )}
                   </div>
                 </div>
 

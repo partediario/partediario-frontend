@@ -280,6 +280,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
         { id: "2", nombre: "Traslado a otro campo" },
         { id: "3", nombre: "Muerte" },
         { id: "4", nombre: "Faena" },
+        { id: "8", nombre: "Mortandad" },
       ])
     } finally {
       setLoadingTipos(false)
@@ -318,7 +319,10 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
       errores.push("La cantidad debe ser mayor a 0")
     }
 
-    if (!nuevoDetalle.peso || nuevoDetalle.peso <= 0) {
+    const tipoMovimientoId = Number.parseInt(nuevoDetalle.tipo_movimiento_id)
+    const esMortandad = tipoMovimientoId === 8
+
+    if (!esMortandad && (!nuevoDetalle.peso || nuevoDetalle.peso <= 0)) {
       errores.push("El peso debe ser mayor a 0")
     }
 
@@ -474,27 +478,6 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
     if (detalles.length === 0) {
       errores.push("Debe agregar al menos un detalle de movimiento")
     }
-
-    // Validar cada detalle individualmente
-    detalles.forEach((detalle, index) => {
-      const numeroDetalle = index + 1
-
-      if (!detalle.tipo_movimiento_id) {
-        errores.push(`Detalle ${numeroDetalle}: Falta seleccionar el tipo de movimiento`)
-      }
-
-      if (!detalle.categoria_id) {
-        errores.push(`Detalle ${numeroDetalle}: Falta seleccionar la categoría`)
-      }
-
-      if (!detalle.cantidad || detalle.cantidad <= 0) {
-        errores.push(`Detalle ${numeroDetalle}: La cantidad debe ser mayor a 0`)
-      }
-
-      if (!detalle.peso || detalle.peso <= 0) {
-        errores.push(`Detalle ${numeroDetalle}: El peso debe ser mayor a 0`)
-      }
-    })
 
     // Validar datos del sistema
     if (!usuario?.id) {
@@ -894,7 +877,10 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium text-gray-700">Peso (kg) *</Label>
+                    <Label className="text-sm font-medium text-gray-700">
+                      Peso (kg){" "}
+                      {nuevoDetalle.tipo_movimiento_id && Number.parseInt(nuevoDetalle.tipo_movimiento_id) !== 8 && "*"}
+                    </Label>
                     <Input
                       type="number"
                       min="0"
@@ -902,9 +888,17 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
                       value={nuevoDetalle.peso || ""}
                       onChange={(e) => setNuevoDetalle({ ...nuevoDetalle, peso: Number.parseInt(e.target.value) || 0 })}
                       className="mt-1"
-                      placeholder="Ej: 250"
-                      required
+                      placeholder={
+                        nuevoDetalle.tipo_movimiento_id && Number.parseInt(nuevoDetalle.tipo_movimiento_id) === 8
+                          ? "Dejar vacío para usar promedio"
+                          : "Ej: 250"
+                      }
                     />
+                    {nuevoDetalle.tipo_movimiento_id && Number.parseInt(nuevoDetalle.tipo_movimiento_id) === 8 && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Si no ingresa un peso, se calculará automáticamente el promedio del lote
+                      </p>
+                    )}
                   </div>
                 </div>
 

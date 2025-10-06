@@ -81,6 +81,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Configuración de Supabase no encontrada" }, { status: 500 })
     }
 
+    const checkUrl = `${supabaseUrl}/rest/v1/pd_potreros?select=id&establecimiento_id=eq.${establecimiento_id}&nombre=eq.${encodeURIComponent(nombre.trim())}`
+
+    const checkResponse = await fetch(checkUrl, {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (checkResponse.ok) {
+      const existingPotreros = await checkResponse.json()
+      if (existingPotreros.length > 0) {
+        return NextResponse.json(
+          { error: `Ya existe un potrero con el nombre "${nombre.trim()}" en este establecimiento` },
+          { status: 400 },
+        )
+      }
+    }
+
     const url = `${supabaseUrl}/rest/v1/pd_potreros`
 
     const response = await fetch(url, {

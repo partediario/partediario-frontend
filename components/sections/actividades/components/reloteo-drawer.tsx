@@ -286,7 +286,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
       .sort((a, b) => a.id - b.id)
       .map((lote) => ({
         value: lote.id.toString(),
-        label: lote.inactivo ? `${lote.nombre} (Inactivo)` : lote.nombre,
+        label: lote.inactivo ? `${lote.nombre} (Vacío)` : lote.nombre,
       }))
   }
 

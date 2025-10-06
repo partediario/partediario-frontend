@@ -1,5 +1,57 @@
 import { type NextRequest, NextResponse } from "next/server"
 
+const TIPOS_PESO_OPCIONAL = [2, 8] // Nacimiento (2) y Mortandad (8)
+
+async function obtenerPesoPromedio(
+  loteId: number,
+  categoriaId: number,
+  supabaseUrl: string,
+  supabaseKey: string,
+): Promise<number | null> {
+  try {
+    console.log(`[v0] Obteniendo peso promedio para lote ${loteId}, categoría ${categoriaId}`)
+
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/pd_lote_stock?lote_id=eq.${loteId}&categoria_animal_id=eq.${categoriaId}&select=peso_total,cantidad`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      },
+    )
+
+    if (!response.ok) {
+      console.log(`[v0] Error obteniendo stock: ${response.status}`)
+      return null
+    }
+
+    const stock = await response.json()
+    console.log(`[v0] Stock obtenido:`, stock)
+
+    if (!stock || stock.length === 0 || !stock[0].peso_total || !stock[0].cantidad) {
+      console.log(`[v0] No hay datos de peso/cantidad en el stock`)
+      return null
+    }
+
+    const pesoTotal = Number(stock[0].peso_total)
+    const cantidad = Number(stock[0].cantidad)
+
+    if (cantidad === 0) {
+      console.log(`[v0] Cantidad es 0, no se puede calcular promedio`)
+      return null
+    }
+
+    const pesoPromedio = Math.round(pesoTotal / cantidad)
+    console.log(`[v0] Peso promedio calculado: ${pesoPromedio} (${pesoTotal} / ${cantidad})`)
+
+    return pesoPromedio
+  } catch (error) {
+    console.error(`[v0] Error calculando peso promedio:`, error)
+    return null
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -64,17 +116,47 @@ export async function POST(request: NextRequest) {
     const movimientoId = cabeceraGuardada[0].id
     console.log("Cabecera guardada con ID:", movimientoId)
 
-    // 2. Guardar detalles en pd_movimiento_animales_detalles
-    const detallesData = detalles.map((detalle: any) => ({
-      movimiento_animal_id: movimientoId,
-      categoria_animal_id: Number.parseInt(detalle.categoria_id),
-      cantidad: Number.parseInt(detalle.cantidad),
-      peso: Number.parseInt(detalle.peso), // La tabla espera integer
-      tipo_peso: detalle.tipo_peso, // 'TOTAL' o 'PROMEDIO'
-      tipo_movimiento_id: Number.parseInt(detalle.tipo_movimiento_id),
-    }))
+    const detallesConPeso = await Promise.all(
+      detalles.map(async (detalle: any) => {
+        let pesoFinal = detalle.peso ? Number.parseInt(detalle.peso) : 0
+        let tipoPesoFinal = detalle.tipo_peso || "TOTAL"
+        const tipoMovimientoId = Number.parseInt(detalle.tipo_movimiento_id)
 
-    console.log("Datos de detalles a guardar:", detallesData)
+        // Solo calcular peso promedio si es Nacimiento o Mortandad Y no se proporcionó peso
+        if (TIPOS_PESO_OPCIONAL.includes(tipoMovimientoId) && (!pesoFinal || pesoFinal === 0)) {
+          console.log(
+            `[v0] Tipo ${tipoMovimientoId} permite peso opcional. Calculando promedio para categoría ${detalle.categoria_id}...`,
+          )
+
+          const pesoPromedio = await obtenerPesoPromedio(
+            Number.parseInt(lote_id),
+            Number.parseInt(detalle.categoria_id),
+            supabaseUrl,
+            supabaseKey,
+          )
+
+          if (pesoPromedio) {
+            pesoFinal = pesoPromedio
+            tipoPesoFinal = "PROMEDIO"
+            console.log(`[v0] Usando peso promedio calculado: ${pesoFinal} kg`)
+          } else {
+            console.log(`[v0] No se pudo calcular peso promedio, usando 0`)
+            pesoFinal = 0
+          }
+        }
+
+        return {
+          movimiento_animal_id: movimientoId,
+          categoria_animal_id: Number.parseInt(detalle.categoria_id),
+          cantidad: Number.parseInt(detalle.cantidad),
+          peso: pesoFinal,
+          tipo_peso: tipoPesoFinal,
+          tipo_movimiento_id: tipoMovimientoId,
+        }
+      }),
+    )
+
+    console.log("Datos de detalles a guardar (con pesos calculados):", detallesConPeso)
 
     const detallesResponse = await fetch(`${supabaseUrl}/rest/v1/pd_movimiento_animales_detalles`, {
       method: "POST",
@@ -84,7 +166,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
         Prefer: "return=representation",
       },
-      body: JSON.stringify(detallesData),
+      body: JSON.stringify(detallesConPeso),
     })
 
     if (!detallesResponse.ok) {
@@ -211,17 +293,47 @@ export async function PUT(request: NextRequest) {
 
     console.log("Detalles existentes eliminados")
 
-    // 3. Insertar nuevos detalles
-    const detallesData = detalles.map((detalle: any) => ({
-      movimiento_animal_id: Number.parseInt(id),
-      categoria_animal_id: Number.parseInt(detalle.categoria_id),
-      cantidad: Number.parseInt(detalle.cantidad),
-      peso: Number.parseInt(detalle.peso),
-      tipo_peso: detalle.tipo_peso,
-      tipo_movimiento_id: Number.parseInt(detalle.tipo_movimiento_id),
-    }))
+    const detallesConPeso = await Promise.all(
+      detalles.map(async (detalle: any) => {
+        let pesoFinal = detalle.peso ? Number.parseInt(detalle.peso) : 0
+        let tipoPesoFinal = detalle.tipo_peso || "TOTAL"
+        const tipoMovimientoId = Number.parseInt(detalle.tipo_movimiento_id)
 
-    console.log("Datos de nuevos detalles a insertar:", detallesData)
+        // Solo calcular peso promedio si es Nacimiento o Mortandad Y no se proporcionó peso
+        if (TIPOS_PESO_OPCIONAL.includes(tipoMovimientoId) && (!pesoFinal || pesoFinal === 0)) {
+          console.log(
+            `[v0] Tipo ${tipoMovimientoId} permite peso opcional. Calculando promedio para categoría ${detalle.categoria_id}...`,
+          )
+
+          const pesoPromedio = await obtenerPesoPromedio(
+            Number.parseInt(lote_id),
+            Number.parseInt(detalle.categoria_id),
+            supabaseUrl,
+            supabaseKey,
+          )
+
+          if (pesoPromedio) {
+            pesoFinal = pesoPromedio
+            tipoPesoFinal = "PROMEDIO"
+            console.log(`[v0] Usando peso promedio calculado: ${pesoFinal} kg`)
+          } else {
+            console.log(`[v0] No se pudo calcular peso promedio, usando 0`)
+            pesoFinal = 0
+          }
+        }
+
+        return {
+          movimiento_animal_id: Number.parseInt(id),
+          categoria_animal_id: Number.parseInt(detalle.categoria_id),
+          cantidad: Number.parseInt(detalle.cantidad),
+          peso: pesoFinal,
+          tipo_peso: tipoPesoFinal,
+          tipo_movimiento_id: tipoMovimientoId,
+        }
+      }),
+    )
+
+    console.log("Datos de nuevos detalles a insertar (con pesos calculados):", detallesConPeso)
 
     const detallesResponse = await fetch(`${supabaseUrl}/rest/v1/pd_movimiento_animales_detalles`, {
       method: "POST",
@@ -231,7 +343,7 @@ export async function PUT(request: NextRequest) {
         "Content-Type": "application/json",
         Prefer: "return=representation",
       },
-      body: JSON.stringify(detallesData),
+      body: JSON.stringify(detallesConPeso),
     })
 
     if (!detallesResponse.ok) {
