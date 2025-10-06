@@ -495,7 +495,6 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
     if (!cantidad || Number.parseInt(cantidad) <= 0) errores.push("La cantidad debe ser mayor a 0")
     if (!peso || Number.parseInt(peso) <= 0) errores.push("El peso debe ser mayor a 0")
 
-    // VALIDACIÓN DE STOCK PARA FAENA
     if (categoriaId && cantidad && Number.parseInt(cantidad) > 0) {
       console.log("🔍 INICIANDO VALIDACIÓN DE STOCK PARA FAENA")
       console.log("   Categoría seleccionada ID:", categoriaId)

@@ -665,7 +665,8 @@ export default function EditarSalidaAnimalesDrawer({
     }
   }
 
-  const agregarDetalle = () => {
+  // VALIDACIÓN DE DETALLE
+  const validarDetalle = (): string[] => {
     console.log("🔍 Iniciando validación de detalle de animales...")
     console.log("Datos del nuevo detalle:", nuevoDetalle)
 
@@ -691,7 +692,6 @@ export default function EditarSalidaAnimalesDrawer({
       errores.push("El peso debe ser mayor a 0")
     }
 
-    // VALIDACIÓN DE STOCK PARA ANIMALES
     if (nuevoDetalle.categoria_id && nuevoDetalle.cantidad > 0) {
       console.log("🔍 INICIANDO VALIDACIÓN DE STOCK PARA ANIMALES")
       console.log("   Categoría seleccionada ID:", nuevoDetalle.categoria_id)
@@ -719,6 +719,14 @@ export default function EditarSalidaAnimalesDrawer({
       }
     }
 
+    console.log("Errores encontrados en detalle:", errores)
+
+    return errores
+  }
+
+  const agregarDetalle = () => {
+    // Reemplazar la llamada a la validación antigua con la nueva función
+    const errores = validarDetalle()
     console.log("Errores encontrados en detalle:", errores)
 
     // Si hay errores, mostrarlos y no agregar el detalle

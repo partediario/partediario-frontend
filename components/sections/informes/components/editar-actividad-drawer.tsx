@@ -27,6 +27,7 @@ interface CategoriaExistente {
   categoria_animal_id: number
   nombre_categoria_animal: string
   lote_id: number
+  cantidad: number
 }
 
 interface Lote {
@@ -326,6 +327,39 @@ export default function EditarActividadDrawer({
     if (!cantidad || Number.parseInt(cantidad) <= 0) errores.push("La cantidad debe ser mayor a 0")
     if (!peso || Number.parseInt(peso) <= 0) errores.push("El peso debe ser mayor a 0")
 
+    if (categoriaId && cantidad && Number.parseInt(cantidad) > 0) {
+      console.log("🔍 INICIANDO VALIDACIÓN DE STOCK EN EDICIÓN")
+      console.log("   Categoría seleccionada ID:", categoriaId)
+      console.log("   Cantidad solicitada:", cantidad)
+
+      const categoriaSeleccionada = categoriasExistentes.find((c) => c.categoria_animal_id.toString() === categoriaId)
+
+      if (categoriaSeleccionada) {
+        // Calcular cantidad ya utilizada en otros detalles de la misma categoría
+        const cantidadYaUtilizada = detalles
+          .filter((d, index) => d.categoria_animal_id.toString() === categoriaId && index !== editandoDetalle)
+          .reduce((sum, d) => sum + d.cantidad, 0)
+
+        const stockDisponible = Number(categoriaSeleccionada.cantidad) - cantidadYaUtilizada
+        const cantidadSolicitada = Number.parseInt(cantidad)
+
+        console.log(`📊 Validación de stock para ${categoriaSeleccionada.nombre_categoria_animal}:`)
+        console.log(`   Stock disponible: ${stockDisponible}`)
+        console.log(`   Cantidad solicitada: ${cantidadSolicitada}`)
+
+        if (cantidadSolicitada > stockDisponible) {
+          const errorMsg =
+            `Stock insuficiente para ${categoriaSeleccionada.nombre_categoria_animal}. ` +
+            `Disponible: ${stockDisponible}, solicitado: ${cantidadSolicitada}`
+          console.log("❌ ERROR DE STOCK:", errorMsg)
+          errores.push(errorMsg)
+        } else {
+          console.log("✅ Stock suficiente")
+        }
+      }
+    }
+    // </CHANGE>
+
     return errores
   }
 
@@ -600,6 +634,14 @@ export default function EditarActividadDrawer({
                               disabled={!loteId}
                               loading={loadingCategorias}
                             />
+                            {categoriaId && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Stock disponible:{" "}
+                                {categoriasExistentes.find((c) => c.categoria_animal_id.toString() === categoriaId)
+                                  ?.cantidad || 0}
+                              </p>
+                            )}
+                            {/* </CHANGE> */}
                           </div>
                         </div>
 

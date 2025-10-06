@@ -221,7 +221,6 @@ export default function FaenaDrawer({
     if (!cantidad || Number.parseInt(cantidad) <= 0) errores.push("La cantidad debe ser mayor a 0")
     if (!peso || Number.parseInt(peso) <= 0) errores.push("El peso debe ser mayor a 0")
 
-    // VALIDACIÓN DE STOCK - igual que en salida de animales
     if (categoriaId && cantidad && Number.parseInt(cantidad) > 0) {
       console.log("🔍 INICIANDO VALIDACIÓN DE STOCK")
       console.log("   Categoría seleccionada ID:", categoriaId)

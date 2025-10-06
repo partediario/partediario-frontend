@@ -96,7 +96,7 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
     categoria_id: "",
     cantidad: 0,
     peso: 0,
-    tipo_peso: "TOTAL" as "TOTAL" | "PROMEDIO",
+    tipo_peso: "PROMEDIO" as "TOTAL" | "PROMEDIO",
   })
 
   // Estado para editar detalle existente
@@ -138,7 +138,7 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
         categoria_id: "",
         cantidad: 0,
         peso: 0,
-        tipo_peso: "TOTAL",
+        tipo_peso: "PROMEDIO",
       })
     }
   }, [isOpen])
@@ -224,7 +224,7 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
           categoria_nombre: detalle.detalle_categoria_animal || "",
           cantidad: detalle.detalle_cantidad || 0,
           peso: detalle.detalle_peso || 0,
-          tipo_peso: (detalle.detalle_tipo_peso as "TOTAL" | "PROMEDIO") || "TOTAL",
+          tipo_peso: (detalle.detalle_tipo_peso as "TOTAL" | "PROMEDIO") || "PROMEDIO",
           deleteable: detalle.deleteable || false,
         }))
 
@@ -450,7 +450,7 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
       categoria_id: "",
       cantidad: 0,
       peso: 0,
-      tipo_peso: "TOTAL",
+      tipo_peso: "PROMEDIO",
     })
     setMostrarFormDetalle(false)
   }

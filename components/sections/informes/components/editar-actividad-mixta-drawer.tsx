@@ -105,7 +105,7 @@ export default function EditarActividadMixtaDrawer({
   const [categoriaAnimalId, setCategoriaAnimalId] = useState<string>("")
   const [cantidadAnimal, setCantidadAnimal] = useState<string>("")
   const [peso, setPeso] = useState<string>("")
-  const [tipoAnimal, setTipoAnimal] = useState<string>("TOTAL")
+  const [tipoAnimal, setTipoAnimal] = useState<string>("PROMEDIO") // Cambiado de vacío a "PROMEDIO"
 
   // Formulario insumos
   const [insumoId, setInsumoId] = useState<string>("")

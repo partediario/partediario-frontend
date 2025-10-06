@@ -88,7 +88,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
     categoria_id: "",
     cantidad: 0,
     peso: 0,
-    tipo_peso: "TOTAL" as "TOTAL" | "PROMEDIO",
+    tipo_peso: "PROMEDIO" as "TOTAL" | "PROMEDIO",
   })
 
   // Datos del usuario desde la vista
@@ -125,7 +125,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
         categoria_id: "",
         cantidad: 0,
         peso: 0,
-        tipo_peso: "TOTAL",
+        tipo_peso: "PROMEDIO",
       })
       // console.log("Formulario limpiado al cerrar el drawer")
     }
@@ -433,7 +433,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
       categoria_id: "",
       cantidad: 0,
       peso: 0,
-      tipo_peso: "TOTAL",
+      tipo_peso: "PROMEDIO",
     })
     setMostrarFormDetalle(false)
     setEditandoDetalle(null)
@@ -448,7 +448,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
       categoria_id: "",
       cantidad: 0,
       peso: 0,
-      tipo_peso: "TOTAL",
+      tipo_peso: "PROMEDIO",
     })
   }
 

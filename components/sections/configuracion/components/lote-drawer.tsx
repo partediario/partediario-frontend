@@ -79,7 +79,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
     categoria_animal_id: "",
     cantidad: "",
     peso: "",
-    tipo_peso: "", // Cambiado para que inicie vacío
+    tipo_peso: "PROMEDIO", // Cambiado de vacío a "PROMEDIO"
   })
   const [stockErrors, setStockErrors] = useState<string[]>([])
 
@@ -266,7 +266,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
       categoria_animal_id: "",
       cantidad: "",
       peso: "",
-      tipo_peso: "", // Vacío por defecto
+      tipo_peso: "PROMEDIO", // Cambiado de vacío a "PROMEDIO"
     })
     setStockErrors([])
   }
@@ -280,7 +280,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
       categoria_animal_id: stockItem.categoria_animal_id.toString(),
       cantidad: stockItem.cantidad.toString(),
       peso: stockItem.peso_total?.toString() || "",
-      tipo_peso: "total", // Por defecto "total" al editar
+      tipo_peso: "PROMEDIO", // Cambiado de vacío a "PROMEDIO"
     })
     setStockErrors([])
   }
@@ -292,7 +292,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
       categoria_animal_id: "",
       cantidad: "",
       peso: "",
-      tipo_peso: "",
+      tipo_peso: "PROMEDIO", // Cambiado de vacío a "PROMEDIO"
     })
     setStockErrors([])
   }

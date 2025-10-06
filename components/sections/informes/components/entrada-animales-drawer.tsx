@@ -88,7 +88,7 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
     categoria_id: "",
     cantidad: 0,
     peso: 0,
-    tipo_peso: "TOTAL" as "TOTAL" | "PROMEDIO",
+    tipo_peso: "PROMEDIO" as "TOTAL" | "PROMEDIO",
   })
 
   // Usar el contexto de usuario
@@ -157,7 +157,7 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
         categoria_id: "",
         cantidad: 0,
         peso: 0,
-        tipo_peso: "TOTAL",
+        tipo_peso: "PROMEDIO",
       })
     }
   }, [isOpen])
@@ -331,7 +331,7 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
       categoria_id: "",
       cantidad: 0,
       peso: 0,
-      tipo_peso: "TOTAL",
+      tipo_peso: "PROMEDIO",
     })
     setMostrarFormDetalle(false)
     setEditandoDetalle(null)
@@ -346,7 +346,7 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
       categoria_id: "",
       cantidad: 0,
       peso: 0,
-      tipo_peso: "TOTAL",
+      tipo_peso: "PROMEDIO",
     })
   }
 
