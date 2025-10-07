@@ -24,6 +24,14 @@ interface Lote {
   }
 }
 
+interface LoteStock {
+  id: number
+  lote_id: number
+  categoria_animal_id: number
+  cantidad: number
+  peso_total: number | null
+}
+
 export function Lotes() {
   const { toast } = useToast()
   const { establecimientoSeleccionado } = useEstablishment()
@@ -36,6 +44,7 @@ export function Lotes() {
   const [drawerMode, setDrawerMode] = useState<"create" | "edit">("create")
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null)
+  const [lotesStock, setLotesStock] = useState<Record<number, LoteStock[]>>({})
 
   // Cargar lotes cuando cambia el establecimiento
   useEffect(() => {
@@ -43,6 +52,7 @@ export function Lotes() {
       fetchLotes()
     } else {
       setLotes([])
+      setLotesStock({})
     }
   }, [establecimientoSeleccionado])
 
@@ -58,7 +68,10 @@ export function Lotes() {
         throw new Error(data.error || "Error al cargar lotes")
       }
 
-      setLotes(data.lotes || [])
+      const lotesData = data.lotes || []
+      setLotes(lotesData)
+
+      await fetchStockParaTodosLosLotes(lotesData)
     } catch (error) {
       console.error("Error fetching lotes:", error)
       toast({
@@ -69,6 +82,50 @@ export function Lotes() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const fetchStockParaTodosLosLotes = async (lotesData: Lote[]) => {
+    try {
+      const stockPromises = lotesData.map(async (lote) => {
+        try {
+          const response = await fetch(`/api/lote-stock?lote_id=${lote.id}`)
+          const data = await response.json()
+          return { loteId: lote.id, stock: data.stock || [] }
+        } catch (error) {
+          console.error(`Error fetching stock for lote ${lote.id}:`, error)
+          return { loteId: lote.id, stock: [] }
+        }
+      })
+
+      const stockResults = await Promise.all(stockPromises)
+      const stockMap: Record<number, LoteStock[]> = {}
+
+      for (const result of stockResults) {
+        stockMap[result.loteId] = result.stock
+      }
+
+      setLotesStock(stockMap)
+    } catch (error) {
+      console.error("Error fetching stock for lotes:", error)
+    }
+  }
+
+  const calcularEstadoLote = (loteId: number): "Cargado" | "Vacío" => {
+    const stock = lotesStock[loteId] || []
+
+    // Si no tiene categorías, está vacío
+    if (stock.length === 0) {
+      return "Vacío"
+    }
+
+    // Si todas las categorías tienen cantidad 0, está vacío
+    const todasCantidadesCero = stock.every((item) => item.cantidad === 0)
+    if (todasCantidadesCero) {
+      return "Vacío"
+    }
+
+    // Si tiene al menos una categoría con cantidad > 0, está cargado
+    return "Cargado"
   }
 
   const handleCreate = () => {
@@ -167,28 +224,43 @@ export function Lotes() {
                 <TableRow>
                   <TableHead>Nombre del Lote</TableHead>
                   <TableHead>Potrero Actual</TableHead>
+                  <TableHead>Estado</TableHead>
                   <TableHead className="w-20">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lotes.map((lote) => (
-                  <TableRow key={lote.id}>
-                    <TableCell className="font-medium">{lote.nombre}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{lote.pd_potreros?.nombre || "Sin potrero"}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        {/* Solo mostrar botón editar si NO es consultor */}
-                        {!permissions.isConsultor && (
-                          <Button size="sm" variant="ghost" onClick={() => handleEdit(lote)}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {lotes.map((lote) => {
+                  const estado = calcularEstadoLote(lote.id)
+
+                  return (
+                    <TableRow key={lote.id}>
+                      <TableCell className="font-medium">{lote.nombre}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{lote.pd_potreros?.nombre || "Sin potrero"}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={estado === "Cargado" ? "default" : "outline"}
+                          className={
+                            estado === "Cargado" ? "bg-green-600 hover:bg-green-700" : "text-gray-600 border-gray-300"
+                          }
+                        >
+                          {estado}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {/* Solo mostrar botón editar si NO es consultor */}
+                          {!permissions.isConsultor && (
+                            <Button size="sm" variant="ghost" onClick={() => handleEdit(lote)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           )}

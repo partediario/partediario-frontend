@@ -360,7 +360,11 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
     if (!loteSeleccionado) errores.push("Debe seleccionar un lote")
     if (!fechaSeleccionada) errores.push("Debe seleccionar una fecha")
     if (!horaSeleccionada) errores.push("Debe seleccionar una hora")
-    if (detalles.length === 0) errores.push("Debe agregar al menos un detalle de movimiento")
+    if (detalles.length === 0) {
+      errores.push(
+        "Debe agregar al menos un detalle. Por favor, complete el formulario y presione 'Agregar' antes de guardar.",
+      )
+    }
     if (!usuario?.id) errores.push("Error del sistema: No se pudo obtener el ID del usuario")
     if (!establecimientoSeleccionado) errores.push("Error del sistema: No se pudo obtener el ID del establecimiento")
 
@@ -371,6 +375,10 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
     const errores = validarFormulario()
     if (errores.length > 0) {
       setErroresValidacion(errores)
+      const drawerContent = document.querySelector('[role="dialog"]')
+      if (drawerContent) {
+        drawerContent.scrollTop = 0
+      }
       return
     }
 

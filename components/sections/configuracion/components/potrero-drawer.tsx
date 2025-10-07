@@ -162,9 +162,12 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
     try {
       let response
 
+      const superficieUtilFinal = formData.superfice_util.trim() ? formData.superfice_util : formData.superficie_total
+
       // Preparar datos para enviar, asegurando que receptividad sea número
       const dataToSend = {
         ...formData,
+        superfice_util: superficieUtilFinal,
         receptividad: formData.receptividad ? Number.parseFloat(formData.receptividad) : null,
       }
 
@@ -353,7 +356,7 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
                         <HelpCircle className="w-4 h-4 text-slate-400" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Superficie efectivamente pastoreable</p>
+                        <p>Superficie efectivamente pastoreable. Si no se ingresa, se usará la superficie total</p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -443,6 +446,7 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
               <ul className="text-sm text-blue-800 space-y-1">
                 <li>• Los potreros son las divisiones de pastoreo de tu establecimiento</li>
                 <li>• La superficie útil debe ser menor o igual a la superficie total</li>
+                <li>• Si no ingresas superficie útil, se usará automáticamente la superficie total</li>
                 <li>• La receptividad indica la capacidad de carga animal</li>
                 <li>• Para Ug se permiten decimales, para Kg solo números enteros</li>
                 <li>• El recurso forrajero ayuda a planificar el manejo</li>

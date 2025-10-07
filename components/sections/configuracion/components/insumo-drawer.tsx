@@ -496,7 +496,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
               <Edit className="w-4 h-4 text-gray-500" />
             </div>
 
-            {/* Primera fila: Nombre y Contenido */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="nombre" className="text-sm font-medium text-gray-700">
@@ -513,26 +512,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
                 <p className="text-sm text-gray-500 mt-1">Mínimo 3 caracteres</p>
               </div>
 
-              <div>
-                <Label htmlFor="contenido" className="text-sm font-medium text-gray-700">
-                  Contenido *
-                </Label>
-                <Input
-                  id="contenido"
-                  type="number"
-                  value={formData.contenido}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, contenido: e.target.value }))}
-                  placeholder="Ej: 50"
-                  disabled={loading}
-                  className="mt-1"
-                  min="1"
-                />
-                <p className="text-sm text-gray-500 mt-1">Debe ser mayor a 0</p>
-              </div>
-            </div>
-
-            {/* Segunda fila: Clase de insumo (fila completa) */}
-            <div className="grid grid-cols-1 gap-4">
               <div>
                 <Label htmlFor="clase_insumo_id" className="text-sm font-medium text-gray-700">
                   Clase de insumo *
@@ -555,7 +534,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
               </div>
             </div>
 
-            {/* Tercera fila: Tipo y Subtipo de insumo */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="tipo_insumo_id" className="text-sm font-medium text-gray-700">
@@ -600,8 +578,24 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
               </div>
             </div>
 
-            {/* Cuarta fila: Unidades de medida */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="contenido" className="text-sm font-medium text-gray-700">
+                  Contenido *
+                </Label>
+                <Input
+                  id="contenido"
+                  type="number"
+                  value={formData.contenido}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, contenido: e.target.value }))}
+                  placeholder="Ej: 50"
+                  disabled={loading}
+                  className="mt-1"
+                  min="1"
+                />
+                <p className="text-sm text-gray-500 mt-1">Debe ser mayor a 0</p>
+              </div>
+
               <div>
                 <Label htmlFor="unidad_medida_producto" className="text-sm font-medium text-gray-700">
                   Unidad de medida del producto *
@@ -621,6 +615,33 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
                     disabled={loadingDropdowns || loading}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stock del Insumo */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-gray-900">Stock del Insumo</h3>
+              <Edit className="w-4 h-4 text-gray-500" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="cantidad" className="text-sm font-medium text-gray-700">
+                  Cantidad en stock
+                </Label>
+                <Input
+                  id="cantidad"
+                  type="number"
+                  value={stockData.cantidad}
+                  onChange={(e) => setStockData((prev) => ({ ...prev, cantidad: e.target.value }))}
+                  placeholder="Ej: 100 (opcional)"
+                  disabled={loading}
+                  className="mt-1"
+                  min="0"
+                />
+                <p className="text-sm text-gray-500 mt-1">Opcional - Deja vacío para crear sin stock inicial</p>
               </div>
 
               <div>
@@ -643,31 +664,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
                   />
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Stock del Insumo */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-gray-900">Stock del Insumo</h3>
-              <Edit className="w-4 h-4 text-gray-500" />
-            </div>
-
-            <div>
-              <Label htmlFor="cantidad" className="text-sm font-medium text-gray-700">
-                Cantidad en stock
-              </Label>
-              <Input
-                id="cantidad"
-                type="number"
-                value={stockData.cantidad}
-                onChange={(e) => setStockData((prev) => ({ ...prev, cantidad: e.target.value }))}
-                placeholder="Ej: 100 (opcional)"
-                disabled={loading}
-                className="mt-1"
-                min="0"
-              />
-              <p className="text-sm text-gray-500 mt-1">Opcional - Deja vacío para crear sin stock inicial</p>
             </div>
           </div>
 

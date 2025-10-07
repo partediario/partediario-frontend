@@ -96,7 +96,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: Package,
       label: "Insumos",
       key: "insumos",
-      visible: true, // Cambiado de permissions.canViewDashboard("insumos") a false
+      visible: false, // Cambiado de permissions.canViewDashboard("insumos") a false
       requiresAuth: true,
     },
     {
@@ -124,6 +124,11 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       canAddParteDiario: permissions.canAddParteDiario(),
     })
     onMenuClick?.(menuItem)
+  }
+
+  const handleLogoClick = () => {
+    console.log("🏠 [SIDEBAR] Logo clicked - Redirigiendo a Registros")
+    onMenuClick?.("Registros")
   }
 
   const handleLogout = () => {
@@ -253,8 +258,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
   return (
     <div className="w-64 h-screen fixed left-0 top-0 z-10 overflow-y-auto" style={{ backgroundColor: "#1F2427" }}>
       <div className="p-4 min-h-full flex flex-col">
-        {/* Logo con efecto hover */}
-        <div className="pt-3 pb-2 flex flex-col items-center cursor-pointer group">
+        <div className="pt-3 pb-2 flex flex-col items-center cursor-pointer group" onClick={handleLogoClick}>
           <Image
             src="https://res.cloudinary.com/dtieutmxi/image/upload/v1749300882/Parte_Diario_blanco_tsoirc.svg"
             alt="Logo Parte Diario"
