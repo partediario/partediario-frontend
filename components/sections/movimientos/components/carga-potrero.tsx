@@ -324,7 +324,7 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
         ])
 
         autoTable(doc, {
-          head: [["Potrero", "Cab/Has", "Has Ganaderas", "Kg/Has", "UG/Has"]],
+          head: [["Potrero", "Cab/ha", "ha Ganaderas", "kg/ha", "UG/ha"]],
           body: tableData,
           startY: 120,
           styles: {
@@ -362,10 +362,10 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
           const XLSX = await import("xlsx")
           const exportData = data.map((item) => ({
             Potrero: item.potrero,
-            "Cab/Has": (item.cabezas_por_ha || 0).toFixed(2),
-            "Kg/Has": (item.kg_por_ha || 0).toFixed(2),
-            "UG/Has": (item.ug_por_ha || 0).toFixed(2),
-            "Has Ganaderas": item.hectareas_utiles,
+            "Cab/ha": (item.cabezas_por_ha || 0).toFixed(2),
+            "kg/ha": (item.kg_por_ha || 0).toFixed(2),
+            "UG/ha": (item.ug_por_ha || 0).toFixed(2),
+            "ha Ganaderas": item.hectareas_utiles,
             "Cantidad Animales": item.cantidad_animales,
             "Peso Total (kg)": item.peso_total,
           }))
@@ -388,10 +388,10 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
           console.log("XLSX failed, using CSV fallback:", xlsxError)
           const headers = [
             "Potrero",
-            "Cab/Has",
-            "Has Ganaderas",
-            "Kg/Has",
-            "UG/Has",
+            "Cab/ha",
+            "ha Ganaderas",
+            "kg/ha",
+            "UG/ha",
             "Cantidad Animales",
             "Peso Total (kg)",
           ]
@@ -496,7 +496,7 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                       <p>Análisis de carga animal por potrero con tabla y gráfico de barras.</p>
                       <div className="space-y-1">
                         <p>
-                          <strong>• Métricas:</strong> Cab/Has, Kg/Has, UG/Has
+                          <strong>• Métricas:</strong> Cab/ha, kg/ha, UG/ha
                         </p>
                         <p>
                           <strong>• Estados:</strong> Vacío, Bajo, Óptimo, Sobrecarga
@@ -567,10 +567,10 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                   <TableHeader>
                     <TableRow className="bg-gray-50">
                       <TableHead className="font-semibold">Potrero</TableHead>
-                      <TableHead className="font-semibold">Cab/Has</TableHead>
-                      <TableHead className="font-semibold">Has Ganaderas</TableHead>
-                      <TableHead className="font-semibold">Kg/Has</TableHead>
-                      <TableHead className="font-semibold">UG/Has</TableHead>
+                      <TableHead className="font-semibold">Cab/ha</TableHead>
+                      <TableHead className="font-semibold">ha Ganaderas</TableHead>
+                      <TableHead className="font-semibold">kg/ha</TableHead>
+                      <TableHead className="font-semibold">UG/ha</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -668,7 +668,7 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                             >
                               {/* Grupo de 3 barras */}
                               <div className="flex justify-center items-end gap-1 w-full">
-                                {/* Barra Cab/Has */}
+                                {/* Barra Cab/ha */}
                                 <div
                                   className="cursor-pointer transition-all duration-200 hover:opacity-80 hover:scale-105"
                                   style={{
@@ -683,7 +683,7 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                                   onMouseLeave={handleBarLeave}
                                   onMouseMove={(e) => handleBarHover(e, item)}
                                 />
-                                {/* Barra Kg/Has */}
+                                {/* Barra kg/ha */}
                                 <div
                                   className="cursor-pointer transition-all duration-200 hover:opacity-80 hover:scale-105"
                                   style={{
@@ -698,7 +698,7 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                                   onMouseLeave={handleBarLeave}
                                   onMouseMove={(e) => handleBarHover(e, item)}
                                 />
-                                {/* Barra UG/Has */}
+                                {/* Barra UG/ha */}
                                 <div
                                   className="cursor-pointer transition-all duration-200 hover:opacity-80 hover:scale-105"
                                   style={{
@@ -741,15 +741,15 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                         <div className="flex flex-col gap-2 text-sm">
                           <div className="flex items-center gap-2">
                             <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                            <span>Cab/Has</span>
+                            <span>Cab/ha</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-4 h-4 bg-red-500 rounded"></div>
-                            <span>Kg/Has</span>
+                            <span>kg/ha</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-4 h-4 bg-green-500 rounded"></div>
-                            <span>UG/Has</span>
+                            <span>UG/ha</span>
                           </div>
                         </div>
                       </div>
@@ -772,20 +772,20 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                           </div>
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-600 text-sm">Cab/Has:</span>
+                              <span className="text-gray-600 text-sm">Cab/ha:</span>
                               <span className="font-bold text-blue-600 text-lg">{tooltip.cabHas.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-600 text-sm">Kg/Has:</span>
+                              <span className="text-gray-600 text-sm">kg/ha:</span>
                               <span className="font-bold text-red-600 text-lg">{tooltip.kgHas.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-600 text-sm">UG/Has:</span>
+                              <span className="text-gray-600 text-sm">UG/ha:</span>
                               <span className="font-bold text-green-600 text-lg">{tooltip.ugHas.toFixed(2)}</span>
                             </div>
                             <div className="pt-2 border-t border-gray-100">
                               <div className="flex justify-between items-center">
-                                <span className="text-gray-600 text-sm">Has Ganaderas:</span>
+                                <span className="text-gray-600 text-sm">ha Ganaderas:</span>
                                 <span className="font-semibold text-gray-900">{tooltip.hectareas}</span>
                               </div>
                             </div>
@@ -806,7 +806,7 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                             <TrendingUp className="w-6 h-6 text-white" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-blue-700">Promedio Cab/Has</p>
+                            <p className="text-sm font-medium text-blue-700">Prom. Cab/ha</p>
                             <p className="text-3xl font-bold text-blue-900">{estadisticas.promedioCabHas.toFixed(2)}</p>
                             <p className="text-sm text-blue-600">cab/ha</p>
                           </div>
@@ -821,7 +821,7 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                             <Target className="w-6 h-6 text-white" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-green-700">Promedio Kg/Has</p>
+                            <p className="text-sm font-medium text-green-700">Prom. kg/ha</p>
                             <p className="text-3xl font-bold text-green-900">{estadisticas.promedioKgHas.toFixed(0)}</p>
                             <p className="text-sm text-green-600">kg/ha</p>
                           </div>
@@ -836,11 +836,11 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                             <Activity className="w-6 h-6 text-white" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-purple-700">Promedio UG/Has</p>
+                            <p className="text-sm font-medium text-purple-700">Prom. UG/ha</p>
                             <p className="text-3xl font-bold text-purple-900">
                               {estadisticas.promedioUgHas.toFixed(2)}
                             </p>
-                            <p className="text-sm text-purple-600">ug/ha</p>
+                            <p className="text-sm text-purple-600">UG/ha</p>
                           </div>
                         </div>
                       </CardContent>

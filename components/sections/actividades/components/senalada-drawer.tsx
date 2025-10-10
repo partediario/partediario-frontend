@@ -359,7 +359,7 @@ export default function SeñaladaDrawer({
         <div className="flex-1 overflow-y-auto p-6">
           {/* Errores principales */}
           {errores.length > 0 && (
-            <Alert variant="destructive" className="mb-6">
+            <Alert variant="destructive" className="mb-6 sticky top-0 z-50 bg-red-50 shadow-md">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 <div className="font-medium mb-2">Se encontraron {errores.length} errores:</div>

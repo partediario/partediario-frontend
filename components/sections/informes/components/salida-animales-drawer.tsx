@@ -599,7 +599,6 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
         })
       }, 500)
 
-      // Disparar evento para recargar partes diarios
       console.log("🔄 Disparando evento reloadPartesDiarios...")
       window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
       console.log("✅ Evento reloadPartesDiarios disparado")
@@ -664,7 +663,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Mostrar mensaje de éxito */}
           {mostrarExito && (
-            <Alert className="border-green-200 bg-green-50">
+            <Alert className="border-green-200 bg-green-50 sticky top-0 z-50 shadow-md">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription>
                 <div className="font-medium text-green-800 mb-2">¡Salida guardada exitosamente!</div>
@@ -678,7 +677,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
 
           {/* Mostrar errores de validación general */}
           {erroresValidacion.length > 0 && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="sticky top-0 z-50 bg-red-50 shadow-md">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 <div className="font-medium mb-2">Se encontraron {erroresValidacion.length} errores:</div>

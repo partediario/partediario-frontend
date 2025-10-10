@@ -92,15 +92,10 @@ const obtenerRangoFechas = (periodo: string) => {
 }
 
 const agruparActividades = (actividades: any[]) => {
-  console.log("[v0] Total actividades antes de agrupar:", actividades.length)
-  console.log("[v0] Primeras 3 actividades:", actividades.slice(0, 3))
-
   const actividadesAgrupadas = new Map()
 
   actividades.forEach((actividad) => {
     const actividadId = actividad.actividad_id
-
-    console.log("[v0] Procesando actividad_id:", actividadId, "categoria:", actividad.categoria_animal)
 
     if (!actividadesAgrupadas.has(actividadId)) {
       // Primera ocurrencia de esta actividad
@@ -137,16 +132,12 @@ const agruparActividades = (actividades: any[]) => {
     }
   })
 
-  console.log("[v0] Actividades agrupadas:", actividadesAgrupadas.size)
-
   // Convertir Map a array y formatear detalles
   const resultado = Array.from(actividadesAgrupadas.values()).map((actividad) => {
     const detallesCombinados =
       actividad.detalles_combinados.length > 0
         ? actividad.detalles_combinados.join(", ")
         : actividad.categoria_animal || actividad.insumo_nombre || ""
-
-    console.log("[v0] Actividad agrupada:", actividad.actividad_id, "detalles:", detallesCombinados)
 
     return {
       ...actividad,
@@ -156,8 +147,6 @@ const agruparActividades = (actividades: any[]) => {
       detalles_combinados: undefined,
     }
   })
-
-  console.log("[v0] Total actividades después de agrupar:", resultado.length)
 
   return resultado
 }

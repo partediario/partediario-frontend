@@ -221,7 +221,7 @@ export default function EntradaInsumosDrawer({ isOpen, onClose, onSuccess }: Ent
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* éxito */}
           {mostrarExito && (
-            <Alert className="border-green-200 bg-green-50">
+            <Alert className="border-green-200 bg-green-50 sticky top-0 z-50 shadow-md">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription className="space-y-1">
                 <p className="font-medium text-green-800">¡Entrada guardada exitosamente!</p>
@@ -232,7 +232,7 @@ export default function EntradaInsumosDrawer({ isOpen, onClose, onSuccess }: Ent
 
           {/* errores */}
           {erroresValidacion.length > 0 && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="sticky top-0 z-50 bg-red-50 shadow-md">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 <p className="font-medium mb-1">Se encontraron {erroresValidacion.length} errores:</p>

@@ -27,6 +27,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -51,6 +52,8 @@ export default function RegisterPage() {
 
     if (formData.password.length < 6) return "La contraseña debe tener al menos 6 caracteres"
     if (formData.password !== formData.confirmPassword) return "Las contraseñas no coinciden"
+
+    if (!acceptedTerms) return "Debe aceptar los términos y condiciones"
 
     return null
   }
@@ -91,10 +94,9 @@ export default function RegisterPage() {
         console.log("✅ [REGISTER] Cuenta creada exitosamente")
         setSuccess(true)
 
-        // Redirigir al login después de 3 segundos
         setTimeout(() => {
           window.location.href = "/login"
-        }, 3000)
+        }, 10000)
       } else {
         console.log("❌ [REGISTER] Error:", result.message)
         setError(result.message || "Error al crear la cuenta")
@@ -127,7 +129,7 @@ export default function RegisterPage() {
               <p className="text-gray-600">
                 ✅ Cuenta creada con éxito. Revise su correo electrónico para validar su cuenta.
               </p>
-              <p className="text-sm text-gray-500">Redirigiendo al login en 3 segundos...</p>
+              <p className="text-sm text-gray-500">Redirigiendo al login en 10 segundos...</p>
             </div>
           </CardContent>
         </Card>
@@ -149,7 +151,6 @@ export default function RegisterPage() {
       <div className="w-full max-w-md space-y-6 relative z-10">
         <Card className="bg-white/95 backdrop-blur-sm">
           <CardHeader className="space-y-4 text-center">
-            {/* Logo */}
             <div className="flex justify-center">
               <Image src="/logo-icon.png" alt="Parte Diario Pro" width={80} height={80} className="rounded-lg" />
             </div>
@@ -160,7 +161,6 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Nombres */}
               <div className="space-y-2">
                 <Label htmlFor="nombres">Nombres *</Label>
                 <Input
@@ -175,7 +175,6 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* Apellidos */}
               <div className="space-y-2">
                 <Label htmlFor="apellidos">Apellidos *</Label>
                 <Input
@@ -190,7 +189,6 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email">Correo Electrónico *</Label>
                 <Input
@@ -205,7 +203,6 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* Teléfono */}
               <div className="space-y-2">
                 <Label htmlFor="telefono">Teléfono *</Label>
                 <Input
@@ -220,7 +217,6 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* Empresa */}
               <div className="space-y-2">
                 <Label htmlFor="empresa">Nombre de la Empresa *</Label>
                 <Input
@@ -235,7 +231,6 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* Contraseña */}
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña *</Label>
                 <div className="relative">
@@ -262,7 +257,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Confirmar Contraseña */}
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirmar Contraseña *</Label>
                 <div className="relative">
@@ -289,20 +283,43 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Error */}
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
-              {/* Botón de registro */}
-              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
+              <div className="flex items-start space-x-2">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  disabled={loading}
+                  className="mt-1 h-4 w-4 rounded border-gray-300"
+                />
+                <label htmlFor="terms" className="text-sm text-gray-600">
+                  Acepto los{" "}
+                  <a
+                    href="https://www.partediario.com/legals.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-600 hover:text-green-700 underline"
+                  >
+                    términos y condiciones
+                  </a>
+                </label>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={loading || !acceptedTerms}
+              >
                 {loading ? "Creando cuenta..." : "Crear Cuenta"}
               </Button>
             </form>
 
-            {/* Link al login */}
             <div className="mt-6 text-center">
               <Link href="/login" className="inline-flex items-center text-sm text-green-600 hover:text-green-700">
                 <ArrowLeft className="h-4 w-4 mr-1" />

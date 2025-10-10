@@ -7,9 +7,6 @@ export async function GET(request: NextRequest) {
     const categoriaOrigenIds = searchParams.get("categoria_origen_ids")
     const empresaId = searchParams.get("empresa_id")
 
-    console.log("[v0] Destete API called with categoria_origen_ids:", categoriaOrigenIds)
-    console.log("[v0] Destete API called with empresa_id:", empresaId)
-
     if (!categoriaOrigenIds) {
       return NextResponse.json({ categorias: [] })
     }
@@ -30,10 +27,8 @@ export async function GET(request: NextRequest) {
 
       if (origenId === "21") {
         categoriaEstandarId = 19
-        console.log("[v0] Terneros (21) -> filtering with categoria_animal_estandar_id = 19")
       } else if (origenId === "22") {
         categoriaEstandarId = 20
-        console.log("[v0] Terneras (22) -> filtering with categoria_animal_estandar_id = 20")
       }
 
       if (categoriaEstandarId) {
@@ -59,14 +54,12 @@ export async function GET(request: NextRequest) {
               allCategorias.push(category)
             }
           })
-          console.log(`[v0] Found ${categories.length} categories for origen ${origenId}:`, categories)
         }
       }
     }
 
     allCategorias.sort((a, b) => a.id - b.id)
 
-    console.log(`[v0] Final result - returning ${allCategorias.length} categories:`, allCategorias)
     return NextResponse.json({ categorias: allCategorias })
   } catch (error) {
     console.error("[v0] Destete API Error:", error)

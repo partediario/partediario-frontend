@@ -10,6 +10,7 @@ import MaquinariasView from "./sections/maquinarias/maquinarias-view"
 import PotrerosView from "./sections/potreros/potreros-view"
 import ActividadesView from "./sections/actividades/actividades-view"
 import ConfiguracionView from "./sections/configuracion/configuracion-view"
+import ReportesView from "./sections/reportes/reportes-view" // Importando nueva vista de Reportes
 import { UserProvider } from "@/contexts/user-context"
 
 export default function ConfigurationInterface() {
@@ -36,6 +37,8 @@ export default function ConfigurationInterface() {
     switch (activeSection) {
       case "Registros":
         return <InformesView establecimientoId={selectedEstablishment} />
+      case "Reportes":
+        return <ReportesView /> // Agregando caso para Reportes
       case "Movimientos":
         return <MovimientosView establecimientoId={selectedEstablishment} />
       case "Actividades":

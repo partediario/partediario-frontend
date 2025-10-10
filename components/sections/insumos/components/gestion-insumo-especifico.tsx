@@ -465,7 +465,7 @@ export function GestionInsumoEspecifico({
                       <div>
                         <p className="text-sm font-medium text-gray-600">Stock Total</p>
                         <p className="text-2xl font-bold text-gray-900">{stockActual.toLocaleString()}</p>
-                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_producto_nombre}</p>
+                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_uso_nombre}</p>
                       </div>
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                         <Package className="w-6 h-6 text-blue-600" />
@@ -480,7 +480,7 @@ export function GestionInsumoEspecifico({
                       <div>
                         <p className="text-sm font-medium text-gray-600">Total Entradas</p>
                         <p className="text-2xl font-bold text-green-600">{totalEntradas.toLocaleString()}</p>
-                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_producto_nombre}</p>
+                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_uso_nombre}</p>
                       </div>
                       <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                         <TrendingUp className="w-6 h-6 text-green-600" />
@@ -495,7 +495,7 @@ export function GestionInsumoEspecifico({
                       <div>
                         <p className="text-sm font-medium text-gray-600">Total Salidas</p>
                         <p className="text-2xl font-bold text-red-600">{totalSalidas.toLocaleString()}</p>
-                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_producto_nombre}</p>
+                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_uso_nombre}</p>
                       </div>
                       <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                         <div className="w-6 h-6 text-red-600 transform rotate-180">

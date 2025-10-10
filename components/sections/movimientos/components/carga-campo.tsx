@@ -234,11 +234,11 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
 
         // Preparar datos para la tabla
         const tableData = [
-          ["Has Ganaderas", data.hectareas_utiles.toLocaleString()],
-          ["Cab/Has", data.cabezas_por_ha.toFixed(2)],
-          ["Kg/Has", `${data.kg_por_ha.toLocaleString()} kg`],
-          ["UG/Has", data.ug_por_ha.toFixed(2)],
-          ["Peso Total", `${data.peso_total.toLocaleString()} kg`],
+          ["ha Ganaderas", data.hectareas_utiles.toString()],
+          ["Cab/ha", data.cabezas_por_ha.toFixed(2)],
+          ["kg/ha", `${data.kg_por_ha.toFixed(2)} kg`],
+          ["UG/ha", data.ug_por_ha.toFixed(2)],
+          ["Peso Total", `${data.peso_total.toFixed(2)} kg`],
         ]
 
         // Crear tabla centrada
@@ -282,10 +282,10 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
           const exportData = [
             {
               Establecimiento: data.establecimiento,
-              "Has Ganaderas": data.hectareas_utiles,
-              "Cab/Has": data.cabezas_por_ha.toFixed(2),
-              "Kg/Has": data.kg_por_ha,
-              "UG/Has": data.ug_por_ha.toFixed(2),
+              "ha Ganaderas": data.hectareas_utiles,
+              "Cab/ha": data.cabezas_por_ha.toFixed(2),
+              "kg/ha": data.kg_por_ha,
+              "UG/ha": data.ug_por_ha.toFixed(2),
               "Peso Total (kg)": data.peso_total,
             },
           ]
@@ -296,10 +296,10 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
 
           const colWidths = [
             { wch: 20 }, // Establecimiento
-            { wch: 15 }, // Has Ganaderas
-            { wch: 12 }, // Cab/Has
-            { wch: 12 }, // Kg/Has
-            { wch: 12 }, // UG/Has
+            { wch: 15 }, // ha Ganaderas
+            { wch: 12 }, // Cab/ha
+            { wch: 12 }, // kg/ha
+            { wch: 12 }, // UG/ha
             { wch: 15 }, // Peso Total
           ]
           ws["!cols"] = colWidths
@@ -319,7 +319,7 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
           console.log("XLSX failed, using CSV fallback:", xlsxError)
           // Fallback a CSV
           const csvContent = [
-            "Establecimiento,Has Ganaderas,Cab/Has,Kg/Has,UG/Has,Peso Total (kg)",
+            "Establecimiento,ha Ganaderas,Cab/ha,kg/ha,UG/ha,Peso Total (kg)",
             `${data.establecimiento},${data.hectareas_utiles},${data.cabezas_por_ha.toFixed(2)},${data.kg_por_ha},${data.ug_por_ha.toFixed(2)},${data.peso_total}`,
           ].join("\n")
 
@@ -426,13 +426,13 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
                       <p>Análisis integral de la carga animal del establecimiento.</p>
                       <div className="space-y-1">
                         <p>
-                          <strong>• Cab/Has:</strong> Cabezas de ganado por hectárea
+                          <strong>• Cab/ha:</strong> Cabezas de ganado por hectárea
                         </p>
                         <p>
-                          <strong>• Kg/Has:</strong> Kilogramos de peso vivo por hectárea
+                          <strong>• kg/ha:</strong> Kilogramos de peso vivo por hectárea
                         </p>
                         <p>
-                          <strong>• UG/Has:</strong> Unidades ganaderas por hectárea
+                          <strong>• UG/ha:</strong> Unidades ganaderas por hectárea
                         </p>
                         <p>
                           <strong>• Indicadores:</strong> Verde=Óptimo, Naranja=Bajo, Rojo=Alto
@@ -484,8 +484,8 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
         {showExportMenu && <div className="fixed inset-0 z-40" onClick={() => setShowExportMenu(false)} />}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-gray-900">{data.hectareas_utiles.toLocaleString()}</p>
-            <p className="text-sm text-gray-600">Has Ganaderas</p>
+            <p className="text-2xl font-bold text-gray-900">{data.hectareas_utiles}</p>
+            <p className="text-sm text-gray-600">ha Ganaderas</p>
           </div>
 
           <TooltipProvider>
@@ -498,7 +498,7 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
                     </p>
                     {getValueBadge(data.cabezas_por_ha, optimalValues.cabHas)}
                   </div>
-                  <p className="text-sm text-gray-600">Cab/Has</p>
+                  <p className="text-sm text-gray-600">Cab/ha</p>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -513,15 +513,15 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
                 <div className="text-center p-4 bg-gray-50 rounded-lg cursor-help">
                   <div className="flex items-center justify-center">
                     <p className={`text-2xl font-bold ${getValueColor(data.kg_por_ha, optimalValues.kgHas)}`}>
-                      {data.kg_por_ha.toLocaleString()}
+                      {data.kg_por_ha.toFixed(2)}
                     </p>
                     {getValueBadge(data.kg_por_ha, optimalValues.kgHas)}
                   </div>
-                  <p className="text-sm text-gray-600">Kg/Has</p>
+                  <p className="text-sm text-gray-600">kg/ha</p>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Valor óptimo: {optimalValues.kgHas.toLocaleString()}</p>
+                <p>Valor óptimo: {optimalValues.kgHas.toFixed(2)}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -536,7 +536,7 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
                     </p>
                     {getValueBadge(data.ug_por_ha, optimalValues.ugHas)}
                   </div>
-                  <p className="text-sm text-gray-600">UG/Has</p>
+                  <p className="text-sm text-gray-600">UG/ha</p>
                 </div>
               </TooltipTrigger>
               <TooltipContent>

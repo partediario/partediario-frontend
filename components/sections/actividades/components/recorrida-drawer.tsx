@@ -354,7 +354,7 @@ export default function RecorridaDrawer({
         <div className="flex-1 overflow-y-auto p-6">
           {/* Errores principales */}
           {errores.length > 0 && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg sticky top-0 z-50 shadow-md">
               <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
                 <AlertCircle className="w-5 h-5" />
                 Se encontraron {errores.length} errores:

@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import Image from "next/image"
 import {
   BarChart3,
@@ -16,13 +14,17 @@ import {
   Eye,
   Crown,
   Users,
+  ChevronDownIcon,
+  FileText,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { useUser } from "@/contexts/user-context"
 import { usePermissions } from "@/hooks/use-permissions"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 interface SidebarProps {
   onMenuClick?: (menuItem: string) => void
@@ -47,6 +49,10 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
   const { usuario, loading: loadingUsuario, error: errorUsuario, isAuthenticated } = useUser()
   const permissions = usePermissions()
 
+  const [isContextDialogOpen, setIsContextDialogOpen] = useState(false)
+  const [tempEmpresa, setTempEmpresa] = useState<string>("")
+  const [tempEstablecimiento, setTempEstablecimiento] = useState<string>("")
+
   // Mostrar resumen de permisos cuando el usuario se carga
   useEffect(() => {
     if (usuario && !loadingUsuario) {
@@ -56,12 +62,26 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
     }
   }, [usuario, loadingUsuario, permissions])
 
+  useEffect(() => {
+    if (isContextDialogOpen) {
+      setTempEmpresa(empresaSeleccionada)
+      setTempEstablecimiento(establecimientoSeleccionado)
+    }
+  }, [isContextDialogOpen, empresaSeleccionada, establecimientoSeleccionado])
+
   const menuItems = [
     {
       icon: BarChart3,
       label: "Registros",
       key: "registros",
       visible: permissions.canViewDashboard("partes"),
+      requiresAuth: true,
+    },
+    {
+      icon: FileText,
+      label: "Reportes",
+      key: "reportes",
+      visible: false,
       requiresAuth: true,
     },
     {
@@ -75,7 +95,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: Activity,
       label: "Actividades",
       key: "actividades",
-      visible: true, // Mantenido oculto como antes
+      visible: true,
       requiresAuth: true,
     },
     {
@@ -89,21 +109,21 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: Map,
       label: "Potreros/Parcelas",
       key: "potreros",
-      visible: false, // Mantenido oculto como antes
+      visible: false,
       requiresAuth: true,
     },
     {
       icon: Package,
       label: "Insumos",
       key: "insumos",
-      visible: false, // Cambiado de permissions.canViewDashboard("insumos") a false
+      visible: true,
       requiresAuth: true,
     },
     {
       icon: Tractor,
       label: "Maquinarias",
       key: "maquinarias",
-      visible: false, // Mantenido oculto como antes
+      visible: false,
       requiresAuth: true,
     },
     {
@@ -146,51 +166,55 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
     window.location.href = "/login"
   }
 
-  const handleCompanyChange = (value: string) => {
-    console.log("🏢 Cambiando empresa a:", value)
-    setEmpresaSeleccionada(value)
-    onCompanyChange?.(value)
+  const handleApplyContext = () => {
+    if (tempEmpresa !== empresaSeleccionada) {
+      console.log("🏢 Cambiando empresa a:", tempEmpresa)
+      setEmpresaSeleccionada(tempEmpresa)
+      onCompanyChange?.(tempEmpresa)
 
-    // Disparar evento global para actualizar todos los componentes
-    const event = new CustomEvent("empresaChanged", {
-      detail: {
-        empresaId: value,
-        empresaNombre: getEmpresaNombre(value),
-        timestamp: Date.now(),
-      },
-    })
-    window.dispatchEvent(event)
+      // Disparar evento global para actualizar todos los componentes
+      const event = new CustomEvent("empresaChanged", {
+        detail: {
+          empresaId: tempEmpresa,
+          empresaNombre: getEmpresaNombre(tempEmpresa),
+          timestamp: Date.now(),
+        },
+      })
+      window.dispatchEvent(event)
 
-    // También disparar evento genérico de actualización
-    window.dispatchEvent(
-      new CustomEvent("updateAllComponents", {
-        detail: { type: "empresa", value, timestamp: Date.now() },
-      }),
-    )
-  }
+      // También disparar evento genérico de actualización
+      window.dispatchEvent(
+        new CustomEvent("updateAllComponents", {
+          detail: { type: "empresa", value: tempEmpresa, timestamp: Date.now() },
+        }),
+      )
+    }
 
-  const handleEstablishmentChange = (value: string) => {
-    console.log("🏭 Cambiando establecimiento a:", value)
-    setEstablecimientoSeleccionado(value)
-    onEstablishmentChange?.(value)
+    if (tempEstablecimiento !== establecimientoSeleccionado) {
+      console.log("🏭 Cambiando establecimiento a:", tempEstablecimiento)
+      setEstablecimientoSeleccionado(tempEstablecimiento)
+      onEstablishmentChange?.(tempEstablecimiento)
 
-    // Disparar evento global para actualizar todos los componentes
-    const event = new CustomEvent("establecimientoChanged", {
-      detail: {
-        establecimientoId: value,
-        establecimientoNombre: getEstablecimientoNombre(value),
-        empresaId: empresaSeleccionada,
-        timestamp: Date.now(),
-      },
-    })
-    window.dispatchEvent(event)
+      // Disparar evento global para actualizar todos los componentes
+      const event = new CustomEvent("establecimientoChanged", {
+        detail: {
+          establecimientoId: tempEstablecimiento,
+          establecimientoNombre: getEstablecimientoNombre(tempEstablecimiento),
+          empresaId: tempEmpresa,
+          timestamp: Date.now(),
+        },
+      })
+      window.dispatchEvent(event)
 
-    // También disparar evento genérico de actualización
-    window.dispatchEvent(
-      new CustomEvent("updateAllComponents", {
-        detail: { type: "establecimiento", value, timestamp: Date.now() },
-      }),
-    )
+      // También disparar evento genérico de actualización
+      window.dispatchEvent(
+        new CustomEvent("updateAllComponents", {
+          detail: { type: "establecimiento", value: tempEstablecimiento, timestamp: Date.now() },
+        }),
+      )
+    }
+
+    setIsContextDialogOpen(false)
   }
 
   // Función para obtener el icono del rol
@@ -198,13 +222,6 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
     if (permissions.isAdmin) return <Crown className="h-4 w-4 text-yellow-500" />
     if (permissions.isConsultor) return <Eye className="h-4 w-4 text-blue-500" />
     return <Users className="h-4 w-4 text-gray-400" />
-  }
-
-  // Función para manejar click en dropdown cuando solo hay una opción
-  const handleSingleOptionClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    return false
   }
 
   // Mostrar loading mientras se carga el usuario
@@ -222,7 +239,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       <div className="w-64 min-h-screen p-4 flex flex-col" style={{ backgroundColor: "#1F2427" }}>
         <div className="pt-3 pb-2 flex flex-col items-center">
           <Image
-            src="https://res.cloudinary.com/dtieutmxi/image/upload/v1749300882/Parte_Diario_blanco_tsoirc.svg"
+            src="/images/design-mode/Parte_Diario_blanco_tsoirc.svg"
             alt="Logo Parte Diario"
             width={160}
             height={56}
@@ -260,7 +277,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       <div className="p-4 min-h-full flex flex-col">
         <div className="pt-3 pb-2 flex flex-col items-center cursor-pointer group" onClick={handleLogoClick}>
           <Image
-            src="https://res.cloudinary.com/dtieutmxi/image/upload/v1749300882/Parte_Diario_blanco_tsoirc.svg"
+            src="/images/design-mode/Parte_Diario_blanco_tsoirc.svg"
             alt="Logo Parte Diario"
             width={160}
             height={56}
@@ -275,77 +292,96 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
         {/* Error message del establishment context */}
         {error && <div className="mb-4 p-2 bg-red-100 border border-red-300 rounded text-red-700 text-xs">{error}</div>}
 
-        {/* Selector de Empresa con título */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Empresa</label>
-          <Select
-            value={empresaSeleccionada}
-            onValueChange={empresas.length > 1 ? handleCompanyChange : undefined}
-            disabled={loading || empresas.length === 0}
-          >
-            <SelectTrigger
-              className={`w-full text-white border-gray-600 rounded-md ${empresas.length <= 1 ? "[&>svg]:hidden" : ""}`}
-              style={{ backgroundColor: "#2A2D2E" }}
-              onClick={empresas.length <= 1 ? handleSingleOptionClick : undefined}
-            >
-              <SelectValue>
-                {loading
-                  ? "Cargando empresas..."
-                  : empresaSeleccionada
-                    ? getEmpresaNombre(empresaSeleccionada)
-                    : empresas.length === 0
-                      ? "No hay empresas disponibles"
-                      : "Seleccionar empresa"}
-              </SelectValue>
-            </SelectTrigger>
-            {empresas.length > 1 && (
-              <SelectContent>
-                {empresas.map((empresa) => (
-                  <SelectItem key={empresa.empresa_id} value={empresa.empresa_id}>
-                    {empresa.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            )}
-          </Select>
-        </div>
+        <button
+          onClick={() => setIsContextDialogOpen(true)}
+          className="mb-6 w-full flex items-center justify-between p-3 rounded-md hover:bg-gray-700 transition-colors duration-200 group"
+          style={{ backgroundColor: "#2A2D2E" }}
+        >
+          <div className="flex-1 text-left">
+            <div className="text-sm font-medium text-white truncate">
+              {empresaSeleccionada ? getEmpresaNombre(empresaSeleccionada) : "Seleccionar empresa"}
+            </div>
+            <div className="text-xs text-gray-400 truncate">
+              {establecimientoSeleccionado
+                ? getEstablecimientoNombre(establecimientoSeleccionado)
+                : "Seleccionar establecimiento"}
+            </div>
+          </div>
+          <ChevronDownIcon className="h-4 w-4 text-gray-400 group-hover:text-white transition-colors" />
+        </button>
 
-        {/* Selector de Establecimiento con título */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Establecimiento</label>
-          <Select
-            value={establecimientoSeleccionado}
-            onValueChange={establecimientos.length > 1 ? handleEstablishmentChange : undefined}
-            disabled={!empresaSeleccionada || establecimientos.length === 0}
-          >
-            <SelectTrigger
-              className={`w-full text-white border-gray-600 rounded-md ${
-                establecimientos.length <= 1 ? "[&>svg]:hidden" : ""
-              }`}
-              style={{ backgroundColor: "#2A2D2E" }}
-              onClick={establecimientos.length <= 1 ? handleSingleOptionClick : undefined}
-            >
-              <SelectValue>
-                {!empresaSeleccionada
-                  ? "Selecciona empresa primero"
-                  : establecimientoSeleccionado
-                    ? getEstablecimientoNombre(establecimientoSeleccionado)
-                    : establecimientos.length === 0
-                      ? "No hay establecimientos disponibles"
-                      : "Seleccionar establecimiento"}
-              </SelectValue>
-            </SelectTrigger>
-            {establecimientos.length > 1 && (
-              <SelectContent>
-                {establecimientos.map((establecimiento) => (
-                  <SelectItem key={establecimiento.establecimiento_id} value={establecimiento.establecimiento_id}>
-                    {establecimiento.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            )}
-          </Select>
-        </div>
+        <Dialog open={isContextDialogOpen} onOpenChange={setIsContextDialogOpen}>
+          <DialogContent className="sm:max-w-md bg-white">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold">Cambiar contexto</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* Selector de Empresa */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Empresa</label>
+                <Select value={tempEmpresa} onValueChange={setTempEmpresa} disabled={loading || empresas.length === 0}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue>
+                      {loading
+                        ? "Cargando empresas..."
+                        : tempEmpresa
+                          ? getEmpresaNombre(tempEmpresa)
+                          : empresas.length === 0
+                            ? "No hay empresas disponibles"
+                            : "Seleccionar empresa"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {empresas.map((empresa) => (
+                      <SelectItem key={empresa.empresa_id} value={empresa.empresa_id}>
+                        {empresa.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Selector de Establecimiento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Establecimiento</label>
+                <Select
+                  value={tempEstablecimiento}
+                  onValueChange={setTempEstablecimiento}
+                  disabled={!tempEmpresa || establecimientos.length === 0}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue>
+                      {!tempEmpresa
+                        ? "Selecciona empresa primero"
+                        : tempEstablecimiento
+                          ? getEstablecimientoNombre(tempEstablecimiento)
+                          : establecimientos.length === 0
+                            ? "No hay establecimientos disponibles"
+                            : "Seleccionar establecimiento"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {establecimientos.map((establecimiento) => (
+                      <SelectItem key={establecimiento.establecimiento_id} value={establecimiento.establecimiento_id}>
+                        {establecimiento.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex justify-end gap-3 mt-4">
+              <Button variant="outline" onClick={() => setIsContextDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleApplyContext} className="bg-black text-white hover:bg-gray-800">
+                Aplicar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Navegación con espaciado perfectamente simétrico */}
         <nav className="flex-1 pb-4">

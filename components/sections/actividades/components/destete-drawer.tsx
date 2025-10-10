@@ -164,8 +164,6 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
     }
 
     try {
-      console.log("[v0] Loading destination categories for Terneros (21) and Terneras (22)")
-
       const response = await fetch(
         `/api/categorias-destino?empresa_id=${empresaSeleccionada}&categoria_origen_ids=21,22`,
       )
@@ -175,11 +173,8 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
       }
 
       const data = await response.json()
-      console.log("[v0] API Response:", data)
 
       const categorias = Array.isArray(data.categorias) ? data.categorias : Array.isArray(data) ? data : []
-      console.log("[v0] Processed categories:", categorias)
-
       setCategoriasDestino(categorias)
     } catch (error) {
       console.error("Error loading categorías destino:", error)
@@ -610,8 +605,6 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
         return
       }
 
-      console.log("[v0] Starting destete process with categories:", categoriasSeleccionadas)
-
       for (const lote of lotes) {
         for (const detalle of lote.pd_detalles) {
           if (detalle.seleccionada && detalle.cantidad_destetar > 0 && detalle.categoria_destino_id) {
@@ -622,8 +615,6 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
               p_cantidad_a_mover: detalle.cantidad_destetar,
               p_peso_promedio_animal: detalle.peso_promedio,
             }
-
-            console.log("[v0] Reclassifying with data:", reclasificarData)
 
             if (!reclasificarData.p_lote_id) {
               throw new Error(`Lote ID faltante para el lote ${lote.lote_nombre}`)
@@ -654,7 +645,6 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
             }
 
             const result = await response.json()
-            console.log("[v0] Reclassification successful:", result)
           }
         }
       }
@@ -671,16 +661,6 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
               categoria_animal_id_anterior: detalle.categoria_animal_id,
               meses_destete: detalle.meses_destete.toString(),
             }
-          })
-
-          console.log("[v0] Saving activity with data:", {
-            establecimiento_id: establecimientoSeleccionado,
-            tipo_actividad_id: tipoActividadId,
-            fecha: fecha.toISOString().split("T")[0],
-            hora: hora,
-            nota: nota.trim() || null,
-            user_id: usuario.id,
-            destetes: destetesParaActividad,
           })
 
           const actividadResponse = await fetch("/api/guardar-destete-actividad", {
@@ -702,7 +682,6 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
             console.error("[v0] Activity save error:", activityError)
             console.error("Error saving activity record, but destete was successful")
           } else {
-            console.log("[v0] Activity record saved successfully")
             window.dispatchEvent(new Event("reloadPartesDiarios"))
           }
         } catch (activityError) {
@@ -756,28 +735,18 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
   }
 
   const getCategoriasDestinoFiltradas = (categoriaOrigenId: number) => {
-    console.log("[v0] Filtering categories for origen ID:", categoriaOrigenId)
-    console.log("[v0] Available categories:", categoriasDestino)
-
     const targetId = categoriaOrigenId === 21 ? 19 : categoriaOrigenId === 22 ? 20 : null
 
     if (!targetId) return []
 
     const filtered = categoriasDestino
-      .filter(
-        (cat) =>
-          // Include direct ID match (e.g., id=19 for Desmamante Macho)
-          cat.id === targetId ||
-          // Include categories that have matching categoria_animal_estandar_id (e.g., Desmamante a with categoria_animal_estandar_id=19)
-          cat.categoria_animal_estandar_id === targetId,
-      )
+      .filter((cat) => cat.id === targetId || cat.categoria_animal_estandar_id === targetId)
       .sort((a, b) => a.id - b.id)
       .map((cat) => ({
         value: cat.id.toString(),
         label: cat.nombre,
       }))
 
-    console.log("[v0] Filtered options:", filtered)
     return filtered
   }
 

@@ -24,19 +24,16 @@ export default function InformesView() {
   }, [])
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header fijo - No hace scroll */}
-      <div className="flex-shrink-0 border-b bg-white">
+    <div className="min-h-screen bg-[#F8F9FA]">
+      <div className="bg-white border-b border-gray-200">
         <DashboardHeader />
-
-        {/* KPIs fijos en la cabecera */}
-        <div className="px-6 py-2 border-b border-gray-200">
-          <KpisDinamicos establecimientoId={establecimientoSeleccionado} />
-        </div>
       </div>
 
-      {/* Contenido con scroll - Solo la lista de partes diarios */}
-      <div className="flex-1 overflow-hidden">
+      <div className="p-6 space-y-6">
+        {/* KPIs ahora son parte del contenido scrolleable */}
+        <KpisDinamicos establecimientoId={establecimientoSeleccionado} />
+
+        {/* Lista de registros sin su propio scroll, forma parte del scroll general */}
         <RegistrosList establecimientoId={establecimientoSeleccionado} />
       </div>
     </div>

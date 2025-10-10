@@ -120,8 +120,8 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
 
   if (!establecimientoId) {
     return (
-      <div className="flex flex-col h-full">
-        <div className="flex-shrink-0 p-6 border-b bg-white">
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="p-6 border-b bg-white">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold">Partes Diarios</h2>
             <button
@@ -133,7 +133,7 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
             </button>
           </div>
         </div>
-        <div className="flex-1 p-6">
+        <div className="p-6">
           <Alert>
             <AlertDescription>Selecciona un establecimiento para ver los partes diarios.</AlertDescription>
           </Alert>
@@ -184,10 +184,9 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header fijo con título y filtros */}
-      <div className="flex-shrink-0 px-6 py-2 border-b border-gray-200 bg-white">
-        <div className="flex items-center gap-2 mb-2">
+    <div className="bg-white rounded-lg border border-gray-200">
+      <div className="px-6 py-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center gap-2 mb-4">
           <h2 className="text-2xl font-bold">Partes Diarios</h2>
           <button
             onClick={() => setShowPartesTooltip(true)}
@@ -258,10 +257,9 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
         )}
       </div>
 
-      {/* Lista scrolleable de partes diarios */}
-      <div className="flex-1 overflow-auto px-6 py-2">
+      <div className="px-6 py-4">
         {loading ? (
-          <div className="space-y-4 pb-6">
+          <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -281,17 +279,15 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
             ))}
           </div>
         ) : filteredPartesDiarios.length === 0 ? (
-          <div className="pb-6">
-            <Alert>
-              <AlertDescription>
-                {searchTerm
-                  ? "No se encontraron partes diarios que coincidan con la búsqueda."
-                  : "No hay partes diarios registrados para este establecimiento con los filtros seleccionados."}
-              </AlertDescription>
-            </Alert>
-          </div>
+          <Alert>
+            <AlertDescription>
+              {searchTerm
+                ? "No se encontraron partes diarios que coincidan con la búsqueda."
+                : "No hay partes diarios registrados para este establecimiento con los filtros seleccionados."}
+            </AlertDescription>
+          </Alert>
         ) : (
-          <div className="space-y-4 pb-6">
+          <div className="space-y-4">
             {filteredPartesDiarios.map((parte) => (
               <ParteDiarioCard key={`parte-${parte.pd_id}-${parte.pd_fecha}-${parte.pd_hora}`} parte={parte} />
             ))}
