@@ -44,11 +44,10 @@ export function CustomDatePicker({
     "Diciembre",
   ]
 
-  const daysOfWeek = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sá"]
+  const daysOfWeek = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"]
 
-  // Generar años (solo años pasados y actual)
   const currentYearActual = new Date().getFullYear()
-  const years = Array.from({ length: 10 }, (_, i) => currentYearActual - 9 + i)
+  const years = Array.from({ length: 15 }, (_, i) => currentYearActual - 9 + i)
 
   // Cerrar al hacer clic fuera
   React.useEffect(() => {
@@ -148,8 +147,8 @@ export function CustomDatePicker({
   }
 
   const isDateDisabled = (day: number, month: number, year: number) => {
-    const dateToCheck = new Date(year, month, day)
-    return dateToCheck > todayDateOnly
+    const checkDate = new Date(year, month, day)
+    return checkDate > todayDateOnly
   }
 
   const isDateSelected = (day: number, month: number, year: number) => {
@@ -217,7 +216,13 @@ export function CustomDatePicker({
 
       {/* Clear Button */}
       {date && (
-        <Button variant="outline" size="icon" onClick={handleClear} className="h-10 w-10 shrink-0" type="button">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleClear}
+          className="h-10 w-10 shrink-0 bg-transparent"
+          type="button"
+        >
           <X className="h-4 w-4" />
         </Button>
       )}
