@@ -44,6 +44,7 @@ import RecorridaDrawer from "../../actividades/components/recorrida-drawer" // I
 import CaneriasBebederosDrawer from "../../actividades/components/canerias-bebederos-drawer" // Import CaneriasBebederosDrawer
 import DesteteDrawer from "../../actividades/components/destete-drawer" // Importando el drawer de destete
 import ActividadVariasCorralDrawer from "../../actividades/components/actividad-varias-corral-drawer" // Importando el drawer de actividad varias de corral
+import PesajeDrawer from "../../actividades/components/pesaje-drawer" // Importar el drawer de Pesaje
 
 interface TipoActividad {
   id: number
@@ -106,6 +107,8 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   const [actividadDesteteSeleccionada, setActividadDesteteSeleccionada] = useState<TipoActividad | null>(null)
   const [actividadVariasCorralDrawerOpen, setActividadVariasCorralDrawerOpen] = useState(false) // Adding state for actividad-varias-corral drawer
   const [actividadVariasCorralSeleccionada, setActividadVariasCorralSeleccionada] = useState<TipoActividad | null>(null)
+  const [pesajeDrawerOpen, setPesajeDrawerOpen] = useState(false) // Agregar estados para el drawer de Pesaje
+  const [actividadPesajeSeleccionada, setActividadPesajeSeleccionada] = useState<TipoActividad | null>(null) // Agregar estados para el drawer de Pesaje
 
   const { currentEstablishment } = useCurrentEstablishment()
 
@@ -191,6 +194,14 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
     if (actividad) {
       console.log("🔍 Verificando actividad:", actividad)
       console.log("🆔 ID de actividad:", actividad.id)
+
+      if (actividad.id === 10 || actividad.nombre === "Pesaje") {
+        console.log("✅ Actividad de pesaje detectada")
+        setActividadPesajeSeleccionada(actividad)
+        setPesajeDrawerOpen(true)
+        onClose()
+        return
+      }
 
       if (actividad.id === 4 || actividad.nombre === "Cañerías y Bebederos") {
         console.log("✅ Actividad de cañerías y bebederos detectada")
@@ -1004,6 +1015,16 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
           console.log("Actividad varias de corral guardada exitosamente")
           onRefresh?.()
         }}
+      />
+
+      <PesajeDrawer
+        isOpen={pesajeDrawerOpen}
+        onClose={() => setPesajeDrawerOpen(false)}
+        onSuccess={() => {
+          console.log("Pesaje guardado exitosamente")
+          onRefresh?.()
+        }}
+        tipoActividadId={actividadPesajeSeleccionada?.id}
       />
     </>
   )

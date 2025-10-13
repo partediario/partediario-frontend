@@ -44,6 +44,7 @@ import EditarCaneriasBebederosDrawer from "./editar-canerias-bebederos-drawer"
 import VerDesteteDrawer from "./ver-destete-drawer"
 import VerActividadVariasCorralDrawer from "./ver-actividad-varias-corral-drawer"
 import EditarActividadVariasCorralDrawer from "./editar-actividad-varias-corral-drawer"
+import VerPesajeDrawer from "./ver-pesaje-drawer"
 
 interface ParteDiarioCardProps {
   parte: ParteDiario
@@ -105,6 +106,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
   // Nuevo estado para drawer de Actividad Varias de Corral
   const [isVerActividadVariasCorralDrawerOpen, setIsVerActividadVariasCorralDrawerOpen] = useState(false)
   const [isEditarActividadVariasCorralDrawerOpen, setIsEditarActividadVariasCorralDrawerOpen] = useState(false)
+
+  const [isVerPesajeDrawerOpen, setIsVerPesajeDrawerOpen] = useState(false)
 
   const [tipoActividad, setTipoActividad] = useState<{ animales: string; insumos: string } | null>(null)
 
@@ -175,6 +178,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
       case "ACTIVIDAD VARIAS DE CORRAL":
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
+      case "PESAJE":
+        return "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200"
       default:
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
     }
@@ -220,6 +225,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "Destete"
       case "ACTIVIDAD VARIAS DE CORRAL":
         return "Actividad Varias de Corral"
+      case "PESAJE":
+        return "Pesaje"
       default:
         return tipo
     }
@@ -272,6 +279,11 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
     } else if (parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id) {
       if (parte.pd_detalles.detalle_tipo_id === 30) {
         setIsVerActividadVariasCorralDrawerOpen(true)
+        return
+      }
+
+      if (parte.pd_detalles.detalle_tipo_id === 10) {
+        setIsVerPesajeDrawerOpen(true)
         return
       }
 
@@ -399,6 +411,15 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return
       }
 
+      if (parte.pd_detalles.detalle_tipo_id === 10) {
+        toast({
+          title: "No editable",
+          description: "El pesaje no se puede editar, solo visualizar",
+          variant: "destructive",
+        })
+        return
+      }
+
       if (parte.pd_detalles.detalle_tipo_id === 19) {
         setIsVerDesteteDrawerOpen(true)
         return
@@ -502,7 +523,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
                 parte.pd_tipo === "CLIMA" ||
                 parte.pd_tipo === "ACTIVIDAD" ||
                 parte.pd_tipo === "INSUMOS") &&
-                !(parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id === 19) && (
+                !(parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id === 19) &&
+                !(parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id === 10) && (
                   <button
                     onClick={() => handleEdit(parte)}
                     className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
@@ -795,6 +817,9 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
           window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
         }}
       />
+
+      {/* Drawer de Pesaje */}
+      <VerPesajeDrawer isOpen={isVerPesajeDrawerOpen} onClose={() => setIsVerPesajeDrawerOpen(false)} parte={parte} />
     </Card>
   )
 }

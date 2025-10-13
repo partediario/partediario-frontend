@@ -174,7 +174,7 @@ export default function EditarLimpiezaBebederosDrawer({
     if (datos.detalles && datos.detalles.length > 0) {
       const detallesConNombres = datos.detalles.map((detalle: any) => {
         const potreroEncontrado = potrerosDisponibles.find((p) => p.id === detalle.potrero_id)
-        console.log(`🔍 Buscando potrero ${detalle.potrero_id}:`, potreroEncontrado)
+        console.log(`�� Buscando potrero ${detalle.potrero_id}:`, potreroEncontrado)
         return {
           ...detalle,
           potrero_nombre: potreroEncontrado ? potreroEncontrado.nombre : `Potrero ${detalle.potrero_id}`,
