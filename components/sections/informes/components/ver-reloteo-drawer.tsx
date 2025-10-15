@@ -1,21 +1,27 @@
 "use client"
 
-import { X, RefreshCw } from "lucide-react"
+import { useState } from "react"
+import { X, RefreshCw, Undo2 } from "lucide-react"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { toast } from "@/hooks/use-toast"
+import { useUser } from "@/contexts/user-context"
 import type { ParteDiario } from "@/lib/types"
 
 interface VerReloteoDrawerProps {
   isOpen: boolean
   onClose: () => void
   parte: ParteDiario | null
+  onSuccess?: () => void
 }
 
 interface DetalleAnimal {
   id: number
   categoria_animal: string
+  categoria_animal_id: number
   cantidad: number
   peso: number
   tipo_peso: string
@@ -29,11 +35,16 @@ interface DetallesReloteo {
   detalle_id: number
   detalle_tipo_id: number
   detalle_tipo: string
+  detalle_deshacible: boolean
   detalles_animales: DetalleAnimal[]
   detalles_insumos: any[]
 }
 
-export default function VerReloteoDrawer({ isOpen, onClose, parte }: VerReloteoDrawerProps) {
+export default function VerReloteoDrawer({ isOpen, onClose, parte, onSuccess }: VerReloteoDrawerProps) {
+  const [showUndoConfirm, setShowUndoConfirm] = useState(false)
+  const [undoing, setUndoing] = useState(false)
+  const { usuario } = useUser()
+
   if (!parte || parte.pd_tipo !== "RELOTEO") return null
 
   const formatDate = (dateStr: string) => {
@@ -55,7 +66,7 @@ export default function VerReloteoDrawer({ isOpen, onClose, parte }: VerReloteoD
 
   const formatTime = (timeStr: string) => {
     try {
-      return timeStr.slice(0, 5) // HH:MM format
+      return timeStr.slice(0, 5)
     } catch {
       return timeStr || ""
     }
@@ -74,7 +85,6 @@ export default function VerReloteoDrawer({ isOpen, onClose, parte }: VerReloteoD
     return "Usuario desconocido"
   }
 
-  // Parse detalles from JSON string if needed
   const parseDetalles = (): DetallesReloteo | null => {
     try {
       if (typeof parte.pd_detalles === "string") {
@@ -89,7 +99,61 @@ export default function VerReloteoDrawer({ isOpen, onClose, parte }: VerReloteoD
   const detalles = parseDetalles()
   const detallesAnimales: DetalleAnimal[] = detalles?.detalles_animales || []
 
-  // Group animals by origin lot instead of movement pairs
+  const puedeDeshacerse = (): boolean => {
+    return detalles?.detalle_deshacible === true
+  }
+
+  const deshacerReloteo = async () => {
+    if (!parte.pd_id || !usuario?.id || !detalles) {
+      console.error("Faltan datos necesarios para deshacer el reloteo")
+      return
+    }
+
+    setUndoing(true)
+    try {
+      const response = await fetch("/api/deshacer-reloteo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          actividad_id: parte.pd_id,
+          user_id: usuario.id,
+          detalles_animales: detallesAnimales,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Error al deshacer el reloteo")
+      }
+
+      toast({
+        title: "Reloteo Deshecho",
+        description: "El reloteo ha sido revertido correctamente",
+      })
+
+      window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+      onSuccess?.()
+      handleClose()
+    } catch (error) {
+      console.error("Error deshaciendo reloteo:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo deshacer el reloteo",
+        variant: "destructive",
+      })
+    } finally {
+      setUndoing(false)
+      setShowUndoConfirm(false)
+    }
+  }
+
+  const handleClose = () => {
+    onClose()
+    setShowUndoConfirm(false)
+  }
+
   const animalesPorLoteOrigen = detallesAnimales.reduce(
     (acc, detalle) => {
       const key = detalle.lote_origen_nombre
@@ -113,7 +177,7 @@ export default function VerReloteoDrawer({ isOpen, onClose, parte }: VerReloteoD
             <RefreshCw className="w-6 h-6 text-blue-600" />
             Ver Reloteo
           </DrawerTitle>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <button onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <X className="h-5 w-5 text-gray-500" />
           </button>
         </DrawerHeader>
@@ -255,15 +319,51 @@ export default function VerReloteoDrawer({ isOpen, onClose, parte }: VerReloteoD
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="border-t p-4 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        <div className="border-t p-4 flex justify-between">
+          <div>
+            {puedeDeshacerse() ? (
+              <Button onClick={() => setShowUndoConfirm(true)} variant="destructive" disabled={undoing}>
+                <Undo2 className="w-4 h-4 mr-2" />
+                {undoing ? "Deshaciendo..." : "Deshacer"}
+              </Button>
+            ) : (
+              <div className="flex flex-col">
+                <Button variant="outline" disabled className="text-gray-400 cursor-not-allowed bg-transparent">
+                  <Undo2 className="w-4 h-4 mr-2" />
+                  Deshacer
+                </Button>
+                <span className="text-xs text-gray-500 mt-1">Este reloteo no puede ser deshecho</span>
+              </div>
+            )}
+          </div>
+
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
             Cerrar
-          </button>
+          </Button>
         </div>
+
+        {showUndoConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Confirmar Deshacer Reloteo</h3>
+              <p className="text-gray-600 mb-6">
+                ¿Está seguro que desea deshacer este reloteo? Los animales volverán a sus lotes originales.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <Button onClick={() => setShowUndoConfirm(false)} variant="outline" disabled={undoing}>
+                  No
+                </Button>
+                <Button onClick={deshacerReloteo} variant="destructive" disabled={undoing}>
+                  {undoing ? "Deshaciendo..." : "Sí, Deshacer"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )
