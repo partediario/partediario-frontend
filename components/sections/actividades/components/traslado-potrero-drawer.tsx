@@ -347,6 +347,15 @@ export default function TrasladoPotreroDrawer({
             p_movimientos: movimientos,
           }),
         })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData?.error || "Error al mover stock entre lotes")
+        }
+
+        const responseData = await response.json()
+        console.log("[v0] Respuesta completa de mover-stock-entre-lotes:", responseData)
+        console.log("[v0] loteDestinoId asignado:", loteDestinoId)
       }
       // Escenario 2: Traslado completo a potrero vacío
       else if (!esParcial && !potreroDestinoData?.lote_id) {
@@ -361,6 +370,11 @@ export default function TrasladoPotreroDrawer({
             potrero_destino_id: potreroDestinoData?.potrero_id,
           }),
         })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData?.error || "Error al mover lote completo")
+        }
       }
       // Escenario 3: Traslado parcial a potrero vacío
       else if (esParcial && !potreroDestinoData?.lote_id) {
@@ -376,7 +390,19 @@ export default function TrasladoPotreroDrawer({
               p_potrero_id: potreroDestinoData?.potrero_id,
             }),
           })
-          // New lote will be created, we'll get the ID from response if needed
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData?.error || "Error al crear y mover stock")
+          }
+
+          const responseData = await response.json()
+          console.log("[v0] Respuesta completa de crear-y-mover-stock:", JSON.stringify(responseData, null, 2))
+          console.log("[v0] responseData.data:", responseData.data)
+          console.log("[v0] responseData.data?.lote_destino_id:", responseData.data?.lote_destino_id)
+
+          loteDestinoId = responseData.data?.lote_destino_id || null
+          console.log("[v0] Lote nuevo creado con ID:", loteDestinoId)
         } else {
           const movimientosQuedan = loteInfo?.pd_detalles
             .filter((detalle) => {
@@ -409,14 +435,15 @@ export default function TrasladoPotreroDrawer({
               p_movimientos: movimientosQuedan,
             }),
           })
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData?.error || "Error al mover lote y crear stock")
+          }
+
           // Original lote moves to destination, new lote created in origin
           loteDestinoId = potreros.find((p) => p.potrero_id.toString() === potreroOrigen)?.lote_id
         }
-      }
-
-      if (!response || !response.ok) {
-        const errorData = await response?.json()
-        throw new Error(errorData?.error || "Error al procesar el traslado")
       }
 
       if (tipoActividadId && usuario?.id) {
