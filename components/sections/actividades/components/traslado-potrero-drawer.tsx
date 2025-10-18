@@ -265,9 +265,15 @@ export default function TrasladoPotreroDrawer({
 
   const getTotalAnimalesQuedan = () => {
     if (!loteInfo) return 0
-    return loteInfo.pd_detalles
-      .filter((detalle) => detalle.seleccionada)
-      .reduce((total, detalle) => total + (detalle.cantidad - detalle.cantidad_trasladar), 0)
+    return loteInfo.pd_detalles.reduce((total, detalle) => {
+      if (detalle.seleccionada) {
+        // Si está seleccionada, contar solo los que quedan después del traslado
+        return total + (detalle.cantidad - detalle.cantidad_trasladar)
+      } else {
+        // Si NO está seleccionada, contar todos (porque todos se quedan en el lote original)
+        return total + detalle.cantidad
+      }
+    }, 0)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
