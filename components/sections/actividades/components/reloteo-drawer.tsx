@@ -447,9 +447,10 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
         return
       }
 
-      // Validar que todas las categorías seleccionadas tengan lote destino
       const categoriasSeleccionadas = lotes.flatMap((lote) =>
-        lote.pd_detalles.filter((detalle) => detalle.seleccionada && detalle.cantidad_trasladar > 0),
+        lote.pd_detalles
+          .filter((detalle) => detalle.seleccionada && detalle.cantidad_trasladar > 0)
+          .map((detalle) => ({ ...detalle, lote_origen_id: lote.lote_id })),
       )
 
       const categoriasSinDestino = categoriasSeleccionadas.filter((detalle) => !detalle.lote_destino_id)
@@ -559,19 +560,14 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
       // Guardar actividad si se proporciona tipoActividadId
       if (tipoActividadId && usuario?.id) {
         try {
-          const reloteosParaActividad = categoriasSeleccionadas.map((detalle) => {
-            const loteOrigen = lotes.find((l) =>
-              l.pd_detalles.some((d) => d.categoria_animal_id === detalle.categoria_animal_id),
-            )
-            return {
-              categoria_animal_id: detalle.categoria_animal_id,
-              cantidad: detalle.cantidad_trasladar,
-              peso_promedio: detalle.peso_promedio,
-              tipo_peso: "PROMEDIO",
-              lote_origen_id: loteOrigen?.lote_id,
-              lote_destino_id: detalle.lote_destino_id,
-            }
-          })
+          const reloteosParaActividad = categoriasSeleccionadas.map((detalle) => ({
+            categoria_animal_id: detalle.categoria_animal_id,
+            cantidad: detalle.cantidad_trasladar,
+            peso_promedio: detalle.peso_promedio,
+            tipo_peso: "PROMEDIO",
+            lote_origen_id: detalle.lote_origen_id,
+            lote_destino_id: detalle.lote_destino_id,
+          }))
 
           const actividadResponse = await fetch("/api/guardar-reloteo-actividad", {
             method: "POST",
