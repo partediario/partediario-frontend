@@ -13,114 +13,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Parámetros inválidos" }, { status: 400 })
     }
 
-    // Para cada detalle de reclasificación, revertir el cambio
     for (const detalle of detalles_animales) {
-      const {
-        lote_id,
-        categoria_animal_id, // Categoría actual (a la que se movió)
-        categoria_animal_id_anterior, // Categoría anterior (de donde vino)
-        cantidad,
-        peso,
-      } = detalle
+      const { data, error } = await supabase.rpc("reclasificar_lote_animales", {
+        p_lote_id: detalle.lote_id,
+        p_categoria_origen_id: detalle.categoria_animal_id, // La categoría ACTUAL (donde están ahora)
+        p_categoria_destino_id: detalle.categoria_animal_id_anterior, // La categoría ANTERIOR (donde estaban antes)
+        p_cantidad_a_mover: detalle.cantidad,
+        p_peso_promedio_animal: detalle.peso,
+      })
 
-      // 1. Buscar el registro actual con la nueva categoría
-      const { data: stockActual, error: errorBuscar } = await supabase
-        .from("pd_lote_stock")
-        .select("id, cantidad, peso_total")
-        .eq("lote_id", lote_id)
-        .eq("categoria_animal_id", categoria_animal_id)
-        .single()
-
-      if (errorBuscar || !stockActual) {
-        console.error(
-          `Error buscando stock actual para lote ${lote_id}, categoría ${categoria_animal_id}:`,
-          errorBuscar,
-        )
-        return NextResponse.json(
-          { error: `No se encontró el stock actual para revertir la reclasificación` },
-          { status: 404 },
-        )
-      }
-
-      // 2. Restar la cantidad y peso del registro actual
-      const nuevaCantidad = stockActual.cantidad - cantidad
-      const nuevoPeso = stockActual.peso_total - peso
-
-      if (nuevaCantidad < 0 || nuevoPeso < 0) {
-        return NextResponse.json(
-          { error: `No hay suficientes animales en la categoría ${categoria_animal_id} para revertir` },
-          { status: 400 },
-        )
-      }
-
-      if (nuevaCantidad === 0) {
-        // Si queda en 0, eliminar el registro
-        const { error: errorEliminar } = await supabase.from("pd_lote_stock").delete().eq("id", stockActual.id)
-
-        if (errorEliminar) {
-          console.error(`Error eliminando stock vacío:`, errorEliminar)
-          return NextResponse.json({ error: "Error al eliminar stock vacío" }, { status: 500 })
-        }
-      } else {
-        // Si queda cantidad, actualizar el registro
-        const { error: errorActualizar } = await supabase
-          .from("pd_lote_stock")
-          .update({
-            cantidad: nuevaCantidad,
-            peso_total: nuevoPeso,
-          })
-          .eq("id", stockActual.id)
-
-        if (errorActualizar) {
-          console.error(`Error actualizando stock actual:`, errorActualizar)
-          return NextResponse.json({ error: "Error al actualizar stock actual" }, { status: 500 })
-        }
-      }
-
-      // 3. Buscar o crear el registro con la categoría anterior
-      const { data: stockAnterior, error: errorBuscarAnterior } = await supabase
-        .from("pd_lote_stock")
-        .select("id, cantidad, peso_total")
-        .eq("lote_id", lote_id)
-        .eq("categoria_animal_id", categoria_animal_id_anterior)
-        .maybeSingle()
-
-      if (errorBuscarAnterior) {
-        console.error(`Error buscando stock anterior:`, errorBuscarAnterior)
-        return NextResponse.json({ error: "Error al buscar stock anterior" }, { status: 500 })
-      }
-
-      if (stockAnterior) {
-        // Si existe, sumar la cantidad y peso
-        const { error: errorSumar } = await supabase
-          .from("pd_lote_stock")
-          .update({
-            cantidad: stockAnterior.cantidad + cantidad,
-            peso_total: stockAnterior.peso_total + peso,
-          })
-          .eq("id", stockAnterior.id)
-
-        if (errorSumar) {
-          console.error(`Error sumando al stock anterior:`, errorSumar)
-          return NextResponse.json({ error: "Error al sumar al stock anterior" }, { status: 500 })
-        }
-      } else {
-        // Si no existe, crear un nuevo registro
-        const { error: errorCrear } = await supabase.from("pd_lote_stock").insert({
-          lote_id,
-          categoria_animal_id: categoria_animal_id_anterior,
-          cantidad,
-          peso_total: peso,
-        })
-
-        if (errorCrear) {
-          console.error(`Error creando stock anterior:`, errorCrear)
-          return NextResponse.json({ error: "Error al crear stock anterior" }, { status: 500 })
-        }
+      if (error) {
+        console.error(`Error revirtiendo reclasificación para lote ${detalle.lote_id}:`, error)
+        return NextResponse.json({ error: `Error al revertir reclasificación: ${error.message}` }, { status: 500 })
       }
     }
 
-    // Actualizar la actividad como deshecha
+    // Marcar la actividad original como deshecha
     const { error: updateError } = await supabase
       .from("pd_actividades")
       .update({

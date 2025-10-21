@@ -1,13 +1,12 @@
 "use client"
-
-import { useState, useEffect } from "react"
-import { X, Users, Save, Loader2 } from "lucide-react"
+import type { JSX } from "react"
+import { useState, useEffect, useRef } from "react"
+import { X, Users, Save, Loader2, Search, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
 import { CustomTimePicker } from "@/components/ui/custom-time-picker"
@@ -15,23 +14,27 @@ import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { useUser } from "@/contexts/user-context"
 import { toast } from "@/hooks/use-toast"
+import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils"
 
-interface Lote {
-  id: number
-  nombre: string
+interface LoteConStock {
+  lote_id: number
+  lote_nombre: string
+  establecimiento_id: number
+  inactivo: boolean
+  pd_detalles: DetalleCategoria[]
 }
 
-interface CategoriaExistente {
-  lote_stock_id: number
-  lote_id: number
-  empresa_id: number
-  establecimiento_id: number
+interface DetalleCategoria {
   categoria_animal_id: number
   categoria_animal_nombre: string
-  sexo: string
-  edad: string
   cantidad: number
   peso_total: number
+  peso_promedio: number
+  cantidad_recategorizar: number
+  seleccionada: boolean
+  categoria_destino_id?: number
+  lote_origen_id: number
 }
 
 interface CategoriaDisponible {
@@ -42,11 +45,15 @@ interface CategoriaDisponible {
   empresa_id: number
 }
 
-interface ReclasificacionLote {
-  lote_stock_id: number
-  nueva_categoria_id: number | null
-  cantidad: number
-  peso_total: number
+interface ReclasificacionDetalle {
+  categoria_animal_id: number
+  categoria_animal_nombre: string
+  cantidad_disponible: number
+  cantidad_recategorizar: number
+  peso_promedio: number
+  lote_origen_id: number
+  categoria_destino_id: number | null
+  sexo: string
 }
 
 interface ReclasificacionLoteDrawerProps {
@@ -57,194 +64,113 @@ interface ReclasificacionLoteDrawerProps {
 
 export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }: ReclasificacionLoteDrawerProps) {
   const [loading, setLoading] = useState(false)
-  const [loadingLotes, setLoadingLotes] = useState(false)
-  const [lotes, setLotes] = useState<Lote[]>([])
-  const [loteSeleccionado, setLoteSeleccionado] = useState<string>("")
-  const [categoriasExistentes, setCategoriasExistentes] = useState<CategoriaExistente[]>([])
+  const [lotes, setLotes] = useState<LoteConStock[]>([])
   const [categoriasDisponibles, setCategoriasDisponibles] = useState<CategoriaDisponible[]>([])
-  const [reclasificaciones, setReclasificaciones] = useState<ReclasificacionLote[]>([])
   const [fecha, setFecha] = useState<Date>(new Date())
   const [hora, setHora] = useState<string>(new Date().toTimeString().slice(0, 5))
   const [nota, setNota] = useState("")
 
-  // Usar el contexto de establecimiento
+  const [searchCategoria, setSearchCategoria] = useState("")
+  const [lotesSeleccionados, setLotesSeleccionados] = useState<string[]>([])
+  const [filtroLoteAbierto, setFiltroLoteAbierto] = useState(false)
+  const filtroLoteRef = useRef<HTMLDivElement>(null)
+  const [searchLote, setSearchLote] = useState("")
+
   const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
   const { usuario } = useUser()
 
-  // Obtener nombre completo del usuario
   const nombreCompleto = usuario ? `${usuario.nombres} ${usuario.apellidos}`.trim() : "Cargando..."
 
   useEffect(() => {
-    if (isOpen && establecimientoSeleccionado && empresaSeleccionada) {
-      console.log("🔄 Drawer abierto, cargando datos iniciales...")
-      console.log("👤 Usuario actual:", usuario)
-      loadLotes()
-      loadCategorias()
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filtroLoteRef.current && !filtroLoteRef.current.contains(event.target as Node)) {
+        setFiltroLoteAbierto(false)
+        setSearchLote("")
+      }
     }
-  }, [isOpen, establecimientoSeleccionado, empresaSeleccionada, usuario])
 
-  // Cargar lotes de stock cuando se selecciona un lote
-  useEffect(() => {
-    if (loteSeleccionado && establecimientoSeleccionado) {
-      console.log("🔄 Lote seleccionado, cargando stock...")
-      loadLotesStock()
+    if (filtroLoteAbierto) {
+      document.addEventListener("mousedown", handleClickOutside)
     }
-  }, [loteSeleccionado, establecimientoSeleccionado])
 
-  // Limpiar formulario al abrir
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [filtroLoteAbierto])
+
   useEffect(() => {
     if (isOpen) {
-      console.log("🧹 Limpiando formulario...")
       setFecha(new Date())
       setHora(new Date().toTimeString().slice(0, 5))
       setNota("")
       setLotes([])
-      setLoteSeleccionado("")
-      setCategoriasExistentes([])
       setCategoriasDisponibles([])
-      setReclasificaciones([])
+      setSearchCategoria("")
+      setLotesSeleccionados([])
+      setFiltroLoteAbierto(false)
+      setSearchLote("")
     }
   }, [isOpen])
 
-  const loadLotes = async () => {
-    setLoadingLotes(true)
+  useEffect(() => {
+    if (isOpen && establecimientoSeleccionado && empresaSeleccionada) {
+      loadData()
+    }
+  }, [isOpen, establecimientoSeleccionado, empresaSeleccionada])
+
+  const loadData = async () => {
+    setLoading(true)
 
     try {
-      console.log("🔍 Cargando lotes...")
-      console.log("🏢 Establecimiento:", establecimientoSeleccionado)
-
-      const lotesUrl = `/api/lotes?establecimiento_id=${establecimientoSeleccionado}`
-      console.log("🌐 Llamando API lotes:", lotesUrl)
-
+      const lotesUrl = `/api/lotes-stock-view?establecimiento_id=${establecimientoSeleccionado}`
       const lotesResponse = await fetch(lotesUrl)
-      console.log("📡 Response lotes status:", lotesResponse.status)
 
       if (lotesResponse.ok) {
         const lotesData = await lotesResponse.json()
-        console.log("📊 Datos lotes recibidos:", lotesData)
 
         if (lotesData.lotes && lotesData.lotes.length > 0) {
-          setLotes(lotesData.lotes)
-          console.log("✅ Lotes cargados:", lotesData.lotes.length)
+          const lotesConStock = lotesData.lotes
+            .filter((lote: LoteConStock) => !lote.inactivo && lote.pd_detalles && lote.pd_detalles.length > 0)
+            .map((lote: LoteConStock) => ({
+              ...lote,
+              pd_detalles: lote.pd_detalles
+                .sort((a, b) => a.categoria_animal_id - b.categoria_animal_id)
+                .map((detalle) => ({
+                  ...detalle,
+                  cantidad_recategorizar: 0,
+                  seleccionada: false,
+                  categoria_destino_id: undefined,
+                  lote_origen_id: lote.lote_id,
+                })),
+            }))
+
+          setLotes(lotesConStock.sort((a, b) => a.lote_id - b.lote_id))
         } else {
-          console.log("⚠️ No se encontraron lotes")
           toast({
             title: "Información",
-            description: "No se encontraron lotes para este establecimiento",
+            description: "No se encontraron lotes con stock disponible",
             variant: "default",
           })
         }
       } else {
-        const errorText = await lotesResponse.text()
-        console.error("❌ Error response lotes:", errorText)
         toast({
           title: "Error",
           description: "Error al cargar lotes",
           variant: "destructive",
         })
       }
-    } catch (error) {
-      console.error("❌ Error general cargando lotes:", error)
-      toast({
-        title: "Error",
-        description: "Error al cargar los lotes: " + (error instanceof Error ? error.message : "Error desconocido"),
-        variant: "destructive",
-      })
-    } finally {
-      setLoadingLotes(false)
-    }
-  }
 
-  const loadCategorias = async () => {
-    try {
-      console.log("🔍 Cargando categorías disponibles...")
-
-      // Cargar todas las categorías disponibles
       const disponiblesUrl = `/api/categorias-animales-empresa?empresa_id=${empresaSeleccionada}`
-      console.log("🌐 Llamando API categorías:", disponiblesUrl)
-
       const disponiblesResponse = await fetch(disponiblesUrl)
-      console.log("📡 Response categorías status:", disponiblesResponse.status)
 
       if (disponiblesResponse.ok) {
         const disponiblesData = await disponiblesResponse.json()
-        console.log("📊 Datos categorías recibidos:", disponiblesData)
 
         if (disponiblesData.categorias) {
           setCategoriasDisponibles(disponiblesData.categorias)
-          console.log("✅ Categorías disponibles cargadas:", disponiblesData.categorias.length)
         }
-      } else {
-        const errorText = await disponiblesResponse.text()
-        console.error("❌ Error response categorías:", errorText)
-        toast({
-          title: "Error",
-          description: "Error al cargar categorías disponibles",
-          variant: "destructive",
-        })
       }
     } catch (error) {
-      console.error("❌ Error general cargando categorías:", error)
-      toast({
-        title: "Error",
-        description: "Error al cargar categorías: " + (error instanceof Error ? error.message : "Error desconocido"),
-        variant: "destructive",
-      })
-    }
-  }
-
-  const loadLotesStock = async () => {
-    setLoading(true)
-
-    try {
-      console.log("🔍 Cargando lotes de stock...")
-      console.log("🏢 Establecimiento:", establecimientoSeleccionado)
-      console.log("📦 Lote seleccionado:", loteSeleccionado)
-
-      // Cargar lotes de stock individuales desde la vista pd_lote_stock_categoria_view
-      const lotesUrl = `/api/lote-stock-individual?establecimiento_id=${establecimientoSeleccionado}&lote_id=${loteSeleccionado}`
-      console.log("🌐 Llamando API lotes stock:", lotesUrl)
-
-      const lotesResponse = await fetch(lotesUrl)
-      console.log("📡 Response lotes stock status:", lotesResponse.status)
-
-      if (lotesResponse.ok) {
-        const lotesData = await lotesResponse.json()
-        console.log("📊 Datos lotes stock recibidos:", lotesData)
-
-        if (lotesData.categorias && lotesData.categorias.length > 0) {
-          setCategoriasExistentes(lotesData.categorias)
-
-          // Inicializar reclasificaciones
-          const iniciales = lotesData.categorias.map((cat: CategoriaExistente) => ({
-            lote_stock_id: cat.lote_stock_id,
-            nueva_categoria_id: null,
-            cantidad: cat.cantidad,
-            peso_total: cat.peso_total,
-          }))
-          setReclasificaciones(iniciales)
-          console.log("✅ Reclasificaciones inicializadas:", iniciales.length)
-        } else {
-          console.log("⚠️ No se encontraron registros de stock para este lote")
-          setCategoriasExistentes([])
-          setReclasificaciones([])
-          toast({
-            title: "Información",
-            description: "No se encontraron registros de stock para este lote",
-            variant: "default",
-          })
-        }
-      } else {
-        const errorText = await lotesResponse.text()
-        console.error("❌ Error response lotes stock:", errorText)
-        toast({
-          title: "Error",
-          description: "Error al cargar registros de stock del lote",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      console.error("❌ Error general cargando lotes stock:", error)
       toast({
         title: "Error",
         description: "Error al cargar los datos: " + (error instanceof Error ? error.message : "Error desconocido"),
@@ -255,25 +181,244 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
     }
   }
 
-  const handleReclasificacionChange = (index: number, field: keyof ReclasificacionLote, value: any) => {
-    const updated = [...reclasificaciones]
-    updated[index] = { ...updated[index], [field]: value }
-    setReclasificaciones(updated)
-    console.log("🔄 Reclasificación actualizada:", updated[index])
+  const handleLoteSelectionChange = (loteId: number, checked: boolean) => {
+    setLotes((prevLotes) =>
+      prevLotes.map((lote) => {
+        if (lote.lote_id === loteId) {
+          return {
+            ...lote,
+            pd_detalles: lote.pd_detalles.map((detalle) => ({
+              ...detalle,
+              seleccionada: checked,
+              cantidad_recategorizar: checked ? detalle.cantidad : 0,
+            })),
+          }
+        }
+        return lote
+      }),
+    )
+  }
+
+  const handleCategoriaSelectionChange = (loteId: number, categoriaId: number, checked: boolean) => {
+    setLotes((prevLotes) =>
+      prevLotes.map((lote) => {
+        if (lote.lote_id === loteId) {
+          return {
+            ...lote,
+            pd_detalles: lote.pd_detalles.map((detalle) => {
+              if (detalle.categoria_animal_id === categoriaId) {
+                return {
+                  ...detalle,
+                  seleccionada: checked,
+                  cantidad_recategorizar: checked ? detalle.cantidad : 0,
+                }
+              }
+              return detalle
+            }),
+          }
+        }
+        return lote
+      }),
+    )
+  }
+
+  const handleCantidadChange = (loteId: number, categoriaId: number, value: string) => {
+    setLotes((prevLotes) =>
+      prevLotes.map((lote) => {
+        if (lote.lote_id === loteId) {
+          return {
+            ...lote,
+            pd_detalles: lote.pd_detalles.map((detalle) => {
+              if (detalle.categoria_animal_id === categoriaId) {
+                if (value === "" || value === "0") {
+                  return {
+                    ...detalle,
+                    cantidad_recategorizar: 0,
+                    seleccionada: false,
+                  }
+                }
+
+                const cantidad = Number.parseInt(value, 10)
+                if (isNaN(cantidad)) {
+                  return detalle
+                }
+
+                const cantidadValida = Math.min(Math.max(0, cantidad), detalle.cantidad)
+                return {
+                  ...detalle,
+                  cantidad_recategorizar: cantidadValida,
+                  seleccionada: cantidadValida > 0 ? detalle.seleccionada : false,
+                }
+              }
+              return detalle
+            }),
+          }
+        }
+        return lote
+      }),
+    )
+  }
+
+  const handleCategoriaDestinoChange = (loteId: number, categoriaId: number, categoriaDestinoId: number) => {
+    setLotes((prevLotes) =>
+      prevLotes.map((lote) => {
+        if (lote.lote_id === loteId) {
+          return {
+            ...lote,
+            pd_detalles: lote.pd_detalles.map((detalle) => {
+              if (detalle.categoria_animal_id === categoriaId) {
+                return {
+                  ...detalle,
+                  categoria_destino_id: categoriaDestinoId,
+                }
+              }
+              return detalle
+            }),
+          }
+        }
+        return lote
+      }),
+    )
+  }
+
+  const getCategoriasDisponiblesPorSexo = (categoriaActualId: number) => {
+    const categoriaActual = categoriasDisponibles.find((cat) => cat.id === categoriaActualId)
+    if (!categoriaActual) return []
+
+    return categoriasDisponibles
+      .filter((cat) => cat.sexo === categoriaActual.sexo && cat.id !== categoriaActualId)
+      .map((cat) => ({
+        value: cat.id.toString(),
+        label: cat.nombre,
+      }))
+  }
+
+  const opcionesLote = lotes
+    .sort((a, b) => a.lote_id - b.lote_id)
+    .map((lote) => ({
+      value: lote.lote_id.toString(),
+      label: lote.lote_nombre,
+    }))
+
+  const handleLoteFilterChange = (loteId: string) => {
+    setLotesSeleccionados((prev) => {
+      if (prev.includes(loteId)) {
+        return prev.filter((id) => id !== loteId)
+      } else {
+        return [...prev, loteId]
+      }
+    })
+  }
+
+  const filteredLotes = lotes
+    .filter((lote) => {
+      if (lotesSeleccionados.length > 0) {
+        return lotesSeleccionados.includes(lote.lote_id.toString())
+      }
+      return true
+    })
+    .map((lote) => ({
+      ...lote,
+      pd_detalles: lote.pd_detalles
+        .filter(
+          (detalle) =>
+            searchCategoria === "" ||
+            detalle.categoria_animal_nombre.toLowerCase().includes(searchCategoria.toLowerCase()),
+        )
+        .sort((a, b) => a.categoria_animal_id - b.categoria_animal_id),
+    }))
+    .filter((lote) => lote.pd_detalles.length > 0)
+
+  const createTableRows = () => {
+    const rows: JSX.Element[] = []
+
+    filteredLotes.forEach((lote) => {
+      // Fila de header del lote
+      rows.push(
+        <TableRow key={`header-${lote.lote_id}`} className="bg-blue-50 border-t-2 border-blue-200">
+          <TableCell colSpan={4} className="py-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={`lote-${lote.lote_id}`}
+                checked={lote.pd_detalles.every((detalle) => detalle.seleccionada)}
+                onCheckedChange={(checked) => handleLoteSelectionChange(lote.lote_id, checked as boolean)}
+              />
+              <Label htmlFor={`lote-${lote.lote_id}`} className="font-semibold text-blue-900">
+                {lote.lote_nombre} - Lote Completo
+              </Label>
+            </div>
+          </TableCell>
+        </TableRow>,
+      )
+
+      // Filas de categorías
+      lote.pd_detalles.forEach((detalle) => {
+        const opcionesCategorias = getCategoriasDisponiblesPorSexo(detalle.categoria_animal_id)
+
+        rows.push(
+          <TableRow key={`${lote.lote_id}-${detalle.categoria_animal_id}`} className="hover:bg-gray-50">
+            <TableCell className="py-2 pl-8">
+              <Checkbox
+                checked={detalle.seleccionada}
+                onCheckedChange={(checked) =>
+                  handleCategoriaSelectionChange(lote.lote_id, detalle.categoria_animal_id, checked as boolean)
+                }
+              />
+            </TableCell>
+            <TableCell className="py-2">
+              <div className="font-medium">{detalle.categoria_animal_nombre}</div>
+            </TableCell>
+            <TableCell className="py-2">
+              <div className="flex items-center justify-center space-x-2">
+                <Input
+                  type="number"
+                  min="0"
+                  max={detalle.cantidad}
+                  value={detalle.cantidad_recategorizar === 0 ? "" : detalle.cantidad_recategorizar.toString()}
+                  onChange={(e) => {
+                    handleCantidadChange(lote.lote_id, detalle.categoria_animal_id, e.target.value)
+                  }}
+                  className="w-16 h-8 text-sm"
+                  disabled={!detalle.seleccionada}
+                  placeholder="0"
+                  onFocus={(e) => e.target.select()}
+                />
+                <span className="text-gray-500 text-sm">/ {detalle.cantidad}</span>
+              </div>
+            </TableCell>
+            <TableCell className="py-2">
+              <CustomCombobox
+                options={opcionesCategorias}
+                value={detalle.categoria_destino_id?.toString() || ""}
+                onValueChange={(value) =>
+                  handleCategoriaDestinoChange(lote.lote_id, detalle.categoria_animal_id, Number.parseInt(value))
+                }
+                placeholder="Seleccionar categoría..."
+                searchPlaceholder="Buscar categoría..."
+                emptyMessage="No hay categorías disponibles."
+                disabled={!detalle.seleccionada}
+              />
+            </TableCell>
+          </TableRow>,
+        )
+      })
+    })
+
+    return rows
+  }
+
+  const getLotesSeleccionadosText = () => {
+    if (lotesSeleccionados.length === 0) {
+      return "Todos los lotes"
+    }
+    if (lotesSeleccionados.length === 1) {
+      const lote = lotes.find((l) => l.lote_id.toString() === lotesSeleccionados[0])
+      return lote?.lote_nombre || "Lote seleccionado"
+    }
+    return `${lotesSeleccionados.length} lotes seleccionados`
   }
 
   const handleSubmit = async () => {
-    // Validar que se haya seleccionado un lote
-    if (!loteSeleccionado) {
-      toast({
-        title: "Error",
-        description: "Debe seleccionar un lote",
-        variant: "destructive",
-      })
-      return
-    }
-
-    // Validar que el usuario esté cargado
     if (!usuario || !usuario.id) {
       toast({
         title: "Error",
@@ -283,43 +428,48 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
       return
     }
 
-    // Validar que al menos una reclasificación esté seleccionada
-    const reclasificacionesValidas = reclasificaciones.filter((r) => r.nueva_categoria_id !== null)
+    const categoriasSeleccionadas = lotes.flatMap((lote) =>
+      lote.pd_detalles.filter((detalle) => detalle.seleccionada && detalle.cantidad_recategorizar > 0),
+    )
 
-    if (reclasificacionesValidas.length === 0) {
+    if (categoriasSeleccionadas.length === 0) {
       toast({
         title: "Error",
-        description: "Debe seleccionar al menos una nueva categoría",
+        description: "Debe seleccionar al menos una categoría para recategorizar",
         variant: "destructive",
       })
       return
     }
 
-    console.log("💾 Guardando reclasificaciones por lote...")
-    console.log("📦 Lote ID:", loteSeleccionado)
-    console.log("👤 Usuario ID:", usuario.id)
-    console.log("📝 Nota:", nota)
-    console.log("📋 Reclasificaciones válidas:", reclasificacionesValidas)
+    const categoriasSinDestino = categoriasSeleccionadas.filter((detalle) => !detalle.categoria_destino_id)
 
-    // Preparar datos para envío
-    const datosEnvio = {
-      establecimiento_id: establecimientoSeleccionado,
-      lote_id: Number(loteSeleccionado),
-      user_id: usuario.id, // UUID string
-      fecha: fecha.toISOString().split("T")[0], // YYYY-MM-DD
-      hora: hora, // HH:MM
-      nota: nota.trim() || "", // Usar la nota del usuario o string vacío
-      reclasificaciones: reclasificacionesValidas.map((r) => ({
-        lote_stock_id: r.lote_stock_id,
-        nueva_categoria_id: r.nueva_categoria_id,
-      })),
+    if (categoriasSinDestino.length > 0) {
+      toast({
+        title: "Error",
+        description: "Todas las categorías seleccionadas deben tener una categoría destino",
+        variant: "destructive",
+      })
+      return
     }
-
-    console.log("📤 Datos a enviar:", JSON.stringify(datosEnvio, null, 2))
 
     setLoading(true)
     try {
-      const response = await fetch("/api/reclasificacion-lote", {
+      const datosEnvio = {
+        establecimiento_id: establecimientoSeleccionado,
+        user_id: usuario.id,
+        fecha: fecha.toISOString().split("T")[0],
+        hora: hora,
+        nota: nota.trim() || "",
+        reclasificaciones: categoriasSeleccionadas.map((detalle) => ({
+          lote_origen_id: detalle.lote_origen_id,
+          categoria_animal_id: detalle.categoria_animal_id,
+          categoria_destino_id: detalle.categoria_destino_id,
+          cantidad: detalle.cantidad_recategorizar,
+          peso_promedio: detalle.peso_promedio,
+        })),
+      }
+
+      const response = await fetch("/api/guardar-reclasificacion-lote", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -327,29 +477,20 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
         body: JSON.stringify(datosEnvio),
       })
 
-      console.log("📡 Response status:", response.status)
-
       if (response.ok) {
-        const responseData = await response.json()
-        console.log("✅ Respuesta exitosa:", responseData)
-
         toast({
-          title: "✅ Actividad Guardada",
-          description: `Se procesaron ${reclasificacionesValidas.length} reclasificaciones del lote`,
+          title: "✅ Reclasificación Guardada",
+          description: `Se procesaron ${categoriasSeleccionadas.length} reclasificaciones`,
           duration: 4000,
         })
 
-        // Disparar evento para recargar actividades
         window.dispatchEvent(new Event("reloadActividades"))
-
-        // Disparar evento para recargar partes diarios
         window.dispatchEvent(new Event("reloadPartesDiarios"))
 
         handleClose()
         onSuccess()
       } else {
         const errorData = await response.json()
-        console.error("❌ Error response completo:", errorData)
         toast({
           title: "Error",
           description: errorData.message || errorData.error || "Error al procesar la reclasificación",
@@ -357,7 +498,6 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
         })
       }
     } catch (error) {
-      console.error("❌ Error general guardando:", error)
       toast({
         title: "Error",
         description:
@@ -370,40 +510,21 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
   }
 
   const handleClose = () => {
-    console.log("🚪 Cerrando drawer de reclasificación por lote")
     onClose()
-    // Reset form
     setFecha(new Date())
     setHora(new Date().toTimeString().slice(0, 5))
     setNota("")
     setLotes([])
-    setLoteSeleccionado("")
-    setCategoriasExistentes([])
     setCategoriasDisponibles([])
-    setReclasificaciones([])
+    setSearchCategoria("")
+    setLotesSeleccionados([])
+    setFiltroLoteAbierto(false)
+    setSearchLote("")
   }
-
-  // Filtrar categorías disponibles por sexo y excluir la categoría actual
-  const getCategoriasDisponiblesPorSexo = (sexoActual: string, categoriaActualId: number) => {
-    const filtradas = categoriasDisponibles.filter((cat) => {
-      const mismosexo = cat.sexo === sexoActual
-      const noEsLaMisma = cat.id !== categoriaActualId
-      return mismosexo && noEsLaMisma
-    })
-
-    console.log(`🔍 Categorías filtradas para sexo ${sexoActual}:`, filtradas.length)
-    return filtradas
-  }
-
-  // Preparar opciones para el selector de lotes
-  const opcionesLotes = lotes.map((lote) => ({
-    value: lote.id.toString(),
-    label: lote.nombre,
-  }))
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full w-[900px] ml-auto">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
           <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Users className="w-6 h-6 text-orange-600" />
@@ -415,11 +536,11 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {/* Datos Generales */}
-          <div className="space-y-6">
+          <div className="space-y-4">
+            {/* Datos Generales */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Datos Generales</h3>
-              <div className="space-y-4">
+              <h3 className="text-lg font-semibold mb-3">Datos Generales</h3>
+              <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Tipo</Label>
@@ -434,21 +555,6 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
                       {nombreCompleto}
                     </div>
                   </div>
-                </div>
-
-                {/* Selector de Lote */}
-                <div>
-                  <Label>Lote *</Label>
-                  <CustomCombobox
-                    options={opcionesLotes}
-                    value={loteSeleccionado}
-                    onValueChange={setLoteSeleccionado}
-                    placeholder="Selecciona lote..."
-                    searchPlaceholder="Buscar lote..."
-                    emptyMessage="No se encontraron lotes."
-                    loading={loadingLotes}
-                    disabled={loadingLotes}
-                  />
                 </div>
 
                 <div>
@@ -469,82 +575,130 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
               </div>
             </div>
 
-            {/* Reclasificaciones */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Reclasificaciones *</h3>
-              {!loteSeleccionado ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>Selecciona un lote para ver las categorías disponibles para reclasificar</p>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Filtros</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="filtro-lote">Filtrar por Lote</Label>
+                  <div className="relative" ref={filtroLoteRef}>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between bg-transparent"
+                      onClick={() => setFiltroLoteAbierto(!filtroLoteAbierto)}
+                      type="button"
+                    >
+                      <span className="truncate text-left">{getLotesSeleccionadosText()}</span>
+                      <ChevronDown
+                        className={cn("ml-2 h-4 w-4 shrink-0 transition-transform", filtroLoteAbierto && "rotate-180")}
+                      />
+                    </Button>
+
+                    {filtroLoteAbierto && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-hidden">
+                        <div className="p-2 border-b">
+                          <div className="relative">
+                            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              placeholder="Buscar lote..."
+                              value={searchLote}
+                              onChange={(e) => setSearchLote(e.target.value)}
+                              className="pl-8 h-8"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        <div className="max-h-48 overflow-auto">
+                          <div
+                            className={cn(
+                              "flex items-center px-3 py-2 text-sm cursor-pointer hover:bg-gray-100",
+                              lotesSeleccionados.length === 0 && "bg-blue-50",
+                            )}
+                            onClick={() => {
+                              setLotesSeleccionados([])
+                            }}
+                          >
+                            <Checkbox checked={lotesSeleccionados.length === 0} className="mr-2" readOnly />
+                            <span
+                              className={cn("truncate", lotesSeleccionados.length === 0 && "text-blue-600 font-medium")}
+                            >
+                              Todos los lotes
+                            </span>
+                          </div>
+                          {opcionesLote
+                            .filter(
+                              (lote) =>
+                                searchLote === "" || lote.label.toLowerCase().includes(searchLote.toLowerCase()),
+                            )
+                            .map((lote) => (
+                              <div
+                                key={lote.value}
+                                className={cn(
+                                  "flex items-center px-3 py-2 text-sm cursor-pointer hover:bg-gray-100",
+                                  lotesSeleccionados.includes(lote.value) && "bg-blue-50",
+                                )}
+                                onClick={() => handleLoteFilterChange(lote.value)}
+                              >
+                                <Checkbox checked={lotesSeleccionados.includes(lote.value)} className="mr-2" readOnly />
+                                <span
+                                  className={cn(
+                                    "truncate",
+                                    lotesSeleccionados.includes(lote.value) && "text-blue-600 font-medium",
+                                  )}
+                                >
+                                  {lote.label}
+                                </span>
+                              </div>
+                            ))}
+                          {opcionesLote.filter(
+                            (lote) => searchLote === "" || lote.label.toLowerCase().includes(searchLote.toLowerCase()),
+                          ).length === 0 &&
+                            searchLote !== "" && (
+                              <div className="py-4 text-center text-sm text-gray-500">No se encontraron lotes.</div>
+                            )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ) : loading ? (
+                <div>
+                  <Label htmlFor="search-categoria">Buscar Categoría</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="search-categoria"
+                      value={searchCategoria}
+                      onChange={(e) => setSearchCategoria(e.target.value)}
+                      placeholder="Buscar por nombre de categoría..."
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Animales a Recategorizar *</h3>
+              {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin" />
-                  <span className="ml-2">Cargando categorías del lote...</span>
+                  <span className="ml-2">Cargando lotes...</span>
+                </div>
+              ) : filteredLotes.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No se encontraron lotes con animales</p>
                 </div>
               ) : (
                 <div className="border rounded-lg overflow-hidden">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Categoría Actual</TableHead>
-                        <TableHead>Cantidad</TableHead>
-                        <TableHead>Peso Total</TableHead>
-                        <TableHead>Nueva Categoría</TableHead>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="w-12 py-2"></TableHead>
+                        <TableHead className="py-2">Categoría</TableHead>
+                        <TableHead className="py-2">Cantidad a Recategorizar</TableHead>
+                        <TableHead className="py-2">Categoría Destino</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
-                      {categoriasExistentes.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                            No hay registros para reclasificar en este lote
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        categoriasExistentes.map((categoria, index) => {
-                          // Filtrar categorías disponibles por sexo para esta fila
-                          const categoriasFiltradasPorSexo = getCategoriasDisponiblesPorSexo(
-                            categoria.sexo,
-                            categoria.categoria_animal_id,
-                          )
-                          const opcionesCategorias = categoriasFiltradasPorSexo.map((cat) => ({
-                            value: cat.id.toString(),
-                            label: cat.nombre,
-                          }))
-
-                          return (
-                            <TableRow key={categoria.lote_stock_id}>
-                              <TableCell>
-                                <div className="font-medium">{categoria.categoria_animal_nombre}</div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{categoria.cantidad}</Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{categoria.peso_total} kg</Badge>
-                              </TableCell>
-                              <TableCell>
-                                <CustomCombobox
-                                  options={opcionesCategorias}
-                                  value={reclasificaciones[index]?.nueva_categoria_id?.toString() || ""}
-                                  onValueChange={(value) =>
-                                    handleReclasificacionChange(
-                                      index,
-                                      "nueva_categoria_id",
-                                      value ? Number.parseInt(value) : null,
-                                    )
-                                  }
-                                  placeholder="Selecciona categoría..."
-                                  searchPlaceholder="Buscar categoría..."
-                                  emptyMessage="No se encontraron categorías."
-                                  loading={false}
-                                  disabled={false}
-                                />
-                              </TableCell>
-                            </TableRow>
-                          )
-                        })
-                      )}
-                    </TableBody>
+                    <TableBody>{createTableRows()}</TableBody>
                   </Table>
                 </div>
               )}
@@ -569,11 +723,7 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
           <Button variant="outline" onClick={handleClose} disabled={loading}>
             Cancelar
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={loading || !loteSeleccionado || !usuario}
-            className="bg-orange-600 hover:bg-orange-700"
-          >
+          <Button onClick={handleSubmit} disabled={loading || !usuario} className="bg-orange-600 hover:bg-orange-700">
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
