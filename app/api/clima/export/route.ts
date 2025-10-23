@@ -133,12 +133,6 @@ export async function POST(request: NextRequest) {
                 color: #999;
                 font-style: italic;
             }
-            @media print {
-                .footer {
-                    position: fixed;
-                    bottom: 0;
-                }
-            }
         </style>
     </head>
     <body>
@@ -200,25 +194,40 @@ export async function POST(request: NextRequest) {
         <div class="footer">
             <div>Página 1 de 1 | Generado por Parte Diario</div>
         </div>
-        
-        <script>
-            // Auto-trigger print dialog when page loads
-            window.onload = function() {
-                window.print();
-            };
-        </script>
     </body>
     </html>
     `
 
-    // Return HTML response that can be printed to PDF by the browser
-    return new NextResponse(html, {
+    // Usar Puppeteer para generar PDF
+    const puppeteer = require("puppeteer")
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    })
+
+    const page = await browser.newPage()
+    await page.setContent(html, { waitUntil: "networkidle0" })
+
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      margin: {
+        top: "20mm",
+        right: "20mm",
+        bottom: "20mm",
+        left: "20mm",
+      },
+    })
+
+    await browser.close()
+
+    return new NextResponse(pdfBuffer, {
       headers: {
-        "Content-Type": "text/html; charset=utf-8",
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="reporte-lluvias-${establecimiento_nombre}-${year}.pdf"`,
       },
     })
   } catch (error) {
-    console.error("Error generating report:", error)
+    console.error("Error generating PDF:", error)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
