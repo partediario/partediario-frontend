@@ -25,7 +25,6 @@ interface CategoriaActual {
   edad: string
   empresa_id: number
   establecimiento_id: number
-  lotes: Array<{ lote_id: number; lote_nombre: string; cantidad: number; peso_total: number; peso_promedio: number }>
 }
 
 interface CategoriaDisponible {
@@ -41,7 +40,6 @@ interface Reclasificacion {
   nueva_categoria_id: number | null
   cantidad: number
   peso: number
-  lotes: Array<{ lote_id: number; lote_nombre: string; cantidad: number; peso_total: number; peso_promedio: number }>
 }
 
 interface ReclasificacionDrawerProps {
@@ -99,13 +97,12 @@ export default function ReclasificacionDrawer({ isOpen, onClose, onSuccess }: Re
         if (categoriasData.categorias && categoriasData.categorias.length > 0) {
           setCategoriasActuales(categoriasData.categorias)
 
-          // Inicializar reclasificaciones con información de lotes
+          // Inicializar reclasificaciones
           const iniciales = categoriasData.categorias.map((cat: CategoriaActual) => ({
             categoria_actual_id: cat.categoria_animal_id,
             nueva_categoria_id: null,
             cantidad: cat.total_cantidad,
             peso: cat.total_peso,
-            lotes: cat.lotes, // Mantener información de lotes para desagregar al guardar
           }))
           setReclasificaciones(iniciales)
         } else {
