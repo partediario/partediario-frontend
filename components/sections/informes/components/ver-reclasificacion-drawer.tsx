@@ -105,7 +105,7 @@ export default function VerReclasificacionDrawer({ isOpen, onClose, parte, onSuc
   const tipoReclasificacion = esReclasificacionPorLote ? "Reclasificación por Lote" : "Reclasificación por Categoría"
 
   const puedeDeshacerse = (): boolean => {
-    return esReclasificacionPorLote && detalles?.detalle_deshacible === true
+    return detalles?.detalle_deshacible === true
   }
 
   const deshacerReclasificacion = async () => {
@@ -116,7 +116,11 @@ export default function VerReclasificacionDrawer({ isOpen, onClose, parte, onSuc
 
     setUndoing(true)
     try {
-      const response = await fetch("/api/deshacer-reclasificacion-lote", {
+      const apiEndpoint = esReclasificacionPorLote
+        ? "/api/deshacer-reclasificacion-lote"
+        : "/api/deshacer-reclasificacion-categoria"
+
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -339,7 +343,7 @@ export default function VerReclasificacionDrawer({ isOpen, onClose, parte, onSuc
                 <Undo2 className="w-4 h-4 mr-2" />
                 {undoing ? "Deshaciendo..." : "Deshacer"}
               </Button>
-            ) : esReclasificacionPorLote ? (
+            ) : (
               <div className="flex flex-col">
                 <Button variant="outline" disabled className="text-gray-400 cursor-not-allowed bg-transparent">
                   <Undo2 className="w-4 h-4 mr-2" />
@@ -347,7 +351,7 @@ export default function VerReclasificacionDrawer({ isOpen, onClose, parte, onSuc
                 </Button>
                 <span className="text-xs text-gray-500 mt-1">Esta reclasificación no puede ser deshecha</span>
               </div>
-            ) : null}
+            )}
           </div>
 
           <Button

@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-import type { JSX } from "react"
 import { MapPin, Download, ChevronDown, HelpCircle, X } from "lucide-react"
 
 // Tipos para integración con Supabase
@@ -128,26 +126,6 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
   const isOutOfRange = (current: number, optimal: number): boolean => {
     const threshold = 0.15 // 15% de variación
     return Math.abs(current - optimal) / optimal > threshold
-  }
-
-  // Función para obtener el color según el valor
-  const getValueColor = (current: number, optimal: number): string => {
-    if (isOutOfRange(current, optimal)) {
-      return current > optimal ? "text-[#EA4335]" : "text-[#FF9800]"
-    }
-    return "text-[#34A853]"
-  }
-
-  // Función para obtener el badge según el valor
-  const getValueBadge = (current: number, optimal: number): JSX.Element => {
-    if (isOutOfRange(current, optimal)) {
-      return current > optimal ? (
-        <Badge className="bg-[#EA4335] text-white ml-2">Alto</Badge>
-      ) : (
-        <Badge className="bg-[#FF9800] text-white ml-2">Bajo</Badge>
-      )
-    }
-    return <Badge className="bg-[#34A853] text-white ml-2">Óptimo</Badge>
   }
 
   const handleExport = async (format: "pdf" | "xlsx") => {
@@ -434,9 +412,6 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
                         <p>
                           <strong>• UG/ha:</strong> Unidades ganaderas por hectárea
                         </p>
-                        <p>
-                          <strong>• Indicadores:</strong> Verde=Óptimo, Naranja=Bajo, Rojo=Alto
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -492,12 +467,7 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center p-4 bg-gray-50 rounded-lg cursor-help">
-                  <div className="flex items-center justify-center">
-                    <p className={`text-2xl font-bold ${getValueColor(data.cabezas_por_ha, optimalValues.cabHas)}`}>
-                      {data.cabezas_por_ha.toFixed(2)}
-                    </p>
-                    {getValueBadge(data.cabezas_por_ha, optimalValues.cabHas)}
-                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{data.cabezas_por_ha.toFixed(2)}</p>
                   <p className="text-sm text-gray-600">Cab/ha</p>
                 </div>
               </TooltipTrigger>
@@ -511,12 +481,7 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center p-4 bg-gray-50 rounded-lg cursor-help">
-                  <div className="flex items-center justify-center">
-                    <p className={`text-2xl font-bold ${getValueColor(data.kg_por_ha, optimalValues.kgHas)}`}>
-                      {data.kg_por_ha.toFixed(2)}
-                    </p>
-                    {getValueBadge(data.kg_por_ha, optimalValues.kgHas)}
-                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{data.kg_por_ha.toFixed(2)}</p>
                   <p className="text-sm text-gray-600">kg/ha</p>
                 </div>
               </TooltipTrigger>
@@ -530,12 +495,7 @@ export default function CargaCampo({ data: propData, isLoading: propLoading = fa
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center p-4 bg-gray-50 rounded-lg cursor-help">
-                  <div className="flex items-center justify-center">
-                    <p className={`text-2xl font-bold ${getValueColor(data.ug_por_ha, optimalValues.ugHas)}`}>
-                      {data.ug_por_ha.toFixed(2)}
-                    </p>
-                    {getValueBadge(data.ug_por_ha, optimalValues.ugHas)}
-                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{data.ug_por_ha.toFixed(2)}</p>
                   <p className="text-sm text-gray-600">UG/ha</p>
                 </div>
               </TooltipTrigger>

@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useMemo, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -20,6 +19,10 @@ import {
   Activity,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { jsPDF } from "jspdf"
+import "jspdf-autotable"
+import * as XLSX from "xlsx"
 
 // Tipos para integración con Supabase
 export interface PotreroData {
@@ -60,9 +63,10 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
   const [showTooltip, setShowTooltip] = useState(false)
   const [selectedPotrero, setSelectedPotrero] = useState<string | null>(null)
   const [currentEstablecimiento, setCurrentEstablecimiento] = useState<string>("")
-  const [tooltip, setTooltipData] = useState<TooltipData | null>(null)
+  const [selectedMetric, setSelectedMetric] = useState<"kg" | "ug">("kg")
   const chartRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
+  const [tooltipData, setTooltipData] = useState<TooltipData | null>(null)
 
   // Función para obtener el establecimiento actual del localStorage
   const getCurrentEstablishment = () => {
@@ -258,7 +262,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
       })
 
       if (format === "pdf") {
-        const { jsPDF } = await import("jspdf")
         const autoTable = (await import("jspdf-autotable")).default
 
         const doc = new jsPDF()
@@ -359,7 +362,6 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
         doc.save(fileName)
       } else if (format === "xlsx") {
         try {
-          const XLSX = await import("xlsx")
           const exportData = data.map((item) => ({
             Potrero: item.potrero,
             "Cab/ha": (item.cabezas_por_ha || 0).toFixed(2),
@@ -466,6 +468,37 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
   const maxKgHas = Math.max(...data.map((item) => item.kg_por_ha || 0))
   const maxUgHas = Math.max(...data.map((item) => item.ug_por_ha || 0))
 
+  const chartData = data.map((item) => ({
+    name: item.potrero,
+    cabHa: Number((item.cabezas_por_ha || 0).toFixed(2)),
+    kgHa: Number((item.kg_por_ha || 0).toFixed(2)),
+    ugHa: Number((item.ug_por_ha || 0).toFixed(2)),
+  }))
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-xl">
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+            <Cow className="w-5 h-5 text-green-500" />
+            <p className="font-bold text-gray-900 text-base">{label}</p>
+          </div>
+          <div className="space-y-2">
+            {payload.map((entry: any, index: number) => (
+              <div key={index} className="flex justify-between items-center gap-4">
+                <span className="text-gray-600 text-sm">{entry.name}:</span>
+                <span className="font-bold text-base" style={{ color: entry.color }}>
+                  {entry.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-3">
@@ -493,13 +526,10 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                       </Button>
                     </div>
                     <div className="space-y-2 text-sm text-gray-600">
-                      <p>Análisis de carga animal por potrero con tabla y gráfico de barras.</p>
+                      <p>Análisis de carga animal por potrero con tabla y gráfico combinado.</p>
                       <div className="space-y-1">
                         <p>
-                          <strong>• Métricas:</strong> Cab/ha, kg/ha, UG/ha
-                        </p>
-                        <p>
-                          <strong>• Estados:</strong> Vacío, Bajo, Óptimo, Sobrecarga
+                          <strong>• Métricas:</strong> Cab/ha (línea), kg/ha o UG/ha (barras)
                         </p>
                       </div>
                     </div>
@@ -610,189 +640,98 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
               </div>
             ) : (
               <div className="w-full space-y-6">
-                {/* Gráfico Principal */}
                 <Card className="w-full">
                   <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <BarChart3 className="w-6 h-6 text-blue-500" />
-                      Análisis de Carga por Potrero
-                    </CardTitle>
-                    <p className="text-base text-gray-600">Comparación de métricas de carga animal entre potreros</p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2 text-xl">
+                          <BarChart3 className="w-6 h-6 text-blue-500" />
+                          Análisis de Carga por Potrero
+                        </CardTitle>
+                        <p className="text-base text-gray-600">
+                          Comparación de métricas de carga animal entre potreros
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                        <Button
+                          variant={selectedMetric === "kg" ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => setSelectedMetric("kg")}
+                          className={selectedMetric === "kg" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                        >
+                          kg/ha
+                        </Button>
+                        <Button
+                          variant={selectedMetric === "ug" ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => setSelectedMetric("ug")}
+                          className={selectedMetric === "ug" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                        >
+                          UG/ha
+                        </Button>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <div
-                      ref={chartRef}
-                      className="w-full relative bg-gray-50 rounded-lg p-4"
-                      style={{ height: "500px" }}
-                    >
-                      {/* Eje Y */}
-                      <div
-                        className="absolute left-2 top-4 flex flex-col justify-between text-xs text-gray-600"
-                        style={{ height: `${CHART_HEIGHT}px` }}
-                      >
-                        <span>{Math.max(maxCabHas, maxKgHas, maxUgHas).toFixed(0)}</span>
-                        <span>{(Math.max(maxCabHas, maxKgHas, maxUgHas) * 0.75).toFixed(0)}</span>
-                        <span>{(Math.max(maxCabHas, maxKgHas, maxUgHas) * 0.5).toFixed(0)}</span>
-                        <span>{(Math.max(maxCabHas, maxKgHas, maxUgHas) * 0.25).toFixed(0)}</span>
-                        <span>0</span>
-                      </div>
-
-                      {/* Líneas de cuadrícula */}
-                      <div className="absolute left-12 right-4 top-4" style={{ height: `${CHART_HEIGHT}px` }}>
-                        {[0, 1, 2, 3, 4].map((index) => (
-                          <div
-                            key={index}
-                            className="absolute w-full border-t border-gray-200"
-                            style={{ top: `${(index / 4) * 100}%` }}
-                          />
-                        ))}
-                      </div>
-
-                      {/* Contenedor de barras agrupadas */}
-                      <div
-                        className="absolute left-12 right-4 top-4 flex justify-between gap-2"
-                        style={{ height: `${CHART_HEIGHT}px` }}
-                      >
-                        {data.map((item, index) => {
-                          const maxValue = Math.max(maxCabHas, maxKgHas, maxUgHas)
-                          const cabHeight = maxValue > 0 ? ((item.cabezas_por_ha || 0) / maxValue) * CHART_HEIGHT : 0
-                          const kgHeight = maxValue > 0 ? ((item.kg_por_ha || 0) / maxValue) * CHART_HEIGHT : 0
-                          const ugHeight = maxValue > 0 ? ((item.ug_por_ha || 0) / maxValue) * CHART_HEIGHT : 0
-                          const groupWidth = `${Math.max(100 / data.length - 3, 8)}%`
-
-                          return (
-                            <div
-                              key={index}
-                              className="flex flex-col justify-end items-center h-full"
-                              style={{ width: groupWidth }}
-                            >
-                              {/* Grupo de 3 barras */}
-                              <div className="flex justify-center items-end gap-1 w-full">
-                                {/* Barra Cab/ha */}
-                                <div
-                                  className="cursor-pointer transition-all duration-200 hover:opacity-80 hover:scale-105"
-                                  style={{
-                                    height: `${cabHeight}px`,
-                                    backgroundColor: getBarColor(item.cabezas_por_ha || 0, maxCabHas, "cab"),
-                                    borderRadius: "4px 4px 0 0",
-                                    border: "1px solid #e5e7eb",
-                                    minHeight: (item.cabezas_por_ha || 0) > 0 ? "4px" : "0px",
-                                    width: "30%",
-                                  }}
-                                  onMouseEnter={(e) => handleBarHover(e, item)}
-                                  onMouseLeave={handleBarLeave}
-                                  onMouseMove={(e) => handleBarHover(e, item)}
-                                />
-                                {/* Barra kg/ha */}
-                                <div
-                                  className="cursor-pointer transition-all duration-200 hover:opacity-80 hover:scale-105"
-                                  style={{
-                                    height: `${kgHeight}px`,
-                                    backgroundColor: getBarColor(item.kg_por_ha || 0, maxKgHas, "kg"),
-                                    borderRadius: "4px 4px 0 0",
-                                    border: "1px solid #e5e7eb",
-                                    minHeight: (item.kg_por_ha || 0) > 0 ? "4px" : "0px",
-                                    width: "30%",
-                                  }}
-                                  onMouseEnter={(e) => handleBarHover(e, item)}
-                                  onMouseLeave={handleBarLeave}
-                                  onMouseMove={(e) => handleBarHover(e, item)}
-                                />
-                                {/* Barra UG/ha */}
-                                <div
-                                  className="cursor-pointer transition-all duration-200 hover:opacity-80 hover:scale-105"
-                                  style={{
-                                    height: `${ugHeight}px`,
-                                    backgroundColor: getBarColor(item.ug_por_ha || 0, maxUgHas, "ug"),
-                                    borderRadius: "4px 4px 0 0",
-                                    border: "1px solid #e5e7eb",
-                                    minHeight: (item.ug_por_ha || 0) > 0 ? "4px" : "0px",
-                                    width: "30%",
-                                  }}
-                                  onMouseEnter={(e) => handleBarHover(e, item)}
-                                  onMouseLeave={handleBarLeave}
-                                  onMouseMove={(e) => handleBarHover(e, item)}
-                                />
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      {/* Etiquetas de potreros */}
-                      <div
-                        className="absolute left-12 right-4 flex justify-between gap-2"
-                        style={{ top: `${CHART_HEIGHT + 20}px` }}
-                      >
-                        {data.map((item, index) => {
-                          const groupWidth = `${Math.max(100 / data.length - 3, 8)}%`
-                          return (
-                            <div key={index} className="flex justify-center items-center" style={{ width: groupWidth }}>
-                              <span className="text-xs text-gray-600 transform -rotate-45 origin-center whitespace-nowrap">
-                                {item.potrero}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      {/* Leyenda */}
-                      <div className="absolute top-4 right-4 bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                        <div className="flex flex-col gap-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                            <span>Cab/ha</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-red-500 rounded"></div>
-                            <span>kg/ha</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-green-500 rounded"></div>
-                            <span>UG/ha</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Tooltip */}
-                      {tooltip && (
-                        <div
-                          className="absolute bg-white p-4 border border-gray-200 rounded-lg shadow-xl z-50 min-w-[280px] pointer-events-none"
-                          style={{
-                            left: Math.min(
-                              tooltip.x + 10,
-                              chartRef.current?.clientWidth ? chartRef.current.clientWidth - 300 : tooltip.x,
-                            ),
-                            top: Math.max(tooltip.y - 120, 10),
+                    <ResponsiveContainer width="100%" height={400}>
+                      <ComposedChart data={chartData} margin={{ top: 20, right: 60, bottom: 60, left: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis
+                          dataKey="name"
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                          tick={{ fill: "#6b7280", fontSize: 12 }}
+                        />
+                        <YAxis
+                          yAxisId="left"
+                          tick={{ fill: "#6b7280", fontSize: 12 }}
+                          label={{
+                            value: selectedMetric === "kg" ? "kg/ha" : "UG/ha",
+                            angle: -90,
+                            position: "insideLeft",
+                            style: { fill: "#6b7280", fontSize: 14, fontWeight: 600 },
                           }}
-                        >
-                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
-                            <Cow className="w-5 h-5 text-green-500" />
-                            <p className="font-bold text-gray-900 text-lg">{tooltip.potrero}</p>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-600 text-sm">Cab/ha:</span>
-                              <span className="font-bold text-blue-600 text-lg">{tooltip.cabHas.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-600 text-sm">kg/ha:</span>
-                              <span className="font-bold text-red-600 text-lg">{tooltip.kgHas.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-600 text-sm">UG/ha:</span>
-                              <span className="font-bold text-green-600 text-lg">{tooltip.ugHas.toFixed(2)}</span>
-                            </div>
-                            <div className="pt-2 border-t border-gray-100">
-                              <div className="flex justify-between items-center">
-                                <span className="text-gray-600 text-sm">ha Ganaderas:</span>
-                                <span className="font-semibold text-gray-900">{tooltip.hectareas}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                        />
+                        <YAxis
+                          yAxisId="right"
+                          orientation="right"
+                          tick={{ fill: "#6b7280", fontSize: 12 }}
+                          label={{
+                            value: "Cab/ha",
+                            angle: 90,
+                            position: "insideRight",
+                            style: { fill: "#6b7280", fontSize: 14, fontWeight: 600 },
+                          }}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend
+                          wrapperStyle={{ paddingTop: "20px" }}
+                          iconType="circle"
+                          formatter={(value) => {
+                            if (value === "kgHa") return "kg/ha"
+                            if (value === "ugHa") return "UG/ha"
+                            if (value === "cabHa") return "Cab/ha"
+                            return value
+                          }}
+                        />
+                        {selectedMetric === "kg" ? (
+                          <Bar yAxisId="left" dataKey="kgHa" name="kgHa" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                        ) : (
+                          <Bar yAxisId="left" dataKey="ugHa" name="ugHa" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                        )}
+                        <Line
+                          yAxisId="right"
+                          type="monotone"
+                          dataKey="cabHa"
+                          name="cabHa"
+                          stroke="#ef4444"
+                          strokeWidth={3}
+                          dot={{ fill: "#ef4444", r: 5 }}
+                          activeDot={{ r: 7 }}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
                   </CardContent>
                 </Card>
 
