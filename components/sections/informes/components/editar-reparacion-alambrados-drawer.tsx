@@ -12,6 +12,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/u
 import { Plus, Trash2, Edit, Wrench, AlertCircle, X } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { useEstablishment } from "@/contexts/establishment-context"
+import { useUser } from "@/contexts/user-context"
 import type { ParteDiario } from "@/lib/types"
 
 interface EditarReparacionAlambradosDrawerProps {
@@ -95,6 +96,8 @@ export default function EditarReparacionAlambradosDrawer({
   const [loading, setLoading] = useState(false)
   const [loadingInsumos, setLoadingInsumos] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const [fecha, setFecha] = useState<Date>(new Date())
   const [hora, setHora] = useState<string>(new Date().toTimeString().slice(0, 5))
@@ -113,6 +116,7 @@ export default function EditarReparacionAlambradosDrawer({
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
 
   const { establecimientoSeleccionado } = useEstablishment()
+  const { usuario } = useUser()
 
   useEffect(() => {
     if (isOpen && parte.pd_detalles?.detalle_id) {
@@ -481,10 +485,80 @@ export default function EditarReparacionAlambradosDrawer({
     }
   }
 
+  const eliminarActividad = async () => {
+    if (!actividad?.id || !usuario?.id) {
+      toast({
+        title: "❌ Error",
+        description: "No se pudo identificar la actividad o el usuario",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/reparacion-alambrados/${actividad.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            deleted: true,
+            deleted_at: new Date().toISOString(),
+            deleted_user_id: usuario.id,
+          }),
+        },
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Error al eliminar reparación de alambrados")
+      }
+
+      toast({
+        title: "✅ Reparación Eliminada",
+        description: "La reparación de alambrados ha sido eliminada correctamente",
+        duration: 4000,
+      })
+
+      window.dispatchEvent(new Event("reloadPartesDiarios"))
+
+      handleClose()
+      onSuccess?.()
+    } catch (error) {
+      console.error("Error deleting reparacion alambrados:", error)
+      toast({
+        title: "❌ Error",
+        description: error instanceof Error ? error.message : "Error al eliminar reparación de alambrados",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
   const handleClose = () => {
     onClose?.()
     limpiarFormularioDetalle()
     setErrores([])
+  }
+
+  const puedeEliminar = () => {
+    if (!parte) return false
+
+    try {
+      let detalles
+      if (typeof parte.pd_detalles === "string") {
+        detalles = JSON.parse(parte.pd_detalles)
+      } else {
+        detalles = parte.pd_detalles
+      }
+
+      return detalles?.detalle_deleteable === true
+    } catch {
+      return false
+    }
   }
 
   const opcionesInsumos = insumosExistentes.map((insumo) => ({
@@ -735,13 +809,47 @@ export default function EditarReparacionAlambradosDrawer({
           )}
         </div>
 
-        <div className="border-t p-4 flex justify-end gap-3">
-          <Button variant="outline" onClick={handleClose} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
-            {saving ? "Guardando..." : "Actualizar Actividad"}
-          </Button>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+              <p className="text-gray-600 mb-6">
+                ¿Está seguro que desea eliminar esta reparación de alambrados? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={eliminarActividad} disabled={deleting}>
+                  {deleting ? "Eliminando..." : "Eliminar"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="border-t p-4 flex justify-between">
+          {puedeEliminar() ? (
+            <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} disabled={saving || deleting}>
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </Button>
+          ) : (
+            <div className="flex flex-col">
+              <Button variant="outline" disabled className="text-gray-400 cursor-not-allowed bg-transparent">
+                Eliminar
+              </Button>
+              <span className="text-xs text-gray-500 mt-1">Esta actividad no puede ser eliminada</span>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleClose} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmit} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+              {saving ? "Guardando..." : "Actualizar Actividad"}
+            </Button>
+          </div>
         </div>
       </DrawerContent>
     </Drawer>

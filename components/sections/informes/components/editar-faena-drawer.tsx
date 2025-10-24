@@ -68,6 +68,8 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
   const [tipoActividadNombre, setTipoActividadNombre] = useState<string>("")
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   // Estados de opciones
   const [lotes, setLotes] = useState<Lote[]>([])
@@ -655,25 +657,78 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
     }
   }
 
+  const eliminarActividad = async () => {
+    if (!parte?.pd_id || !usuario?.id) {
+      toast({
+        title: "❌ Error",
+        description: "No se pudo identificar la actividad o el usuario",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/actividades-animales/${parte.pd_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_user_id: usuario.id,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Error al eliminar faena")
+      }
+
+      toast({
+        title: "✅ Faena Eliminada",
+        description: "La faena ha sido eliminada correctamente",
+        duration: 4000,
+      })
+
+      // Disparar evento para recargar partes diarios
+      window.dispatchEvent(new Event("reloadPartesDiarios"))
+
+      handleClose()
+      onSuccess?.()
+    } catch (error) {
+      console.error("Error deleting faena:", error)
+      toast({
+        title: "❌ Error",
+        description: error instanceof Error ? error.message : "Error al eliminar faena",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
   const handleClose = () => {
     onClose?.()
   }
 
-  // Opciones para los combobox
-  const opcionesLotes = lotes.map((lote) => ({
-    value: lote.id.toString(),
-    label: lote.nombre,
-  }))
+  const puedeEliminar = () => {
+    if (!parte) return false
 
-  const opcionesCategorias = categoriasExistentes.map((cat) => ({
-    value: cat.categoria_animal_id.toString(),
-    label: cat.nombre_categoria_animal,
-  }))
+    try {
+      let detalles
+      if (typeof parte.pd_detalles === "string") {
+        detalles = JSON.parse(parte.pd_detalles)
+      } else {
+        detalles = parte.pd_detalles
+      }
 
-  const opcionesTiposMovimiento = tiposMovimiento.map((tipo) => ({
-    value: tipo.id.toString(),
-    label: tipo.nombre,
-  }))
+      // Check if detalle_deleteable is true
+      return detalles?.detalle_deleteable === true
+    } catch {
+      return false
+    }
+  }
 
   if (!parte || parte.pd_tipo !== "ACTIVIDAD") return null
 
@@ -746,7 +801,10 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
                         <Label className="text-sm font-medium text-gray-700">Tipo de Movimiento *</Label>
                         <div className="mt-1">
                           <CustomCombobox
-                            options={opcionesTiposMovimiento}
+                            options={tiposMovimiento.map((tipo) => ({
+                              value: tipo.id.toString(),
+                              label: tipo.nombre,
+                            }))}
                             value={tipoMovimiento}
                             onValueChange={setTipoMovimiento}
                             placeholder="Selecciona tipo de movimiento..."
@@ -809,7 +867,10 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
                             <Label className="text-sm font-medium text-gray-700">Lote *</Label>
                             <div className="mt-1">
                               <CustomCombobox
-                                options={opcionesLotes}
+                                options={lotes.map((lote) => ({
+                                  value: lote.id.toString(),
+                                  label: lote.nombre,
+                                }))}
                                 value={loteId}
                                 onValueChange={setLoteId}
                                 placeholder="Selecciona lote..."
@@ -830,7 +891,10 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
                             </Label>
                             <div className="mt-1">
                               <CustomCombobox
-                                options={opcionesCategorias}
+                                options={categoriasExistentes.map((cat) => ({
+                                  value: cat.categoria_animal_id.toString(),
+                                  label: cat.nombre_categoria_animal,
+                                }))}
                                 value={categoriaId}
                                 onValueChange={setCategoriaId}
                                 placeholder={loteId ? "Selecciona categoría..." : "Primero selecciona un lote"}
@@ -977,13 +1041,52 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
           )}
         </div>
 
-        <div className="border-t p-4 flex justify-end gap-3">
-          <Button variant="outline" onClick={handleClose} disabled={loading}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={loading || loadingData} className="bg-green-600 hover:bg-green-700">
-            {loading ? "Actualizando..." : "Actualizar Faena"}
-          </Button>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+              <p className="text-gray-600 mb-6">
+                ¿Está seguro que desea eliminar esta faena? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={eliminarActividad} disabled={deleting}>
+                  {deleting ? "Eliminando..." : "Eliminar"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="border-t p-4 flex justify-between">
+          {/* Botón Eliminar en el lado izquierdo */}
+          {puedeEliminar() ? (
+            <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} disabled={loading || deleting}>
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </Button>
+          ) : (
+            <div className="flex flex-col">
+              <Button variant="outline" disabled className="text-gray-400 cursor-not-allowed bg-transparent">
+                Eliminar
+              </Button>
+              <span className="text-xs text-gray-500 mt-1">Esta actividad no puede ser eliminada</span>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleClose} disabled={loading}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={loading || loadingData}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {loading ? "Actualizando..." : "Actualizar Faena"}
+            </Button>
+          </div>
         </div>
       </DrawerContent>
     </Drawer>

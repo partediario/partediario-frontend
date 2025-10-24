@@ -12,6 +12,7 @@ import { toast } from "@/components/ui/use-toast"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
 import { CustomTimePicker } from "@/components/ui/custom-time-picker"
+import { useUser } from "@/contexts/user-context"
 import type { ParteDiario } from "@/lib/types"
 
 interface EditarCaneriasBebederosDrawerProps {
@@ -89,9 +90,13 @@ export default function EditarCaneriasBebederosDrawer({
   const [loading, setLoading] = useState(false)
   const [loadingPotreros, setLoadingPotreros] = useState(false)
   const [loadingInsumos, setLoadingInsumos] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [errores, setErrores] = useState<string[]>([])
   const [erroresDetallePotreros, setErroresDetallePotreros] = useState<string[]>([])
   const [erroresDetalleInsumos, setErroresDetalleInsumos] = useState<string[]>([])
+
+  const { usuario } = useUser()
 
   useEffect(() => {
     if (isOpen && parte) {
@@ -112,9 +117,11 @@ export default function EditarCaneriasBebederosDrawer({
 
     // Cargar detalles existentes
     try {
-      let detalles = parte.pd_detalles
-      if (typeof detalles === "string") {
-        detalles = JSON.parse(detalles)
+      let detalles
+      if (typeof parte.pd_detalles === "string") {
+        detalles = JSON.parse(parte.pd_detalles)
+      } else {
+        detalles = parte.pd_detalles
       }
 
       const potrerosConObservaciones = (detalles?.detalles_potreros || []).map((potrero: any) => ({
@@ -470,7 +477,7 @@ export default function EditarCaneriasBebederosDrawer({
 
       console.log("[v0] Enviando payload:", payload)
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/canerias-bebederos/${parte?.pd_id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/actividades-mixtas/${parte?.pd_id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -528,6 +535,56 @@ export default function EditarCaneriasBebederosDrawer({
     }
   }
 
+  const eliminarActividad = async () => {
+    if (!parte?.pd_id || !usuario?.id) {
+      toast({
+        title: "❌ Error",
+        description: "No se pudo identificar la actividad o el usuario",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/actividades-mixtas/${parte.pd_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_user_id: usuario.id,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Error al eliminar cañerías y bebederos")
+      }
+
+      toast({
+        title: "✅ Cañerías y Bebederos Eliminada",
+        description: "La actividad ha sido eliminada correctamente",
+        duration: 4000,
+      })
+
+      window.dispatchEvent(new Event("reloadPartesDiarios"))
+
+      handleClose()
+      onSuccess?.()
+    } catch (error) {
+      console.error("Error deleting cañerías y bebederos:", error)
+      toast({
+        title: "❌ Error",
+        description: error instanceof Error ? error.message : "Error al eliminar cañerías y bebederos",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
   const handleClose = () => {
     onClose()
     // Reset form
@@ -552,6 +609,23 @@ export default function EditarCaneriasBebederosDrawer({
       return parte.pd_usuario
     }
     return "Usuario desconocido"
+  }
+
+  const puedeEliminar = () => {
+    if (!parte) return false
+
+    try {
+      let detalles
+      if (typeof parte.pd_detalles === "string") {
+        detalles = JSON.parse(parte.pd_detalles)
+      } else {
+        detalles = parte.pd_detalles
+      }
+
+      return detalles?.detalle_deleteable === true
+    } catch {
+      return false
+    }
   }
 
   // Filtrar potreros que ya están agregados
@@ -935,7 +1009,7 @@ export default function EditarCaneriasBebederosDrawer({
                     </div>
                   )}
 
-                  {/* Tabla de detalles insumos */}
+                  {/*Tabla de detalles insumos */}
                   <div className="border rounded-lg overflow-hidden">
                     <div className="bg-gray-50 border-b">
                       <div className="grid grid-cols-10 gap-4 p-4 text-sm font-medium text-gray-700">
@@ -1001,14 +1075,49 @@ export default function EditarCaneriasBebederosDrawer({
           </div>
         </div>
 
+        {/* Diálogo de confirmación de eliminación */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+              <p className="text-gray-600 mb-6">
+                ¿Está seguro que desea eliminar esta cañerías y bebederos? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={eliminarActividad} disabled={deleting}>
+                  {deleting ? "Eliminando..." : "Eliminar"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
-        <div className="border-t p-4 flex justify-end gap-3">
-          <Button variant="outline" onClick={handleClose} disabled={loading}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={loading} className="bg-green-600 hover:bg-green-700">
-            {loading ? "Actualizando..." : "Actualizar Actividad"}
-          </Button>
+        <div className="border-t p-4 flex justify-between">
+          {puedeEliminar() ? (
+            <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} disabled={loading || deleting}>
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </Button>
+          ) : (
+            <div className="flex flex-col">
+              <Button variant="outline" disabled className="text-gray-400 cursor-not-allowed bg-transparent">
+                Eliminar
+              </Button>
+              <span className="text-xs text-gray-500 mt-1">Esta actividad no puede ser eliminada</span>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleClose} disabled={loading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmit} disabled={loading} className="bg-green-600 hover:bg-green-700">
+              {loading ? "Actualizando..." : "Actualizar Actividad"}
+            </Button>
+          </div>
         </div>
       </DrawerContent>
     </Drawer>

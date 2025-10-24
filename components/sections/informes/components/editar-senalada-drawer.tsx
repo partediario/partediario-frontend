@@ -411,6 +411,24 @@ export default function EditarSenaladaDrawer({ isOpen, onClose, parte, onSuccess
     })
     .filter(Boolean)
 
+  const puedeEliminar = () => {
+    if (!parte) return false
+
+    try {
+      let detalles
+      if (typeof parte.pd_detalles === "string") {
+        detalles = JSON.parse(parte.pd_detalles)
+      } else {
+        detalles = parte.pd_detalles
+      }
+
+      // Check if detalle_deleteable is true
+      return detalles?.detalle_deleteable === true
+    } catch {
+      return false
+    }
+  }
+
   if (!parte || parte.pd_tipo !== "ACTIVIDAD") return null
 
   return (
@@ -686,9 +704,18 @@ export default function EditarSenaladaDrawer({ isOpen, onClose, parte, onSuccess
 
         <div className="border-t p-4 flex justify-between">
           {/* Botón Eliminar en el lado izquierdo */}
-          <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} disabled={loading || deleting}>
-            Eliminar
-          </Button>
+          {puedeEliminar() ? (
+            <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} disabled={loading || deleting}>
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </Button>
+          ) : (
+            <div className="flex flex-col">
+              <Button variant="outline" disabled className="text-gray-400 cursor-not-allowed bg-transparent">
+                Eliminar
+              </Button>
+              <span className="text-xs text-gray-500 mt-1">Esta actividad no puede ser eliminada</span>
+            </div>
+          )}
 
           <div className="flex gap-3">
             <Button variant="outline" onClick={handleClose} disabled={loading}>

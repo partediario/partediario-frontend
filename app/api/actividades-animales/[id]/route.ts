@@ -167,3 +167,62 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
+
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const { id } = params
+    const body = await request.json()
+    const { deleted, deleted_at, deleted_user_id } = body
+
+    console.log("🗑️ Soft delete para faena ID:", id)
+    console.log("📝 Datos recibidos:", { deleted, deleted_at, deleted_user_id })
+
+    // Validar datos requeridos
+    if (typeof deleted !== "boolean" || !deleted_at || !deleted_user_id) {
+      return NextResponse.json(
+        { error: "Faltan datos requeridos: deleted, deleted_at y deleted_user_id son obligatorios" },
+        { status: 400 },
+      )
+    }
+
+    // Verificar que la actividad existe
+    const { data: actividadExistente, error: verificarError } = await supabase
+      .from("pd_actividades")
+      .select("id")
+      .eq("id", id)
+      .single()
+
+    if (verificarError || !actividadExistente) {
+      console.error("❌ Actividad no encontrada:", verificarError)
+      return NextResponse.json({ error: "Actividad no encontrada" }, { status: 404 })
+    }
+
+    // Actualizar con soft delete
+    const { data, error } = await supabase
+      .from("pd_actividades")
+      .update({
+        deleted,
+        deleted_at,
+        deleted_user_id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error("❌ Error en soft delete:", error)
+      return NextResponse.json({ error: "Error al eliminar", details: error.message }, { status: 500 })
+    }
+
+    console.log("✅ Faena eliminada exitosamente")
+
+    return NextResponse.json({
+      message: "Actividad eliminada exitosamente",
+      data,
+    })
+  } catch (error) {
+    console.error("❌ Error en PATCH actividades-animales:", error)
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+  }
+}
