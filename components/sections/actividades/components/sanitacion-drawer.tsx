@@ -10,7 +10,7 @@ import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
 import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
-import { Plus, Trash2, Edit, Users, Syringe, AlertCircle, X } from "lucide-react"
+import { Plus, Trash2, Edit, Users, Syringe, AlertCircle, X, Check, Search, ChevronDown, Package } from "lucide-react"
 import { useCurrentEstablishment } from "@/hooks/use-current-establishment"
 import { useUser } from "@/contexts/user-context"
 import { useEstablishment } from "@/contexts/establishment-context"
@@ -74,6 +74,10 @@ export default function SanitacionDrawer({
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("animales")
 
+  const [lotesSeleccionados, setLotesSeleccionados] = useState<number[]>([])
+  const [mostrarSelectorLotes, setMostrarSelectorLotes] = useState(false)
+  const [busquedaLotes, setBusquedaLotes] = useState<string>("")
+
   // Datos para animales
   const [lotes, setLotes] = useState<Lote[]>([])
   const [categoriasExistentes, setCategorias] = useState<CategoriaExistente[]>([])
@@ -82,6 +86,9 @@ export default function SanitacionDrawer({
   // Datos para insumos (vacunas - clase_insumo_id = 2)
   const [insumosExistentes, setInsumosExistentes] = useState<InsumoExistente[]>([])
   const [loadingInsumos, setLoadingInsumos] = useState(false)
+
+  const [insumosGenerales, setInsumosGenerales] = useState<InsumoExistente[]>([])
+  const [loadingInsumosGenerales, setLoadingInsumosGenerales] = useState(false)
 
   // Formulario principal
   const [fecha, setFecha] = useState<Date>(new Date())
@@ -95,13 +102,23 @@ export default function SanitacionDrawer({
   const [categoriaId, setCategoriaId] = useState<string>("")
   const [cantidadAnimales, setCantidadAnimales] = useState<string>("")
 
-  // Formulario de detalle insumos
+  // Formulario de detalle insumos (vacunas)
   const [mostrarFormDetalleInsumos, setMostrarFormDetalleInsumos] = useState(false)
   const [editandoDetalleInsumos, setEditandoDetalleInsumos] = useState<number | null>(null)
   const [insumoId, setInsumoId] = useState<string>("")
   const [cantidadInsumos, setCantidadInsumos] = useState<string>("")
   const [unidadMedidaActual, setUnidadMedidaActual] = useState<string>("")
   const [stockDisponible, setStockDisponible] = useState<number>(0)
+
+  // Formulario de detalle insumos generales
+  const [detallesInsumosGenerales, setDetallesInsumosGenerales] = useState<DetalleInsumo[]>([])
+  const [mostrarFormDetalleInsumosGenerales, setMostrarFormDetalleInsumosGenerales] = useState(false)
+  const [editandoDetalleInsumosGenerales, setEditandoDetalleInsumosGenerales] = useState<number | null>(null)
+  const [insumoGeneralId, setInsumoGeneralId] = useState<string>("")
+  const [cantidadInsumosGenerales, setCantidadInsumosGenerales] = useState<string>("")
+  const [unidadMedidaActualGenerales, setUnidadMedidaActualGenerales] = useState<string>("")
+  const [stockDisponibleGenerales, setStockDisponibleGenerales] = useState<number>(0)
+  const [erroresDetalleInsumosGenerales, setErroresDetalleInsumosGenerales] = useState<string[]>([])
 
   // Detalles agregados
   const [detallesAnimales, setDetallesAnimales] = useState<DetalleActividad[]>([])
@@ -124,6 +141,7 @@ export default function SanitacionDrawer({
     if (isOpen && establecimientoSeleccionado && empresaSeleccionada) {
       fetchLotes()
       fetchInsumosExistentes()
+      fetchInsumosGenerales()
     }
   }, [isOpen, establecimientoSeleccionado, empresaSeleccionada])
 
@@ -133,10 +151,13 @@ export default function SanitacionDrawer({
       setFecha(new Date())
       setHora(new Date().toTimeString().slice(0, 5))
       setNota("")
+      setLotesSeleccionados([])
       setDetallesAnimales([])
       setDetallesInsumos([])
+      setDetallesInsumosGenerales([])
       limpiarFormularioDetalleAnimales()
       limpiarFormularioDetalleInsumos()
+      limpiarFormularioDetalleInsumosGenerales()
       setErrores([])
       setActiveTab("animales")
     }
@@ -165,6 +186,19 @@ export default function SanitacionDrawer({
       setStockDisponible(0)
     }
   }, [insumoId, insumosExistentes])
+
+  useEffect(() => {
+    if (insumoGeneralId) {
+      const insumoSeleccionado = insumosGenerales.find((i) => i.insumo_id === insumoGeneralId)
+      if (insumoSeleccionado) {
+        setUnidadMedidaActualGenerales(insumoSeleccionado.unidad_medida)
+        setStockDisponibleGenerales(insumoSeleccionado.cantidad_disponible)
+      }
+    } else {
+      setUnidadMedidaActualGenerales("")
+      setStockDisponibleGenerales(0)
+    }
+  }, [insumoGeneralId, insumosGenerales])
 
   const fetchLotes = async () => {
     if (!establecimientoSeleccionado) return
@@ -231,14 +265,40 @@ export default function SanitacionDrawer({
     }
   }
 
+  const fetchInsumosGenerales = async () => {
+    if (!establecimientoSeleccionado) return
+
+    setLoadingInsumosGenerales(true)
+    try {
+      const response = await fetch(`/api/insumos-existentes?establecimiento_id=${establecimientoSeleccionado}`)
+      if (!response.ok) throw new Error("Error al cargar insumos")
+
+      const data = await response.json()
+      setInsumosGenerales(data.insumos || [])
+    } catch (error) {
+      console.error("Error fetching insumos generales:", error)
+      toast({
+        title: "❌ Error",
+        description: "Error al cargar insumos disponibles",
+        variant: "destructive",
+      })
+    } finally {
+      setLoadingInsumosGenerales(false)
+    }
+  }
+
   const validarFormularioPrincipal = (): string[] => {
     const errores: string[] = []
 
     if (!actividadSeleccionada) errores.push("Debe seleccionar un tipo de actividad")
     if (!fecha) errores.push("La fecha es requerida")
     if (!hora) errores.push("La hora es requerida")
-    if (detallesAnimales.length === 0) {
-      errores.push("Debe agregar al menos un detalle de animales")
+    if (detallesAnimales.length === 0 && detallesInsumos.length === 0 && detallesInsumosGenerales.length === 0) {
+      errores.push("Debe agregar al menos un detalle de animales o insumos")
+    }
+    // Added validation for selected lotes
+    if (lotesSeleccionados.length === 0) {
+      errores.push("Debe seleccionar al menos un lote")
     }
 
     return errores
@@ -277,6 +337,33 @@ export default function SanitacionDrawer({
         )
       } else {
         errores.push(`La cantidad no puede ser mayor al stock disponible (${stockDisponible})`)
+      }
+    }
+
+    return errores
+  }
+
+  const validarDetalleInsumosGenerales = (): string[] => {
+    const errores: string[] = []
+
+    if (!insumoGeneralId) errores.push("Debe seleccionar un insumo")
+    if (!cantidadInsumosGenerales || Number.parseInt(cantidadInsumosGenerales) <= 0)
+      errores.push("La cantidad debe ser mayor a 0")
+
+    const cantidadYaUsada = detallesInsumosGenerales
+      .filter((d, index) => d.insumo_id.toString() === insumoGeneralId && index !== editandoDetalleInsumosGenerales)
+      .reduce((sum, d) => sum + d.cantidad, 0)
+
+    const stockDisponibleReal = stockDisponibleGenerales - cantidadYaUsada
+    const cantidadNumerica = Number.parseInt(cantidadInsumosGenerales) || 0
+
+    if (cantidadNumerica > stockDisponibleReal) {
+      if (cantidadYaUsada > 0) {
+        errores.push(
+          `La cantidad no puede ser mayor a ${stockDisponibleReal} (ya se usaron ${cantidadYaUsada} de ${stockDisponibleGenerales} disponibles)`,
+        )
+      } else {
+        errores.push(`La cantidad no puede ser mayor al stock disponible (${stockDisponibleGenerales})`)
       }
     }
 
@@ -346,6 +433,36 @@ export default function SanitacionDrawer({
     limpiarFormularioDetalleInsumos()
   }
 
+  const agregarDetalleInsumosGenerales = () => {
+    const erroresValidacion = validarDetalleInsumosGenerales()
+    if (erroresValidacion.length > 0) {
+      setErroresDetalleInsumosGenerales(erroresValidacion)
+      return
+    }
+
+    const insumoSeleccionado = insumosGenerales.find((i) => i.insumo_id === insumoGeneralId)
+    if (!insumoSeleccionado) return
+
+    const nuevoDetalle: DetalleInsumo = {
+      insumo_id: Number.parseInt(insumoGeneralId),
+      insumo_nombre: insumoSeleccionado.nombre_insumo,
+      cantidad: Number.parseInt(cantidadInsumosGenerales),
+      unidad_medida: insumoSeleccionado.unidad_medida,
+      cantidad_disponible: insumoSeleccionado.cantidad_disponible,
+    }
+
+    if (editandoDetalleInsumosGenerales !== null) {
+      const nuevosDetalles = [...detallesInsumosGenerales]
+      nuevosDetalles[editandoDetalleInsumosGenerales] = nuevoDetalle
+      setDetallesInsumosGenerales(nuevosDetalles)
+      setEditandoDetalleInsumosGenerales(null)
+    } else {
+      setDetallesInsumosGenerales([...detallesInsumosGenerales, nuevoDetalle])
+    }
+
+    limpiarFormularioDetalleInsumosGenerales()
+  }
+
   const editarDetalleAnimales = (index: number) => {
     const detalle = detallesAnimales[index]
     setLoteId(detalle.lote_id.toString())
@@ -367,12 +484,26 @@ export default function SanitacionDrawer({
     setActiveTab("insumos")
   }
 
+  const editarDetalleInsumosGenerales = (index: number) => {
+    const detalle = detallesInsumosGenerales[index]
+    setInsumoGeneralId(detalle.insumo_id.toString())
+    setCantidadInsumosGenerales(detalle.cantidad.toString())
+    setEditandoDetalleInsumosGenerales(index)
+    setMostrarFormDetalleInsumosGenerales(true)
+    setErroresDetalleInsumosGenerales([])
+    setActiveTab("insumos-generales")
+  }
+
   const eliminarDetalleAnimales = (index: number) => {
     setDetallesAnimales(detallesAnimales.filter((_, i) => i !== index))
   }
 
   const eliminarDetalleInsumos = (index: number) => {
     setDetallesInsumos(detallesInsumos.filter((_, i) => i !== index))
+  }
+
+  const eliminarDetalleInsumosGenerales = (index: number) => {
+    setDetallesInsumosGenerales(detallesInsumosGenerales.filter((_, i) => i !== index))
   }
 
   const limpiarFormularioDetalleAnimales = () => {
@@ -394,6 +525,28 @@ export default function SanitacionDrawer({
     setErroresDetalleInsumos([])
   }
 
+  const limpiarFormularioDetalleInsumosGenerales = () => {
+    setInsumoGeneralId("")
+    setCantidadInsumosGenerales("")
+    setUnidadMedidaActualGenerales("")
+    setStockDisponibleGenerales(0)
+    setMostrarFormDetalleInsumosGenerales(false)
+    setEditandoDetalleInsumosGenerales(null)
+    setErroresDetalleInsumosGenerales([])
+  }
+
+  const toggleLoteSeleccion = (loteId: number) => {
+    setLotesSeleccionados((prev) => (prev.includes(loteId) ? prev.filter((id) => id !== loteId) : [...prev, loteId]))
+  }
+
+  const limpiarSeleccionLotes = () => {
+    setLotesSeleccionados([])
+  }
+
+  const cerrarSelectorLotes = () => {
+    setMostrarSelectorLotes(false)
+  }
+
   const handleSubmit = async () => {
     const erroresValidacion = validarFormularioPrincipal()
     if (erroresValidacion.length > 0) {
@@ -403,6 +556,8 @@ export default function SanitacionDrawer({
 
     setLoading(true)
     try {
+      const todosLosInsumos = [...detallesInsumos, ...detallesInsumosGenerales]
+
       const response = await fetch("/api/actividades-mixtas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -413,12 +568,13 @@ export default function SanitacionDrawer({
           hora,
           nota: nota || null,
           user_id: usuario?.id,
+          lotes_seleccionados: lotesSeleccionados,
           detalles_animales: detallesAnimales.map((d) => ({
             categoria_animal_id: d.categoria_animal_id,
             cantidad: d.cantidad,
             lote_id: d.lote_id,
           })),
-          detalles_insumos: detallesInsumos.map((d) => ({
+          detalles_insumos: todosLosInsumos.map((d) => ({
             insumo_id: d.insumo_id,
             cantidad: d.cantidad,
           })),
@@ -433,10 +589,12 @@ export default function SanitacionDrawer({
       // Calcular totales
       const totalAnimales = detallesAnimales.reduce((sum, detalle) => sum + detalle.cantidad, 0)
       const totalVacunas = detallesInsumos.length
+      const totalInsumosGenerales = detallesInsumosGenerales.length
 
       toast({
         title: "✅ Sanitación Guardada",
-        description: `Se registraron ${totalAnimales} animales y ${totalVacunas} vacunas`,
+        // Update description to include general supplies and lotes count
+        description: `Se registraron ${totalAnimales} animales, ${totalVacunas} vacunas y ${totalInsumosGenerales} insumos en ${lotesSeleccionados.length} lotes`,
         duration: 4000,
       })
 
@@ -464,10 +622,13 @@ export default function SanitacionDrawer({
     setFecha(new Date())
     setHora(new Date().toTimeString().slice(0, 5))
     setNota("")
+    setLotesSeleccionados([])
     setDetallesAnimales([])
     setDetallesInsumos([])
+    setDetallesInsumosGenerales([])
     limpiarFormularioDetalleAnimales()
     limpiarFormularioDetalleInsumos()
+    limpiarFormularioDetalleInsumosGenerales()
     setErrores([])
     setActiveTab("animales")
   }
@@ -487,12 +648,29 @@ export default function SanitacionDrawer({
     label: insumo.nombre_insumo,
   }))
 
+  const opcionesInsumosGenerales = insumosGenerales.map((insumo) => ({
+    value: insumo.insumo_id,
+    label: insumo.nombre_insumo,
+  }))
+
   // Calcular stock disponible real para mostrar en insumos
   const cantidadYaUsadaEnFormularioInsumos = detallesInsumos
     .filter((d, index) => d.insumo_id.toString() === insumoId && index !== editandoDetalleInsumos)
     .reduce((sum, d) => sum + d.cantidad, 0)
 
   const stockDisponibleRealInsumos = stockDisponible - cantidadYaUsadaEnFormularioInsumos
+
+  const cantidadYaUsadaEnFormularioInsumosGenerales = detallesInsumosGenerales
+    .filter((d, index) => d.insumo_id.toString() === insumoGeneralId && index !== editandoDetalleInsumosGenerales)
+    .reduce((sum, d) => sum + d.cantidad, 0)
+
+  const stockDisponibleRealInsumosGenerales = stockDisponibleGenerales - cantidadYaUsadaEnFormularioInsumosGenerales
+
+  const lotesSeleccionadosNombres = lotes
+    .filter((lote) => lotesSeleccionados.includes(lote.id))
+    .map((lote) => lote.nombre)
+
+  const lotesFiltrados = lotes.filter((lote) => lote.nombre.toLowerCase().includes(busquedaLotes.toLowerCase()))
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
@@ -561,6 +739,102 @@ export default function SanitacionDrawer({
               </div>
             </div>
 
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Lotes</h3>
+                <Button
+                  onClick={() => setMostrarSelectorLotes(!mostrarSelectorLotes)}
+                  variant="outline"
+                  className="text-green-600 border-green-600 hover:bg-green-50 flex items-center gap-2"
+                >
+                  {mostrarSelectorLotes ? "Ocultar Selector" : "Seleccionar Lotes"}
+                  <ChevronDown className={`w-4 h-4 transition-transform ${mostrarSelectorLotes ? "rotate-180" : ""}`} />
+                </Button>
+              </div>
+
+              {/* Lotes seleccionados */}
+              {lotesSeleccionados.length > 0 && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="text-sm font-medium text-green-800 mb-2">
+                    Lotes seleccionados ({lotesSeleccionados.length}):
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {lotesSeleccionadosNombres.map((nombre, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
+                      >
+                        <Check className="w-3 h-3" />
+                        {nombre}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {mostrarSelectorLotes && (
+                <div className="bg-white border border-gray-200 rounded-lg shadow-lg mb-4">
+                  {/* Search bar */}
+                  <div className="p-4 border-b border-gray-200">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        type="text"
+                        placeholder="Buscar opciones..."
+                        value={busquedaLotes}
+                        onChange={(e) => setBusquedaLotes(e.target.value)}
+                        className="pl-10 pr-4 py-2 w-full border-gray-300 focus:border-green-500 focus:ring-green-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Options list */}
+                  <div className="max-h-60 overflow-y-auto">
+                    {lotesFiltrados.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        {busquedaLotes
+                          ? "No se encontraron lotes que coincidan con la búsqueda"
+                          : "No se encontraron lotes"}
+                      </div>
+                    ) : (
+                      <div className="py-2">
+                        {lotesFiltrados.map((lote) => (
+                          <label
+                            key={lote.id}
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={lotesSeleccionados.includes(lote.id)}
+                              onChange={() => toggleLoteSeleccion(lote.id)}
+                              className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                            />
+                            <span className="text-sm text-gray-900 flex-1">{lote.nombre}</span>
+                            {lotesSeleccionados.includes(lote.id) && <Check className="w-4 h-4 text-green-600" />}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="p-4 border-t border-gray-200 flex justify-between">
+                    <Button
+                      variant="ghost"
+                      onClick={limpiarSeleccionLotes}
+                      className="text-gray-600 hover:text-gray-800"
+                      disabled={lotesSeleccionados.length === 0}
+                    >
+                      Limpiar
+                    </Button>
+                    <Button onClick={cerrarSelectorLotes} className="bg-green-600 hover:bg-green-700 text-white">
+                      Cerrar
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Detalles con Tabs */}
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -568,7 +842,7 @@ export default function SanitacionDrawer({
               </div>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="animales" className="flex items-center gap-2">
                     <Users className="w-4 h-4" />
                     Animales ({detallesAnimales.length})
@@ -576,6 +850,10 @@ export default function SanitacionDrawer({
                   <TabsTrigger value="insumos" className="flex items-center gap-2">
                     <Syringe className="w-4 h-4" />
                     Vacunas ({detallesInsumos.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="insumos-generales" className="flex items-center gap-2">
+                    <Package className="w-4 h-4" />
+                    Insumos ({detallesInsumosGenerales.length})
                   </TabsTrigger>
                 </TabsList>
 
@@ -665,7 +943,7 @@ export default function SanitacionDrawer({
                     </div>
                   )}
 
-                  {/* Tabla de detalles animales */}
+                  {/*Tabla de detalles animales */}
                   <div className="border rounded-lg overflow-hidden">
                     <div className="bg-gray-50 border-b">
                       <div className="grid grid-cols-10 gap-3 px-4 py-3 text-sm font-medium text-gray-700">
@@ -802,7 +1080,7 @@ export default function SanitacionDrawer({
                     </div>
                   )}
 
-                  {/* Tabla de detalles insumos */}
+                  {/*Tabla de detalles insumos */}
                   <div className="border rounded-lg overflow-hidden">
                     <div className="bg-gray-50 border-b">
                       <div className="grid grid-cols-10 gap-3 px-4 py-3 text-sm font-medium text-gray-700">
@@ -839,6 +1117,143 @@ export default function SanitacionDrawer({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => eliminarDetalleInsumos(index)}
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="insumos-generales" className="space-y-4">
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => setMostrarFormDetalleInsumosGenerales(true)}
+                      disabled={!actividadSeleccionada}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Agregar línea
+                    </Button>
+                  </div>
+
+                  {/* Formulario de detalle insumos generales */}
+                  {mostrarFormDetalleInsumosGenerales && (
+                    <div className="bg-gray-50 border rounded-lg p-6">
+                      {/* Errores de detalle insumos generales */}
+                      {erroresDetalleInsumosGenerales.length > 0 && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
+                          <div className="flex items-center gap-2 text-red-800 font-medium mb-1">
+                            <AlertCircle className="w-4 h-4" />
+                            Errores encontrados:
+                          </div>
+                          <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
+                            {erroresDetalleInsumosGenerales.map((error, index) => (
+                              <li key={index}>{error}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <h4 className="font-medium mb-4">
+                        {editandoDetalleInsumosGenerales !== null ? "Editar Detalle Insumo" : "Nuevo Detalle Insumo"}
+                      </h4>
+
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Insumo *</Label>
+                            <CustomCombobox
+                              options={opcionesInsumosGenerales}
+                              value={insumoGeneralId}
+                              onValueChange={setInsumoGeneralId}
+                              placeholder="Selecciona insumo..."
+                              searchPlaceholder="Buscar insumo..."
+                              emptyMessage="No se encontraron insumos disponibles."
+                              loading={loadingInsumosGenerales}
+                            />
+                          </div>
+
+                          <div>
+                            <Label>
+                              Cantidad *{" "}
+                              {insumoGeneralId &&
+                                stockDisponibleRealInsumosGenerales >= 0 &&
+                                `(Disponible: ${stockDisponibleRealInsumosGenerales})`}
+                            </Label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                value={cantidadInsumosGenerales}
+                                onChange={(e) => setCantidadInsumosGenerales(e.target.value)}
+                                placeholder="Ej: 5"
+                                min="1"
+                                max={stockDisponibleRealInsumosGenerales}
+                                className="flex-1"
+                              />
+                              {unidadMedidaActualGenerales && (
+                                <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-2 rounded border min-w-[80px] text-center">
+                                  {unidadMedidaActualGenerales}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 mt-6">
+                        <Button onClick={agregarDetalleInsumosGenerales} className="bg-blue-600 hover:bg-blue-700">
+                          {editandoDetalleInsumosGenerales !== null ? "Actualizar" : "Agregar"}
+                        </Button>
+                        <Button variant="outline" onClick={limpiarFormularioDetalleInsumosGenerales}>
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/*Tabla de detalles insumos generales */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 border-b">
+                      <div className="grid grid-cols-10 gap-3 px-4 py-3 text-sm font-medium text-gray-700">
+                        <div className="col-span-4">Insumo</div>
+                        <div className="col-span-2">Cantidad</div>
+                        <div className="col-span-2">Unidad Medida</div>
+                        <div className="col-span-2 text-center">Acciones</div>
+                      </div>
+                    </div>
+
+                    <div className="min-h-[100px]">
+                      {detallesInsumosGenerales.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">No hay insumos agregados</div>
+                      ) : (
+                        <div className="divide-y">
+                          {detallesInsumosGenerales.map((detalle, index) => (
+                            <div
+                              key={index}
+                              className="grid grid-cols-10 gap-3 px-4 py-3 text-sm hover:bg-gray-50 items-center min-h-[48px]"
+                            >
+                              <div className="col-span-4 font-medium">{detalle.insumo_nombre}</div>
+                              <div className="col-span-2 font-medium">{detalle.cantidad}</div>
+                              <div className="col-span-2 text-gray-600">{detalle.unidad_medida}</div>
+                              <div className="col-span-2 flex justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => editarDetalleInsumosGenerales(index)}
+                                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => eliminarDetalleInsumosGenerales(index)}
                                   className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />

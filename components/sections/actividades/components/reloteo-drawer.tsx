@@ -226,13 +226,11 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
             ...lote,
             pd_detalles: lote.pd_detalles.map((detalle) => {
               if (detalle.categoria_animal_id === categoriaId) {
-                // Handle empty string or invalid input
                 if (value === "" || value === "0") {
                   return {
                     ...detalle,
                     cantidad_trasladar: 0,
-                    // Destildar automáticamente si la cantidad es 0
-                    seleccionada: false,
+                    // Don't uncheck when deleting quantity
                   }
                 }
 
@@ -246,8 +244,6 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
                 return {
                   ...detalle,
                   cantidad_trasladar: cantidadValida,
-                  // Destildar automáticamente si la cantidad es 0
-                  seleccionada: cantidadValida > 0 ? detalle.seleccionada : false,
                 }
               }
               return detalle
@@ -404,7 +400,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
                   onChange={(e) => {
                     handleCantidadChange(lote.lote_id, detalle.categoria_animal_id, e.target.value)
                   }}
-                  className="w-16 h-8 text-sm"
+                  className="w-16 h-8 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   disabled={!detalle.seleccionada}
                   placeholder="0"
                   onFocus={(e) => e.target.select()}
@@ -438,23 +434,36 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
     setLoading(true)
 
     try {
-      const movimientos = getResumenReloteo()
+      const todasLasCategorias = lotes.flatMap((lote) => lote.pd_detalles)
+      const categoriasSeleccionadas = todasLasCategorias.filter((detalle) => detalle.seleccionada)
 
-      if (movimientos.length === 0) {
+      if (categoriasSeleccionadas.length === 0) {
         toast({
           title: "Error",
           description: "Debe seleccionar al menos una categoría para relotear",
           variant: "destructive",
         })
+        setLoading(false)
         return
       }
 
-      // Validar que todas las categorías seleccionadas tengan lote destino
-      const categoriasSeleccionadas = lotes.flatMap((lote) =>
-        lote.pd_detalles.filter((detalle) => detalle.seleccionada && detalle.cantidad_trasladar > 0),
+      const categoriasConCantidadCero = categoriasSeleccionadas.filter(
+        (detalle) => !detalle.cantidad_trasladar || detalle.cantidad_trasladar === 0,
       )
 
-      const categoriasSinDestino = categoriasSeleccionadas.filter((detalle) => !detalle.lote_destino_id)
+      if (categoriasConCantidadCero.length > 0) {
+        toast({
+          title: "Error",
+          description: "Las categorías seleccionadas deben tener una cantidad válida mayor a 0",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      const categoriasConCantidadValida = categoriasSeleccionadas.filter((detalle) => detalle.cantidad_trasladar > 0)
+
+      const categoriasSinDestino = categoriasConCantidadValida.filter((detalle) => !detalle.lote_destino_id)
 
       if (categoriasSinDestino.length > 0) {
         toast({
@@ -462,8 +471,12 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
           description: "Todas las categorías seleccionadas deben tener un lote destino",
           variant: "destructive",
         })
+        setLoading(false)
         return
       }
+
+      // Now get the movements summary (should have valid data at this point)
+      const movimientos = getResumenReloteo()
 
       // Procesar movimientos por lote origen
       const movimientosPorLote = new Map<

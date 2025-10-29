@@ -1,7 +1,14 @@
 "use client"
 
+import {
+  Dialog,
+  DialogContent as DialogContentComponent,
+  DialogHeader as DialogHeaderComponent,
+  DialogFooter as DialogFooterComponent,
+  DialogTitle as DialogTitleComponent,
+  DialogDescription as DialogDescriptionComponent,
+} from "@/components/ui/dialog"
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,14 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { User, Mail, Lock, Shield, Loader2, Eye, EyeOff, Phone, KeyRound, AlertTriangle } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 
 interface Usuario {
   id: string
@@ -92,7 +91,6 @@ export function UsuarioDrawer({
     telefono: string
   } | null>(null)
 
-  // Cargar roles
   const fetchRoles = async () => {
     try {
       setLoadingRoles(true)
@@ -127,7 +125,6 @@ export function UsuarioDrawer({
     }
   }, [isOpen])
 
-  // Resetear formulario cuando cambia el usuario o modo
   useEffect(() => {
     if (mode === "edit" && usuario) {
       setFormData({
@@ -151,7 +148,6 @@ export function UsuarioDrawer({
       })
     }
 
-    // Resetear datos de contraseña
     setPasswordData({
       newPassword: "",
       confirmNewPassword: "",
@@ -180,7 +176,6 @@ export function UsuarioDrawer({
         return
       }
 
-      // Verificar que hay un establecimiento seleccionado
       if (!establecimientoSeleccionado) {
         toast({
           title: "Error",
@@ -192,7 +187,6 @@ export function UsuarioDrawer({
 
       await validarYCrearUsuario()
     } else {
-      // En modo edición, validar que se seleccione un rol (solo si no es owner)
       if (!usuario?.is_owner && !formData.rolId) {
         toast({
           title: "Error",
@@ -212,7 +206,6 @@ export function UsuarioDrawer({
 
       console.log("🔍 [VALIDAR] Validando usuario existente...")
 
-      // Paso 1: Validar si existe un usuario con el mismo email o teléfono
       const validacionResponse = await fetch("/api/validar-usuario-existente", {
         method: "POST",
         headers: {
@@ -298,7 +291,6 @@ export function UsuarioDrawer({
         return
       }
 
-      // Si no existe ningún usuario, proceder con la creación normal
       await crearNuevoUsuario()
     } catch (error) {
       console.error("Error validating user:", error)
@@ -410,7 +402,7 @@ export function UsuarioDrawer({
     } catch (error) {
       console.error("Error assigning user:", error)
       toast({
-        title: "Error",
+        title: "Error al asignar usuario",
         description: error instanceof Error ? error.message : "Error desconocido",
         variant: "destructive",
       })
@@ -431,7 +423,6 @@ export function UsuarioDrawer({
         apellidos: formData.apellidos.trim(),
       }
 
-      // Solo incluir rolId si el usuario NO es owner
       if (!usuario.is_owner) {
         updateData.rolId = formData.rolId
       }
@@ -460,7 +451,7 @@ export function UsuarioDrawer({
     } catch (error) {
       console.error("Error updating user:", error)
       toast({
-        title: "Error",
+        title: "Error al actualizar usuario",
         description: error instanceof Error ? error.message : "Error desconocido",
         variant: "destructive",
       })
@@ -472,10 +463,8 @@ export function UsuarioDrawer({
   const formatPhoneForDisplay = (phone: string) => {
     if (!phone) return "Sin teléfono"
 
-    // Limpiar el número de espacios, guiones y otros caracteres
     const cleanPhone = phone.replace(/[\s\-$$$$]/g, "")
 
-    // Si empieza con +595
     if (cleanPhone.startsWith("+595")) {
       const number = cleanPhone.substring(4)
       if (number.length >= 9) {
@@ -483,15 +472,13 @@ export function UsuarioDrawer({
       }
     }
 
-    // Si empieza con 595 sin el +
     if (cleanPhone.startsWith("595") && cleanPhone.length >= 12) {
       const number = cleanPhone.substring(3)
       return `+595 ${number.substring(0, 3)}-${number.substring(3, 6)}-${number.substring(6)}`
     }
 
-    // Si es un número local que empieza con 09
     if (cleanPhone.startsWith("09") && cleanPhone.length === 10) {
-      const number = cleanPhone.substring(1) // Quitar el 0
+      const number = cleanPhone.substring(1)
       return `+595 ${number.substring(0, 3)}-${number.substring(3, 6)}-${number.substring(6)}`
     }
 
@@ -569,7 +556,6 @@ export function UsuarioDrawer({
         description: `La contraseña para ${usuario.email} ha sido cambiada exitosamente`,
       })
 
-      // Resetear campos de contraseña
       setPasswordData({
         newPassword: "",
         confirmNewPassword: "",
@@ -586,7 +572,6 @@ export function UsuarioDrawer({
     }
   }
 
-  // Si no hay usuario en modo edición, no renderizar nada
   if (mode === "edit" && !usuario) {
     return null
   }
@@ -608,7 +593,6 @@ export function UsuarioDrawer({
           </SheetHeader>
 
           <form onSubmit={handleSubmit} className="space-y-6 mt-6">
-            {/* Datos Personales */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                 <User className="w-4 h-4" />
@@ -640,7 +624,6 @@ export function UsuarioDrawer({
               </div>
             </div>
 
-            {/* Información de Contacto */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                 <Mail className="w-4 h-4" />
@@ -684,7 +667,6 @@ export function UsuarioDrawer({
               </div>
             </div>
 
-            {/* Cambiar Contraseña (solo para editar) */}
             {mode === "edit" && usuario && (
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -772,7 +754,6 @@ export function UsuarioDrawer({
               </div>
             )}
 
-            {/* Contraseña (solo para crear) */}
             {mode === "create" && (
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -840,7 +821,6 @@ export function UsuarioDrawer({
               </div>
             )}
 
-            {/* Rol */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                 <Shield className={`w-4 h-4 ${usuario?.is_owner ? "text-amber-500" : "text-blue-500"}`} />
@@ -876,7 +856,6 @@ export function UsuarioDrawer({
               </div>
             </div>
 
-            {/* Botones */}
             <div className="flex gap-3 pt-4">
               <Button
                 type="submit"
@@ -901,16 +880,16 @@ export function UsuarioDrawer({
       </Sheet>
 
       <Dialog open={showEmailConfirmDialog} onOpenChange={setShowEmailConfirmDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <DialogContentComponent className="sm:max-w-md">
+          <DialogHeaderComponent>
+            <DialogTitleComponent className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-500" />
               Usuario Existente
-            </DialogTitle>
-            <DialogDescription>
+            </DialogTitleComponent>
+            <DialogDescriptionComponent>
               Se encontró un usuario existente con el email o teléfono proporcionado. ¿Desea asignarlo a esta empresa?
-            </DialogDescription>
-          </DialogHeader>
+            </DialogDescriptionComponent>
+          </DialogHeaderComponent>
 
           {usuarioExistente && (
             <div className="space-y-3 py-4">
@@ -937,7 +916,7 @@ export function UsuarioDrawer({
             </div>
           )}
 
-          <DialogFooter className="flex gap-2">
+          <DialogFooterComponent className="flex gap-2">
             <Button
               type="button"
               variant="outline"
@@ -952,8 +931,8 @@ export function UsuarioDrawer({
             <Button type="button" onClick={asignarUsuarioExistente} className="bg-green-700 hover:bg-green-800">
               Sí, agregar
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </DialogFooterComponent>
+        </DialogContentComponent>
       </Dialog>
     </>
   )

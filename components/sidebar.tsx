@@ -81,7 +81,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: FileText,
       label: "Reportes",
       key: "reportes",
-      visible: false,
+      visible: true,
       requiresAuth: true,
     },
     {

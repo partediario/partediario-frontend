@@ -234,7 +234,6 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
                   return {
                     ...detalle,
                     cantidad_recategorizar: 0,
-                    seleccionada: false,
                   }
                 }
 
@@ -247,7 +246,6 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
                 return {
                   ...detalle,
                   cantidad_recategorizar: cantidadValida,
-                  seleccionada: cantidadValida > 0 ? detalle.seleccionada : false,
                 }
               }
               return detalle
@@ -378,7 +376,7 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
                   onChange={(e) => {
                     handleCantidadChange(lote.lote_id, detalle.categoria_animal_id, e.target.value)
                   }}
-                  className="w-16 h-8 text-sm"
+                  className="w-16 h-8 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   disabled={!detalle.seleccionada}
                   placeholder="0"
                   onFocus={(e) => e.target.select()}
@@ -428,11 +426,9 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
       return
     }
 
-    const categoriasSeleccionadas = lotes.flatMap((lote) =>
-      lote.pd_detalles.filter((detalle) => detalle.seleccionada && detalle.cantidad_recategorizar > 0),
-    )
+    const categoriasConCheckbox = lotes.flatMap((lote) => lote.pd_detalles.filter((detalle) => detalle.seleccionada))
 
-    if (categoriasSeleccionadas.length === 0) {
+    if (categoriasConCheckbox.length === 0) {
       toast({
         title: "Error",
         description: "Debe seleccionar al menos una categoría para recategorizar",
@@ -440,6 +436,19 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
       })
       return
     }
+
+    const categoriasSinCantidad = categoriasConCheckbox.filter((detalle) => detalle.cantidad_recategorizar === 0)
+
+    if (categoriasSinCantidad.length > 0) {
+      toast({
+        title: "Error",
+        description: "Las categorías seleccionadas deben tener una cantidad válida mayor a 0",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const categoriasSeleccionadas = categoriasConCheckbox.filter((detalle) => detalle.cantidad_recategorizar > 0)
 
     const categoriasSinDestino = categoriasSeleccionadas.filter((detalle) => !detalle.categoria_destino_id)
 

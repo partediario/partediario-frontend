@@ -232,8 +232,7 @@ export default function TrasladoPotreroDrawer({
         return {
           ...detalle,
           cantidad_trasladar: cantidadValida,
-          // Destildar automáticamente si la cantidad es 0
-          seleccionada: cantidadValida > 0 ? detalle.seleccionada : false,
+          // Don't uncheck when deleting quantity
         }
       }
       return detalle
@@ -300,26 +299,36 @@ export default function TrasladoPotreroDrawer({
         return
       }
 
+      const categoriasConCantidadCero = loteInfo.pd_detalles.filter(
+        (detalle) => detalle.seleccionada && (!detalle.cantidad_trasladar || detalle.cantidad_trasladar === 0),
+      )
+
+      if (categoriasConCantidadCero.length > 0) {
+        toast({
+          title: "Error",
+          description: "Las categorías seleccionadas deben tener una cantidad válida mayor a 0",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      const categoriasSeleccionadas = loteInfo.pd_detalles.filter(
+        (detalle) => detalle.seleccionada && detalle.cantidad_trasladar > 0,
+      )
+
+      if (categoriasSeleccionadas.length === 0) {
+        toast({
+          title: "Error",
+          description: "Debe seleccionar al menos una categoría para trasladar",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
       const esParcial = esTraslladoParcial()
       const potreroDestinoData = potreros.find((p) => p.potrero_id.toString() === potreroDestino)
-
-      if (esParcial && !potreroDestinoData?.lote_id && !nombreLoteNuevo.trim()) {
-        toast({
-          title: "Error",
-          description: "Debe ingresar un nombre para el nuevo lote",
-          variant: "destructive",
-        })
-        return
-      }
-
-      if (esParcial && !potreroDestinoData?.lote_id && nombreLoteNuevo.trim().length < 3) {
-        toast({
-          title: "Error",
-          description: "El nombre del lote debe tener al menos 3 caracteres",
-          variant: "destructive",
-        })
-        return
-      }
 
       // Preparar movimientos para las APIs usando la estructura correcta de datos
       const movimientos = loteInfo?.pd_detalles
@@ -757,7 +766,7 @@ export default function TrasladoPotreroDrawer({
                                     }
                                   }}
                                   onFocus={(e) => e.target.select()}
-                                  className="w-16 h-8"
+                                  className="w-16 h-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   disabled={!detalle.seleccionada}
                                   placeholder="0"
                                 />
