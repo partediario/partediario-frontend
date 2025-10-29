@@ -68,21 +68,45 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     if (detallesInsumos && detallesInsumos.length > 0) {
       const insumosIds = detallesInsumos.map((d) => d.insumo_id)
 
-      const { data: insumosData, error: insumosDataError } = await supabase
-        .from("pd_insumos")
-        .select(`
-          id,
-          nombre,
-          pd_unidad_medida_insumos!pd_insumos_unidad_medida_uso_fkey(
+      try {
+        const { data: insumosData, error: insumosDataError } = await supabase
+          .from("pd_insumos")
+          .select(`
             id,
-            nombre
-          )
-        `)
-        .in("id", insumosIds)
+            nombre,
+            pd_unidad_medida_insumos!pd_insumos_unidad_medida_uso_fkey(
+              id,
+              nombre
+            )
+          `)
+          .in("id", insumosIds)
 
-      if (insumosDataError) {
-        console.error("❌ Error obteniendo información de insumos:", insumosDataError)
-        // Fallback: crear estructura básica
+        if (insumosDataError) {
+          // Silently handle error and use fallback
+          insumosConDetalles = detallesInsumos.map((detalle) => ({
+            ...detalle,
+            pd_insumos: {
+              id: detalle.insumo_id,
+              nombre: `Insumo ${detalle.insumo_id}`,
+              pd_unidad_medida_insumos: null,
+            },
+          }))
+        } else {
+          // Combinar los datos de insumos con los detalles
+          insumosConDetalles = detallesInsumos.map((detalle) => {
+            const insumoInfo = insumosData?.find((info) => info.id === detalle.insumo_id)
+            return {
+              ...detalle,
+              pd_insumos: insumoInfo || {
+                id: detalle.insumo_id,
+                nombre: `Insumo ${detalle.insumo_id}`,
+                pd_unidad_medida_insumos: null,
+              },
+            }
+          })
+        }
+      } catch (error) {
+        // Silently handle any query errors and use fallback
         insumosConDetalles = detallesInsumos.map((detalle) => ({
           ...detalle,
           pd_insumos: {
@@ -91,19 +115,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             pd_unidad_medida_insumos: null,
           },
         }))
-      } else {
-        // Combinar los datos de insumos con los detalles
-        insumosConDetalles = detallesInsumos.map((detalle) => {
-          const insumoInfo = insumosData?.find((info) => info.id === detalle.insumo_id)
-          return {
-            ...detalle,
-            pd_insumos: insumoInfo || {
-              id: detalle.insumo_id,
-              nombre: `Insumo ${detalle.insumo_id}`,
-              pd_unidad_medida_insumos: null,
-            },
-          }
-        })
       }
     }
 
