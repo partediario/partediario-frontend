@@ -5,23 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
 import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
-import { Plus, Trash2, Edit, Users, Syringe, AlertCircle, X } from "lucide-react"
+import { Plus, Trash2, Edit, Syringe, AlertCircle, X, Check, Search, ChevronDown } from "lucide-react"
 import { useCurrentEstablishment } from "@/hooks/use-current-establishment"
 import { useUser } from "@/contexts/user-context"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { toast } from "@/hooks/use-toast"
 import type { ParteDiario } from "@/lib/types"
-
-interface CategoriaExistente {
-  categoria_animal_id: number
-  nombre_categoria_animal: string
-  lote_id: number
-}
 
 interface Lote {
   id: number
@@ -34,14 +27,6 @@ interface InsumoExistente {
   cantidad_disponible: number
   unidad_medida: string
   unidad_medida_uso_id: number
-}
-
-interface DetalleActividad {
-  categoria_animal_id: number
-  categoria_nombre: string
-  cantidad: number
-  lote_id: number
-  lote_nombre: string
 }
 
 interface DetalleInsumo {
@@ -65,12 +50,12 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [activeTab, setActiveTab] = useState("animales")
 
-  // Datos para animales
   const [lotes, setLotes] = useState<Lote[]>([])
-  const [categoriasExistentes, setCategorias] = useState<CategoriaExistente[]>([])
-  const [loadingCategorias, setLoadingCategorias] = useState(false)
+  const [lotesSeleccionados, setLotesSeleccionados] = useState<number[]>([])
+  const [mostrarSelectorLotes, setMostrarSelectorLotes] = useState(false)
+  const [busquedaLotes, setBusquedaLotes] = useState<string>("")
+  const [loadingLotes, setLoadingLotes] = useState(false)
 
   // Datos para insumos (vacunas - clase_insumo_id = 2)
   const [insumosExistentes, setInsumosExistentes] = useState<InsumoExistente[]>([])
@@ -81,13 +66,6 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
   const [hora, setHora] = useState<string>(new Date().toTimeString().slice(0, 5))
   const [nota, setNota] = useState<string>("")
 
-  // Formulario de detalle animales
-  const [mostrarFormDetalleAnimales, setMostrarFormDetalleAnimales] = useState(false)
-  const [editandoDetalleAnimales, setEditandoDetalleAnimales] = useState<number | null>(null)
-  const [loteId, setLoteId] = useState<string>("")
-  const [categoriaId, setCategoriaId] = useState<string>("")
-  const [cantidadAnimales, setCantidadAnimales] = useState<string>("")
-
   // Formulario de detalle insumos
   const [mostrarFormDetalleInsumos, setMostrarFormDetalleInsumos] = useState(false)
   const [editandoDetalleInsumos, setEditandoDetalleInsumos] = useState<number | null>(null)
@@ -97,12 +75,10 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
   const [stockDisponible, setStockDisponible] = useState<number>(0)
 
   // Detalles agregados
-  const [detallesAnimales, setDetallesAnimales] = useState<DetalleActividad[]>([])
   const [detallesInsumos, setDetallesInsumos] = useState<DetalleInsumo[]>([])
 
   // Errores
   const [errores, setErrores] = useState<string[]>([])
-  const [erroresDetalleAnimales, setErroresDetalleAnimales] = useState<string[]>([])
   const [erroresDetalleInsumos, setErroresDetalleInsumos] = useState<string[]>([])
 
   const { currentEstablishment } = useCurrentEstablishment()
@@ -117,16 +93,6 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
       cargarDatosIniciales()
     }
   }, [isOpen, establecimientoSeleccionado, empresaSeleccionada, parte.pd_detalles?.detalle_id])
-
-  // Cargar categorías cuando se selecciona lote
-  useEffect(() => {
-    if (loteId) {
-      fetchCategoriasExistentes()
-    } else {
-      setCategorias([])
-      setCategoriaId("")
-    }
-  }, [loteId])
 
   // Actualizar unidad de medida y stock cuando cambia el insumo seleccionado
   useEffect(() => {
@@ -158,33 +124,25 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
       if (response.ok) {
         const actividadData = await response.json()
 
-        // Map animal details with lot names
-        const animales = (actividadData.pd_actividades_animales_detalle || []).map((animal: any) => ({
-          categoria_animal_id: animal.categoria_animal_id || 0,
-          categoria_nombre: animal.pd_categoria_animales?.nombre || "",
-          cantidad: animal.cantidad || 0,
-          lote_id: animal.lote_id || 0,
-          lote_nombre: animal.pd_lotes?.nombre || "",
-        }))
-        setDetallesAnimales(animales)
+        const loteIds = (actividadData.pd_actividades_animales_detalle || [])
+          .map((animal: any) => animal.lote_id)
+          .filter(Boolean)
+        const loteIdsUnicos = Array.from(new Set(loteIds))
+        setLotesSeleccionados(loteIdsUnicos)
 
         let insumosData = []
 
         if (parte.pd_detalles?.detalles_insumos && parte.pd_detalles.detalles_insumos.length > 0) {
-          // Usar datos de pd_detalles que ya incluyen unidad_medida
-          console.log("Usando unidades de medida desde pd_detalles:", parte.pd_detalles.detalles_insumos)
-
           insumosData = parte.pd_detalles.detalles_insumos.map((insumo: any) => ({
             insumo_id: insumo.insumo_id || 0,
             insumo_nombre: insumo.insumo || "",
             cantidad: insumo.cantidad || 0,
-            unidad_medida: insumo.unidad_medida || "", // Ya viene en pd_detalles
+            unidad_medida: insumo.unidad_medida || "",
             cantidad_disponible: 0,
             es_original: true,
             cantidad_original: insumo.cantidad || 0,
           }))
         } else {
-          // Fallback: usar datos de la API
           insumosData = (actividadData.pd_actividades_insumos_detalle || []).map((insumo: any) => ({
             insumo_id: insumo.insumo_id || 0,
             insumo_nombre: insumo.pd_insumos?.nombre || "",
@@ -199,30 +157,21 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
         setDetallesInsumos(insumosData)
 
         console.log("Datos cargados desde API:", {
-          animales: animales.length,
+          lotes: loteIdsUnicos.length,
           insumos: insumosData.length,
-          insumosOriginales: insumosData.filter((i) => i.es_original).length,
-          insumosConUnidades: insumosData.map((i) => ({
-            nombre: i.insumo_nombre,
-            unidad: i.unidad_medida,
-            esOriginal: i.es_original,
-          })),
         })
       } else {
-        const animales = (parte.pd_detalles?.detalles_animales || []).map((animal: any) => ({
-          categoria_animal_id: animal.categoria_animal_id || 0,
-          categoria_nombre: animal.categoria_animal || "",
-          cantidad: animal.cantidad || 0,
-          lote_id: animal.lote_id || 0,
-          lote_nombre: animal.lote_nombre || "",
-        }))
-        setDetallesAnimales(animales)
+        const loteIds = (parte.pd_detalles?.detalles_animales || [])
+          .map((animal: any) => animal.lote_id)
+          .filter(Boolean)
+        const loteIdsUnicos = Array.from(new Set(loteIds))
+        setLotesSeleccionados(loteIdsUnicos)
 
         const vacunas = (parte.pd_detalles?.detalles_insumos || []).map((insumo: any) => ({
           insumo_id: insumo.insumo_id || 0,
           insumo_nombre: insumo.insumo || "",
           cantidad: insumo.cantidad || 0,
-          unidad_medida: insumo.unidad_medida || "", // Usar directamente desde pd_detalles
+          unidad_medida: insumo.unidad_medida || "",
           cantidad_disponible: 0,
           es_original: true,
           cantidad_original: insumo.cantidad || 0,
@@ -230,13 +179,8 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
         setDetallesInsumos(vacunas)
 
         console.log("Datos cargados desde pd_detalles (fallback):", {
-          animales: animales.length,
+          lotes: loteIdsUnicos.length,
           insumos: vacunas.length,
-          insumosConUnidades: vacunas.map((i) => ({
-            nombre: i.insumo_nombre,
-            unidad: i.unidad_medida,
-            esOriginal: i.es_original,
-          })),
         })
       }
     } catch (error) {
@@ -254,6 +198,7 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
   const fetchLotes = async () => {
     if (!establecimientoSeleccionado) return
 
+    setLoadingLotes(true)
     try {
       const response = await fetch(`/api/lotes?establecimiento_id=${establecimientoSeleccionado}`)
       if (!response.ok) throw new Error("Error al cargar lotes")
@@ -267,28 +212,8 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
         description: "Error al cargar lotes",
         variant: "destructive",
       })
-    }
-  }
-
-  const fetchCategoriasExistentes = async () => {
-    if (!loteId) return
-
-    setLoadingCategorias(true)
-    try {
-      const response = await fetch(`/api/categorias-existentes-lote?lote_id=${loteId}`)
-      if (!response.ok) throw new Error("Error al cargar categorías")
-
-      const data = await response.json()
-      setCategorias(data.categorias || [])
-    } catch (error) {
-      console.error("Error fetching categorias:", error)
-      toast({
-        title: "❌ Error",
-        description: "Error al cargar categorías",
-        variant: "destructive",
-      })
     } finally {
-      setLoadingCategorias(false)
+      setLoadingLotes(false)
     }
   }
 
@@ -316,24 +241,23 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
     }
   }
 
+  const toggleLoteSeleccion = (loteId: number) => {
+    setLotesSeleccionados((prev) => (prev.includes(loteId) ? prev.filter((id) => id !== loteId) : [...prev, loteId]))
+  }
+
   const validarFormularioPrincipal = (): string[] => {
     const errores: string[] = []
 
     if (!fecha) errores.push("La fecha es requerida")
     if (!hora) errores.push("La hora es requerida")
-    if (detallesAnimales.length === 0) {
-      errores.push("Debe agregar al menos un detalle de animales")
+
+    const tieneLotesSeleccionados = lotesSeleccionados.length > 0
+    const tieneDetalles = detallesInsumos.length > 0
+    const tieneNota = nota.trim().length > 0
+
+    if (!tieneLotesSeleccionados && !tieneDetalles && !tieneNota) {
+      errores.push("Debe seleccionar lotes, agregar vacunas, o escribir una nota")
     }
-
-    return errores
-  }
-
-  const validarDetalleAnimales = (): string[] => {
-    const errores: string[] = []
-
-    if (!loteId) errores.push("Debe seleccionar un lote")
-    if (!categoriaId) errores.push("Debe seleccionar una categoría")
-    if (!cantidadAnimales || Number.parseInt(cantidadAnimales) <= 0) errores.push("La cantidad debe ser mayor a 0")
 
     return errores
   }
@@ -352,38 +276,6 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
     }
 
     return errores
-  }
-
-  const agregarDetalleAnimales = () => {
-    const erroresValidacion = validarDetalleAnimales()
-    if (erroresValidacion.length > 0) {
-      setErroresDetalleAnimales(erroresValidacion)
-      return
-    }
-
-    const loteSeleccionado = lotes.find((l) => l.id.toString() === loteId)
-    const categoriaSeleccionada = categoriasExistentes.find((c) => c.categoria_animal_id.toString() === categoriaId)
-
-    if (!loteSeleccionado || !categoriaSeleccionada) return
-
-    const nuevoDetalle: DetalleActividad = {
-      categoria_animal_id: Number.parseInt(categoriaId),
-      categoria_nombre: categoriaSeleccionada.nombre_categoria_animal,
-      cantidad: Number.parseInt(cantidadAnimales),
-      lote_id: Number.parseInt(loteId),
-      lote_nombre: loteSeleccionado.nombre,
-    }
-
-    if (editandoDetalleAnimales !== null) {
-      const nuevosDetalles = [...detallesAnimales]
-      nuevosDetalles[editandoDetalleAnimales] = nuevoDetalle
-      setDetallesAnimales(nuevosDetalles)
-      setEditandoDetalleAnimales(null)
-    } else {
-      setDetallesAnimales([...detallesAnimales, nuevoDetalle])
-    }
-
-    limpiarFormularioDetalleAnimales()
   }
 
   const agregarDetalleInsumos = () => {
@@ -418,17 +310,6 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
     limpiarFormularioDetalleInsumos()
   }
 
-  const editarDetalleAnimales = (index: number) => {
-    const detalle = detallesAnimales[index]
-    setLoteId(detalle.lote_id.toString())
-    setCategoriaId(detalle.categoria_animal_id.toString())
-    setCantidadAnimales(detalle.cantidad.toString())
-    setEditandoDetalleAnimales(index)
-    setMostrarFormDetalleAnimales(true)
-    setErroresDetalleAnimales([])
-    setActiveTab("animales")
-  }
-
   const editarDetalleInsumos = (index: number) => {
     const detalle = detallesInsumos[index]
     setInsumoId(detalle.insumo_id.toString())
@@ -436,24 +317,10 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
     setEditandoDetalleInsumos(index)
     setMostrarFormDetalleInsumos(true)
     setErroresDetalleInsumos([])
-    setActiveTab("insumos")
-  }
-
-  const eliminarDetalleAnimales = (index: number) => {
-    setDetallesAnimales(detallesAnimales.filter((_, i) => i !== index))
   }
 
   const eliminarDetalleInsumos = (index: number) => {
     setDetallesInsumos(detallesInsumos.filter((_, i) => i !== index))
-  }
-
-  const limpiarFormularioDetalleAnimales = () => {
-    setLoteId("")
-    setCategoriaId("")
-    setCantidadAnimales("")
-    setMostrarFormDetalleAnimales(false)
-    setEditandoDetalleAnimales(null)
-    setErroresDetalleAnimales([])
   }
 
   const limpiarFormularioDetalleInsumos = () => {
@@ -482,11 +349,7 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
           fecha: fecha.toISOString().split("T")[0],
           hora,
           nota: nota || null,
-          detalles_animales: detallesAnimales.map((d) => ({
-            categoria_animal_id: d.categoria_animal_id,
-            cantidad: d.cantidad,
-            lote_id: d.lote_id,
-          })),
+          lotes_seleccionados: lotesSeleccionados,
           detalles_insumos: detallesInsumos.map((d) => ({
             insumo_id: d.insumo_id,
             cantidad: d.cantidad,
@@ -499,17 +362,14 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
         throw new Error(errorData.error || "Error al actualizar sanitación")
       }
 
-      // Calcular totales
-      const totalAnimales = detallesAnimales.reduce((sum, detalle) => sum + detalle.cantidad, 0)
       const totalVacunas = detallesInsumos.length
 
       toast({
         title: "✅ Sanitación Actualizada",
-        description: `Se actualizaron ${totalAnimales} animales y ${totalVacunas} vacunas`,
+        description: `Se actualizaron ${lotesSeleccionados.length} lotes y ${totalVacunas} vacunas`,
         duration: 4000,
       })
 
-      // Disparar evento para recargar partes diarios
       console.log("Disparando evento reloadPartesDiarios después de actualizar sanitación")
       window.dispatchEvent(new Event("reloadPartesDiarios"))
 
@@ -533,12 +393,10 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
     setFecha(new Date())
     setHora(new Date().toTimeString().slice(0, 5))
     setNota("")
-    setDetallesAnimales([])
+    setLotesSeleccionados([])
     setDetallesInsumos([])
-    limpiarFormularioDetalleAnimales()
     limpiarFormularioDetalleInsumos()
     setErrores([])
-    setActiveTab("animales")
   }
 
   const eliminarActividad = async () => {
@@ -574,7 +432,6 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
         duration: 4000,
       })
 
-      // Disparar evento para recargar partes diarios
       window.dispatchEvent(new Event("reloadPartesDiarios"))
 
       handleClose()
@@ -603,22 +460,11 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
         detalles = parte.pd_detalles
       }
 
-      // Check if detalle_deleteable is true
       return detalles?.detalle_deleteable === true
     } catch {
       return false
     }
   }
-
-  const opcionesLotes = lotes.map((lote) => ({
-    value: lote.id.toString(),
-    label: lote.nombre,
-  }))
-
-  const opcionesCategorias = categoriasExistentes.map((cat) => ({
-    value: cat.categoria_animal_id.toString(),
-    label: cat.nombre_categoria_animal,
-  }))
 
   const opcionesInsumos = insumosExistentes.map((insumo) => ({
     value: insumo.insumo_id,
@@ -631,7 +477,6 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
 
     const stockBase = insumoSeleccionado.cantidad_disponible
 
-    // Si estamos editando una línea original, devolver stock base + cantidad original de esa línea
     if (indexEditando !== null && detallesInsumos[indexEditando]?.es_original) {
       const detalleEditado = detallesInsumos[indexEditando]
       if (detalleEditado.insumo_id.toString() === insumoIdSeleccionado) {
@@ -641,15 +486,12 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
       }
     }
 
-    // Para agregar nueva línea o editar línea nueva: calcular stock considerando uso actual
     const detallesOriginalesIniciales = parte.pd_detalles?.detalles_insumos || []
 
-    // Calcular cantidad total descontada originalmente para este insumo
     const cantidadDescontadaOriginalmente = detallesOriginalesIniciales
       .filter((detalle: any) => detalle.insumo_id?.toString() === insumoIdSeleccionado)
       .reduce((total: number, detalle: any) => total + (detalle.cantidad || 0), 0)
 
-    // Calcular cantidad original aún presente en detalles actuales
     const cantidadOriginalPresente = detallesInsumos
       .filter(
         (detalle, index) =>
@@ -657,10 +499,8 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
       )
       .reduce((total, detalle) => total + (detalle.cantidad_original || detalle.cantidad), 0)
 
-    // Calcular cantidad liberada (descontada originalmente - aún presente)
     const cantidadLiberada = cantidadDescontadaOriginalmente - cantidadOriginalPresente
 
-    // Calcular cantidad usada por líneas nuevas (no originales)
     const cantidadNuevosUsada = detallesInsumos
       .filter(
         (detalle, index) =>
@@ -668,13 +508,29 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
       )
       .reduce((total, detalle) => total + detalle.cantidad, 0)
 
-    // Stock disponible = stock base + cantidad liberada - cantidad usada por nuevos
     const stockDisponible = stockBase + cantidadLiberada - cantidadNuevosUsada
 
     return Math.max(0, stockDisponible)
   }
 
   const stockDisponibleRealInsumos = insumoId ? calcularStockDisponibleInsumos(insumoId, editandoDetalleInsumos) : 0
+
+  const lotesSeleccionadosNombres = (lotes: Lote[], lotesSeleccionados: number[]): string[] => {
+    return lotes.filter((lote) => lotesSeleccionados.includes(lote.id)).map((lote) => lote.nombre)
+  }
+
+  const lotesFiltrados = (lotes: Lote[], busquedaLotes: string): Lote[] => {
+    return lotes.filter((lote) => lote.nombre.toLowerCase().includes(busquedaLotes.toLowerCase()))
+  }
+
+  const limpiarSeleccionLotes = () => {
+    setLotesSeleccionados([])
+  }
+
+  const cerrarSelectorLotes = () => {
+    setMostrarSelectorLotes(false)
+    setBusquedaLotes("")
+  }
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
@@ -752,306 +608,266 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
                   </div>
                 </div>
 
-                {/* Detalles con Tabs */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Detalles *</h3>
+                    <h3 className="text-lg font-semibold">Lotes</h3>
+                    <Button
+                      onClick={() => setMostrarSelectorLotes(!mostrarSelectorLotes)}
+                      variant="outline"
+                      className="text-green-600 border-green-600 hover:bg-green-50 flex items-center gap-2"
+                    >
+                      {mostrarSelectorLotes ? "Ocultar Selector" : "Seleccionar Lotes"}
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform ${mostrarSelectorLotes ? "rotate-180" : ""}`}
+                      />
+                    </Button>
                   </div>
 
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="animales" className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        Animales ({detallesAnimales.length})
-                      </TabsTrigger>
-                      <TabsTrigger value="insumos" className="flex items-center gap-2">
-                        <Syringe className="w-4 h-4" />
-                        Vacunas ({detallesInsumos.length})
-                      </TabsTrigger>
-                    </TabsList>
+                  {/* Lotes seleccionados */}
+                  {lotesSeleccionados.length > 0 && (
+                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="text-sm font-medium text-green-800 mb-2">
+                        Lotes seleccionados ({lotesSeleccionados.length}):
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {lotesSeleccionadosNombres(lotes, lotesSeleccionados).map((nombre, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
+                          >
+                            <Check className="w-3 h-3" />
+                            {nombre}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                    <TabsContent value="animales" className="space-y-4">
-                      <div className="flex justify-end">
-                        <Button
-                          onClick={() => setMostrarFormDetalleAnimales(true)}
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Agregar línea
-                        </Button>
+                  {mostrarSelectorLotes && (
+                    <div className="bg-white border border-gray-200 rounded-lg shadow-lg mb-4">
+                      {/* Search bar */}
+                      <div className="p-4 border-b border-gray-200">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                          <Input
+                            type="text"
+                            placeholder="Buscar opciones..."
+                            value={busquedaLotes}
+                            onChange={(e) => setBusquedaLotes(e.target.value)}
+                            className="pl-10 pr-4 py-2 w-full border-gray-300 focus:border-green-500 focus:ring-green-500"
+                          />
+                        </div>
                       </div>
 
-                      {/* Formulario de detalle animales */}
-                      {mostrarFormDetalleAnimales && (
-                        <div className="bg-gray-50 border rounded-lg p-6">
-                          {/* Errores de detalle animales */}
-                          {erroresDetalleAnimales.length > 0 && (
-                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
-                              <div className="flex items-center gap-2 text-red-800 font-medium mb-1">
-                                <AlertCircle className="w-4 h-4" />
-                                Errores encontrados:
-                              </div>
-                              <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
-                                {erroresDetalleAnimales.map((error, index) => (
-                                  <li key={index}>{error}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          <h4 className="font-medium mb-4">
-                            {editandoDetalleAnimales !== null ? "Editar Detalle Animal" : "Nuevo Detalle Animal"}
-                          </h4>
-
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Lote *</Label>
-                                <CustomCombobox
-                                  options={opcionesLotes}
-                                  value={loteId}
-                                  onValueChange={setLoteId}
-                                  placeholder="Selecciona lote..."
-                                  searchPlaceholder="Buscar lote..."
-                                  emptyMessage="No se encontraron lotes."
+                      {/* Options list */}
+                      <div className="max-h-60 overflow-y-auto">
+                        {loadingLotes ? (
+                          <div className="text-center py-8 text-gray-500">Cargando lotes...</div>
+                        ) : lotesFiltrados(lotes, busquedaLotes).length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            {busquedaLotes
+                              ? "No se encontraron lotes que coincidan con la búsqueda"
+                              : "No se encontraron lotes"}
+                          </div>
+                        ) : (
+                          <div className="py-2">
+                            {lotesFiltrados(lotes, busquedaLotes).map((lote) => (
+                              <label
+                                key={lote.id}
+                                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={lotesSeleccionados.includes(lote.id)}
+                                  onChange={() => toggleLoteSeleccion(lote.id)}
+                                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
                                 />
-                              </div>
+                                <span className="text-sm text-gray-900 flex-1">{lote.nombre}</span>
+                                {lotesSeleccionados.includes(lote.id) && <Check className="w-4 h-4 text-green-600" />}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
-                              <div>
-                                <Label>Categoría Animal *</Label>
-                                <CustomCombobox
-                                  options={opcionesCategorias}
-                                  value={categoriaId}
-                                  onValueChange={setCategoriaId}
-                                  placeholder={loteId ? "Selecciona categoría..." : "Primero selecciona un lote"}
-                                  searchPlaceholder="Buscar categoría..."
-                                  emptyMessage="No se encontraron categorías con stock."
-                                  disabled={!loteId}
-                                  loading={loadingCategorias}
-                                />
-                              </div>
-                            </div>
+                      {/* Action buttons */}
+                      <div className="p-4 border-t border-gray-200 flex justify-between">
+                        <Button
+                          variant="ghost"
+                          onClick={limpiarSeleccionLotes}
+                          className="text-gray-600 hover:text-gray-800"
+                          disabled={lotesSeleccionados.length === 0}
+                        >
+                          Limpiar
+                        </Button>
+                        <Button onClick={cerrarSelectorLotes} className="bg-green-600 hover:bg-green-700 text-white">
+                          Cerrar
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-                            <div>
-                              <Label>Cantidad *</Label>
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Detalle Vacunas</h3>
+                    <Button
+                      onClick={() => setMostrarFormDetalleInsumos(true)}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Agregar línea
+                    </Button>
+                  </div>
+
+                  {/* Formulario de detalle insumos */}
+                  {mostrarFormDetalleInsumos && (
+                    <div className="bg-gray-50 border rounded-lg p-6 mb-4">
+                      {/* Errores de detalle insumos */}
+                      {erroresDetalleInsumos.length > 0 && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
+                          <div className="flex items-center gap-2 text-red-800 font-medium mb-1">
+                            <AlertCircle className="w-4 h-4" />
+                            Errores encontrados:
+                          </div>
+                          <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
+                            {erroresDetalleInsumos.map((error, index) => (
+                              <li key={index}>{error}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <h4 className="font-medium mb-4">
+                        {editandoDetalleInsumos !== null ? "Editar Detalle Vacuna" : "Nuevo Detalle Vacuna"}
+                      </h4>
+
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Vacuna *</Label>
+                            <CustomCombobox
+                              options={opcionesInsumos}
+                              value={insumoId}
+                              onValueChange={setInsumoId}
+                              placeholder="Selecciona vacuna..."
+                              searchPlaceholder="Buscar vacuna..."
+                              emptyMessage="No se encontraron vacunas disponibles."
+                              loading={loadingInsumos}
+                            />
+                          </div>
+
+                          <div>
+                            <Label>
+                              Cantidad *{" "}
+                              {insumoId &&
+                                stockDisponibleRealInsumos >= 0 &&
+                                `(Disponible: ${stockDisponibleRealInsumos})`}
+                            </Label>
+                            <div className="flex items-center gap-2">
                               <Input
                                 type="number"
-                                value={cantidadAnimales}
-                                onChange={(e) => setCantidadAnimales(e.target.value)}
-                                placeholder="Ej: 10"
+                                value={cantidadInsumos}
+                                onChange={(e) => setCantidadInsumos(e.target.value)}
+                                placeholder="Ej: 5"
                                 min="1"
+                                max={stockDisponibleRealInsumos}
+                                className="flex-1"
                               />
+                              {unidadMedidaActual && (
+                                <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-2 rounded border min-w-[80px] text-center">
+                                  {unidadMedidaActual}
+                                </span>
+                              )}
                             </div>
                           </div>
-
-                          <div className="flex gap-2 mt-6">
-                            <Button onClick={agregarDetalleAnimales} className="bg-green-600 hover:bg-green-700">
-                              {editandoDetalleAnimales !== null ? "Actualizar" : "Agregar"}
-                            </Button>
-                            <Button variant="outline" onClick={limpiarFormularioDetalleAnimales}>
-                              Cancelar
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Tabla de detalles animales */}
-                      <div className="border rounded-lg overflow-hidden">
-                        <div className="bg-gray-50 border-b">
-                          <div className="grid grid-cols-10 gap-3 px-4 py-3 text-sm font-medium text-gray-700">
-                            <div className="col-span-3">Lote</div>
-                            <div className="col-span-4">Categoría Animal</div>
-                            <div className="col-span-2 text-center">Cantidad</div>
-                            <div className="col-span-1 text-center">Acciones</div>
-                          </div>
-                        </div>
-
-                        <div className="min-h-[100px]">
-                          {detallesAnimales.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500">No hay detalles de animales agregados</div>
-                          ) : (
-                            <div className="divide-y">
-                              {detallesAnimales.map((detalle, index) => (
-                                <div
-                                  key={index}
-                                  className="grid grid-cols-10 gap-3 px-4 py-3 text-sm hover:bg-gray-50 items-center min-h-[48px]"
-                                >
-                                  <div className="col-span-3 font-medium truncate">{detalle.lote_nombre}</div>
-                                  <div className="col-span-4 truncate">{detalle.categoria_nombre}</div>
-                                  <div className="col-span-2 text-center font-medium">{detalle.cantidad}</div>
-                                  <div className="col-span-1 flex justify-center gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => editarDetalleAnimales(index)}
-                                      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    >
-                                      <Edit className="w-3.5 h-3.5" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => eliminarDetalleAnimales(index)}
-                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       </div>
-                    </TabsContent>
 
-                    <TabsContent value="insumos" className="space-y-4">
-                      <div className="flex justify-end">
-                        <Button
-                          onClick={() => setMostrarFormDetalleInsumos(true)}
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Agregar línea
+                      <div className="flex gap-2 mt-6">
+                        <Button onClick={agregarDetalleInsumos} className="bg-blue-600 hover:bg-blue-700">
+                          {editandoDetalleInsumos !== null ? "Actualizar" : "Agregar"}
+                        </Button>
+                        <Button variant="outline" onClick={limpiarFormularioDetalleInsumos}>
+                          Cancelar
                         </Button>
                       </div>
+                    </div>
+                  )}
 
-                      {/* Formulario de detalle insumos */}
-                      {mostrarFormDetalleInsumos && (
-                        <div className="bg-gray-50 border rounded-lg p-6">
-                          {/* Errores de detalle insumos */}
-                          {erroresDetalleInsumos.length > 0 && (
-                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
-                              <div className="flex items-center gap-2 text-red-800 font-medium mb-1">
-                                <AlertCircle className="w-4 h-4" />
-                                Errores encontrados:
-                              </div>
-                              <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
-                                {erroresDetalleInsumos.map((error, index) => (
-                                  <li key={index}>{error}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
+                  {/* Tabla de detalles insumos */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 border-b">
+                      <div className="grid grid-cols-10 gap-3 px-4 py-3 text-sm font-medium text-gray-700">
+                        <div className="col-span-4">Vacuna</div>
+                        <div className="col-span-2">Cantidad</div>
+                        <div className="col-span-2">Unidad Medida</div>
+                        <div className="col-span-2 text-center">Acciones</div>
+                      </div>
+                    </div>
 
-                          <h4 className="font-medium mb-4">
-                            {editandoDetalleInsumos !== null ? "Editar Detalle Vacuna" : "Nuevo Detalle Vacuna"}
-                          </h4>
-
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Vacuna *</Label>
-                                <CustomCombobox
-                                  options={opcionesInsumos}
-                                  value={insumoId}
-                                  onValueChange={setInsumoId}
-                                  placeholder="Selecciona vacuna..."
-                                  searchPlaceholder="Buscar vacuna..."
-                                  emptyMessage="No se encontraron vacunas disponibles."
-                                  loading={loadingInsumos}
-                                />
-                              </div>
-
-                              <div>
-                                <Label>
-                                  Cantidad *{" "}
-                                  {insumoId &&
-                                    stockDisponibleRealInsumos >= 0 &&
-                                    `(Disponible: ${stockDisponibleRealInsumos})`}
-                                </Label>
-                                <div className="flex items-center gap-2">
-                                  <Input
-                                    type="number"
-                                    value={cantidadInsumos}
-                                    onChange={(e) => setCantidadInsumos(e.target.value)}
-                                    placeholder="Ej: 5"
-                                    min="1"
-                                    max={stockDisponibleRealInsumos}
-                                    className="flex-1"
-                                  />
-                                  {unidadMedidaActual && (
-                                    <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-2 rounded border min-w-[80px] text-center">
-                                      {unidadMedidaActual}
-                                    </span>
-                                  )}
-                                </div>
+                    <div className="min-h-[100px]">
+                      {detallesInsumos.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">No hay vacunas agregadas</div>
+                      ) : (
+                        <div className="divide-y">
+                          {detallesInsumos.map((detalle, index) => (
+                            <div
+                              key={index}
+                              className="grid grid-cols-10 gap-3 px-4 py-3 text-sm hover:bg-gray-50 items-center min-h-[48px]"
+                            >
+                              <div className="col-span-4 font-medium">{detalle.insumo_nombre}</div>
+                              <div className="col-span-2 font-medium">{detalle.cantidad}</div>
+                              <div className="col-span-2 text-gray-600">{detalle.unidad_medida}</div>
+                              <div className="col-span-2 flex justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => editarDetalleInsumos(index)}
+                                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => eliminarDetalleInsumos(index)}
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
                               </div>
                             </div>
-                          </div>
-
-                          <div className="flex gap-2 mt-6">
-                            <Button onClick={agregarDetalleInsumos} className="bg-blue-600 hover:bg-blue-700">
-                              {editandoDetalleInsumos !== null ? "Actualizar" : "Agregar"}
-                            </Button>
-                            <Button variant="outline" onClick={limpiarFormularioDetalleInsumos}>
-                              Cancelar
-                            </Button>
-                          </div>
+                          ))}
                         </div>
                       )}
-
-                      {/* Tabla de detalles insumos */}
-                      <div className="border rounded-lg overflow-hidden">
-                        <div className="bg-gray-50 border-b">
-                          <div className="grid grid-cols-10 gap-3 px-4 py-3 text-sm font-medium text-gray-700">
-                            <div className="col-span-4">Vacuna</div>
-                            <div className="col-span-2">Cantidad</div>
-                            <div className="col-span-2">Unidad Medida</div>
-                            <div className="col-span-2 text-center">Acciones</div>
-                          </div>
-                        </div>
-
-                        <div className="min-h-[100px]">
-                          {detallesInsumos.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500">No hay vacunas agregadas</div>
-                          ) : (
-                            <div className="divide-y">
-                              {detallesInsumos.map((detalle, index) => (
-                                <div
-                                  key={index}
-                                  className="grid grid-cols-10 gap-3 px-4 py-3 text-sm hover:bg-gray-50 items-center min-h-[48px]"
-                                >
-                                  <div className="col-span-4 font-medium">{detalle.insumo_nombre}</div>
-                                  <div className="col-span-2 font-medium">{detalle.cantidad}</div>
-                                  <div className="col-span-2 text-gray-600">{detalle.unidad_medida}</div>
-                                  <div className="col-span-2 flex justify-center gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => editarDetalleInsumos(index)}
-                                      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    >
-                                      <Edit className="w-3.5 h-3.5" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => eliminarDetalleInsumos(index)}
-                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Nota */}
                 <div>
-                  <Label htmlFor="nota">Nota</Label>
+                  <Label htmlFor="nota">
+                    Nota
+                    {lotesSeleccionados.length === 0 && detallesInsumos.length === 0 && (
+                      <span className="text-red-500 ml-1">*</span>
+                    )}
+                  </Label>
                   <Textarea
                     id="nota"
                     value={nota}
                     onChange={(e) => setNota(e.target.value)}
-                    placeholder="Observaciones adicionales..."
+                    placeholder={
+                      lotesSeleccionados.length === 0 && detallesInsumos.length === 0
+                        ? "La nota es obligatoria si no selecciona lotes ni agrega vacunas..."
+                        : "Observaciones adicionales..."
+                    }
                     rows={3}
+                    className={
+                      lotesSeleccionados.length === 0 && detallesInsumos.length === 0 && !nota.trim()
+                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                        : ""
+                    }
                   />
                 </div>
               </div>
