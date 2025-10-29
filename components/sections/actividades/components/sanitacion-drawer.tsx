@@ -540,7 +540,7 @@ export default function SanitacionDrawer({
 
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Detalle Vacunas</h3>
+                <h3 className="text-lg font-semibold">Detalle Insumos</h3>
                 <Button
                   onClick={() => setMostrarFormDetalleInsumos(true)}
                   disabled={!actividadSeleccionada}
