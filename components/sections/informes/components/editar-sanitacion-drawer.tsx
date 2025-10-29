@@ -350,7 +350,7 @@ export default function EditarSanitacionDrawer({ isOpen, onClose, parte, onSucce
           hora,
           nota: nota || null,
           lotes_seleccionados: lotesSeleccionados,
-          detalles_insumos: detallesInsumos.map((d) => ({
+          detalles: detallesInsumos.map((d) => ({
             insumo_id: d.insumo_id,
             cantidad: d.cantidad,
           })),
