@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { useUser } from "@/contexts/user-context"
@@ -234,7 +233,6 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
                   return {
                     ...detalle,
                     cantidad_recategorizar: 0,
-                    seleccionada: false,
                   }
                 }
 
@@ -247,7 +245,6 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
                 return {
                   ...detalle,
                   cantidad_recategorizar: cantidadValida,
-                  seleccionada: cantidadValida > 0 ? detalle.seleccionada : false,
                 }
               }
               return detalle
@@ -378,7 +375,7 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
                   onChange={(e) => {
                     handleCantidadChange(lote.lote_id, detalle.categoria_animal_id, e.target.value)
                   }}
-                  className="w-16 h-8 text-sm"
+                  className="w-16 h-8 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   disabled={!detalle.seleccionada}
                   placeholder="0"
                   onFocus={(e) => e.target.select()}
@@ -428,11 +425,9 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
       return
     }
 
-    const categoriasSeleccionadas = lotes.flatMap((lote) =>
-      lote.pd_detalles.filter((detalle) => detalle.seleccionada && detalle.cantidad_recategorizar > 0),
-    )
+    const categoriasConCheckbox = lotes.flatMap((lote) => lote.pd_detalles.filter((detalle) => detalle.seleccionada))
 
-    if (categoriasSeleccionadas.length === 0) {
+    if (categoriasConCheckbox.length === 0) {
       toast({
         title: "Error",
         description: "Debe seleccionar al menos una categoría para recategorizar",
@@ -440,6 +435,19 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
       })
       return
     }
+
+    const categoriasSinCantidad = categoriasConCheckbox.filter((detalle) => detalle.cantidad_recategorizar === 0)
+
+    if (categoriasSinCantidad.length > 0) {
+      toast({
+        title: "Error",
+        description: "Las categorías seleccionadas deben tener una cantidad válida mayor a 0",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const categoriasSeleccionadas = categoriasConCheckbox.filter((detalle) => detalle.cantidad_recategorizar > 0)
 
     const categoriasSinDestino = categoriasSeleccionadas.filter((detalle) => !detalle.categoria_destino_id)
 
@@ -537,42 +545,10 @@ export default function ReclasificacionLoteDrawer({ isOpen, onClose, onSuccess }
 
         <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-4">
-            {/* Datos Generales */}
+            {/* Fecha */}
             <div>
-              <h3 className="text-lg font-semibold mb-3">Datos Generales</h3>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                      Reclasificación
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {nombreCompleto}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="tipo-actividad">Tipo de Actividad *</Label>
-                  <Input value="Reclasificación de animales por Lote" disabled className="bg-gray-50" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Fecha *</Label>
-                    <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
-                  </div>
-                  <div>
-                    <Label>Hora *</Label>
-                    <CustomTimePicker time={hora} onTimeChange={setHora} placeholder="Seleccionar hora" />
-                  </div>
-                </div>
-              </div>
+              <Label>Fecha *</Label>
+              <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
             </div>
 
             <div>

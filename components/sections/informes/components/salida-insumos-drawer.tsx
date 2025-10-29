@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 import { toast } from "@/hooks/use-toast"
@@ -253,39 +252,12 @@ export default function SalidaInsumosDrawer({ isOpen, onClose, onSuccess }: Sali
             </Alert>
           )}
 
-          {/* DATOS GENERALES */}
+          {/* Solo mostrar Fecha */}
           <section className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Datos Generales</h3>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                  Salida
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                  {loadingUsuario ? "Cargando..." : nombreCompleto}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
-                <div className="mt-1">
-                  <CustomDatePicker date={fechaSeleccionada} onDateChange={setFechaSeleccionada} />
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Hora *</Label>
-                <div className="mt-1">
-                  <CustomTimePicker time={horaSeleccionada} onTimeChange={setHoraSeleccionada} />
-                </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
+              <div className="mt-1">
+                <CustomDatePicker date={fechaSeleccionada} onDateChange={setFechaSeleccionada} />
               </div>
             </div>
           </section>

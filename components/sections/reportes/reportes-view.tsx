@@ -3,17 +3,23 @@
 import { useState } from "react"
 import { ReportTemplateCard } from "./components/report-template-card"
 import { EmptyState } from "./components/empty-state"
+import { ReportDrawer } from "./components/report-drawer"
 import { mockReportTemplates } from "@/lib/reportes/mocks"
 import type { ReportTemplate } from "@/lib/reportes/types"
 
 export default function ReportesView() {
   const [selectedTemplate, setSelectedTemplate] = useState<ReportTemplate | null>(null)
   const [showWizard, setShowWizard] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   const handleUseTemplate = (template: ReportTemplate) => {
     setSelectedTemplate(template)
-    // Por ahora solo mostramos un mensaje, luego implementaremos el wizard completo
-    alert(`Generando reporte: ${template.name}`)
+    setIsDrawerOpen(true)
+  }
+
+  const handleCloseDrawer = () => {
+    setIsDrawerOpen(false)
+    setSelectedTemplate(null)
   }
 
   return (
@@ -41,6 +47,8 @@ export default function ReportesView() {
             onAction={() => setShowWizard(true)}
           />
         )}
+
+        <ReportDrawer isOpen={isDrawerOpen} onClose={handleCloseDrawer} template={selectedTemplate} />
       </div>
     </div>
   )

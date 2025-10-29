@@ -11,7 +11,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "@/hooks/use-toast"
 import { useUser } from "@/contexts/user-context"
@@ -359,7 +358,6 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
 
     if (!loteSeleccionado) errores.push("Debe seleccionar un lote")
     if (!fechaSeleccionada) errores.push("Debe seleccionar una fecha")
-    if (!horaSeleccionada) errores.push("Debe seleccionar una hora")
     if (detalles.length === 0) {
       errores.push(
         "Debe agregar al menos un detalle. Por favor, complete el formulario y presione 'Agregar' antes de guardar.",
@@ -494,39 +492,23 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                  Entrada
+                <Label htmlFor="lote" className="text-sm font-medium text-gray-700">
+                  Lote *
+                </Label>
+                <div className="mt-1">
+                  <CustomCombobox
+                    options={opcionesLotes}
+                    value={loteSeleccionado}
+                    onValueChange={setLoteSeleccionado}
+                    placeholder="Selecciona un lote..."
+                    searchPlaceholder="Buscar lote..."
+                    emptyMessage="No se encontraron lotes."
+                    loading={loadingLotes}
+                    disabled={loadingLotes}
+                  />
                 </div>
               </div>
 
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                  {loadingUsuario ? "Cargando..." : nombreCompleto}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="lote" className="text-sm font-medium text-gray-700">
-                Lote *
-              </Label>
-              <div className="mt-1">
-                <CustomCombobox
-                  options={opcionesLotes}
-                  value={loteSeleccionado}
-                  onValueChange={setLoteSeleccionado}
-                  placeholder="Selecciona un lote..."
-                  searchPlaceholder="Buscar lote..."
-                  emptyMessage="No se encontraron lotes."
-                  loading={loadingLotes}
-                  disabled={loadingLotes}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
                 <div className="mt-1">
@@ -534,17 +516,6 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
                     date={fechaSeleccionada}
                     onDateChange={setFechaSeleccionada}
                     placeholder="Seleccionar fecha"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Hora *</Label>
-                <div className="mt-1">
-                  <CustomTimePicker
-                    time={horaSeleccionada}
-                    onTimeChange={setHoraSeleccionada}
-                    placeholder="Seleccionar hora"
                   />
                 </div>
               </div>

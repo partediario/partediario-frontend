@@ -340,7 +340,19 @@ export function Usuarios() {
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Usuario</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Teléfono</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Rol</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                      <div className="flex items-center gap-2">
+                        <span>Rol</span>
+                        <button
+                          type="button"
+                          className="text-gray-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-1 transition-colors"
+                          aria-label="Información sobre Roles de Usuario"
+                          onClick={(e) => handleTooltipToggle("roles-info", e)}
+                        >
+                          <HelpCircle className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Establecimientos</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Fecha Creación</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Acciones</th>
@@ -515,6 +527,111 @@ export function Usuarios() {
                 permisos asignados por rol. Cada usuario debe estar asignado a al menos un establecimiento para poder
                 trabajar en el sistema.
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTooltip === "roles-info" && tooltipPosition && (
+        <div
+          className="fixed w-[500px] max-h-[600px] overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl p-5 z-[9999]"
+          style={{
+            left: Math.max(10, Math.min(tooltipPosition.x - 250, window.innerWidth - 520)),
+            top: Math.max(10, tooltipPosition.y - 100),
+          }}
+        >
+          <div className="flex justify-between items-start mb-3">
+            <h4 className="font-bold text-base text-gray-900 pr-2">Roles de Usuario</h4>
+            <button
+              onClick={() => setActiveTooltip(null)}
+              className="text-gray-400 hover:text-gray-600 p-1 flex-shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <p className="text-sm text-gray-700 leading-relaxed mb-4">
+            Cada rol tiene diferentes niveles de acceso y permisos en el sistema. Seleccione el rol apropiado según las
+            responsabilidades del usuario.
+          </p>
+
+          <div className="space-y-4">
+            {/* Administrador */}
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="w-5 h-5 text-blue-600" />
+                <h5 className="font-bold text-blue-900">Administrador</h5>
+              </div>
+              <p className="text-sm text-blue-800 mb-2">Control total del sistema y gestión de usuarios.</p>
+              <div className="text-sm text-blue-700 space-y-1">
+                <p className="font-medium">Permisos:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Acceso completo a todos los módulos</li>
+                  <li>Crear, editar y eliminar usuarios</li>
+                  <li>Gestionar configuración de empresa y establecimientos</li>
+                  <li>Ver y editar todos los dashboards (Partes Diarios, Movimientos, Clima, Insumos)</li>
+                  <li>Agregar y editar todos los tipos de registros</li>
+                  <li>Generar y exportar todos los reportes</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Gerente */}
+            <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="w-5 h-5 text-green-600" />
+                <h5 className="font-bold text-green-900">Gerente</h5>
+              </div>
+              <p className="text-sm text-green-800 mb-2">
+                Gestión operativa completa sin acceso a administración de usuarios.
+              </p>
+              <div className="text-sm text-green-700 space-y-1">
+                <p className="font-medium">Permisos:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Ver y editar todos los dashboards (Partes Diarios, Movimientos, Clima, Insumos)</li>
+                  <li>Ver configuración (empresa, establecimientos)</li>
+                  <li>NO puede ver ni editar usuarios</li>
+                  <li>Agregar y editar todos los tipos de registros (movimientos, actividades, clima, insumos)</li>
+                  <li>Generar y exportar reportes</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Consultor */}
+            <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="w-5 h-5 text-purple-600" />
+                <h5 className="font-bold text-purple-900">Consultor</h5>
+              </div>
+              <p className="text-sm text-purple-800 mb-2">Solo lectura y generación de reportes.</p>
+              <div className="text-sm text-purple-700 space-y-1">
+                <p className="font-medium">Permisos:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Ver dashboards de Movimientos, Clima e Insumos</li>
+                  <li>NO puede ver Partes Diarios ni Configuración</li>
+                  <li>NO puede agregar ni editar registros</li>
+                  <li>Acceso limitado a reportes (solo visualización)</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Operativo */}
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="w-5 h-5 text-amber-600" />
+                <h5 className="font-bold text-amber-900">Operativo</h5>
+              </div>
+              <p className="text-sm text-amber-800 mb-2">Acceso limitado para operaciones diarias específicas.</p>
+              <div className="text-sm text-amber-700 space-y-1">
+                <p className="font-medium">Permisos:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Ver dashboards de Movimientos, Clima e Insumos</li>
+                  <li>NO puede ver Partes Diarios ni Configuración</li>
+                  <li>Agregar registros según privilegios asignados (movimientos, actividades, clima, insumos)</li>
+                  <li>NO puede editar configuración ni ver usuarios</li>
+                  <li>Acceso limitado a reportes</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>

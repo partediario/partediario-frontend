@@ -4,15 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Syringe, Users, X } from "lucide-react"
+import { Syringe, X } from "lucide-react"
 import type { ParteDiario } from "@/lib/types"
-
-interface DetalleAnimal {
-  lote_nombre: string
-  categoria_animal_nombre: string
-  cantidad: number
-}
 
 interface DetalleVacuna {
   insumo_nombre: string
@@ -27,8 +20,8 @@ interface VerSanitacionDrawerProps {
 }
 
 export default function VerSanitacionDrawer({ isOpen = false, onClose, parte }: VerSanitacionDrawerProps) {
-  const [detallesAnimales, setDetallesAnimales] = useState<DetalleAnimal[]>([])
   const [detallesVacunas, setDetallesVacunas] = useState<DetalleVacuna[]>([])
+  const [lotesSeleccionados, setLotesSeleccionados] = useState<string[]>([])
 
   useEffect(() => {
     if (isOpen && parte) {
@@ -41,13 +34,15 @@ export default function VerSanitacionDrawer({ isOpen = false, onClose, parte }: 
     if (!parte?.pd_detalles) return
 
     try {
-      console.log("🔍 Datos de animales desde la vista:", parte.pd_detalles.detalles_animales)
+      console.log("🔍 Datos desde la vista:", parte.pd_detalles)
 
-      const animales = (parte.pd_detalles.detalles_animales || []).map((animal: any) => ({
-        lote_nombre: animal.lote_nombre || animal.lote || "",
-        categoria_animal_nombre: animal.categoria_animal || animal.categoria_animal_nombre || "",
-        cantidad: animal.cantidad || 0,
-      }))
+      const lotes = (parte.pd_detalles.detalles_animales || [])
+        .map((animal: any) => animal.lote_nombre || animal.lote || "")
+        .filter(Boolean)
+
+      // Remove duplicates
+      const lotesUnicos = Array.from(new Set(lotes))
+      setLotesSeleccionados(lotesUnicos)
 
       // Cargar detalles de vacunas desde la vista
       const vacunas = (parte.pd_detalles.detalles_insumos || []).map((insumo: any) => ({
@@ -56,11 +51,10 @@ export default function VerSanitacionDrawer({ isOpen = false, onClose, parte }: 
         unidad_medida: insumo.unidad_medida || "",
       }))
 
-      setDetallesAnimales(animales)
       setDetallesVacunas(vacunas)
 
       console.log("✅ Datos de sanitación cargados:", {
-        animales: animales.length,
+        lotes: lotesUnicos.length,
         vacunas: vacunas.length,
       })
     } catch (error) {
@@ -135,7 +129,7 @@ export default function VerSanitacionDrawer({ isOpen = false, onClose, parte }: 
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium text-gray-700">Tipo de Actividad *</Label>
+                  <Label className="text-sm font-medium text-gray-700">Tipo de Actividad</Label>
                   <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
                     {parte?.pd_detalles?.detalle_tipo || "Sanitación"}
                   </div>
@@ -143,13 +137,13 @@ export default function VerSanitacionDrawer({ isOpen = false, onClose, parte }: 
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
+                    <Label className="text-sm font-medium text-gray-700">Fecha</Label>
                     <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
                       {parte?.pd_fecha ? formatDate(parte.pd_fecha) : ""}
                     </div>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-gray-700">Hora *</Label>
+                    <Label className="text-sm font-medium text-gray-700">Hora</Label>
                     <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
                       {parte?.pd_hora ? formatTime(parte.pd_hora) : ""}
                     </div>
@@ -158,78 +152,69 @@ export default function VerSanitacionDrawer({ isOpen = false, onClose, parte }: 
               </div>
             </div>
 
-            {/* Detalles con Pestañas */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Detalles *</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Lotes</h3>
+              </div>
 
-              <Tabs defaultValue="animales" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="animales" className="flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Animales ({detallesAnimales.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="vacunas" className="flex items-center gap-2">
-                    <Syringe className="w-4 h-4" />
-                    Vacunas ({detallesVacunas.length})
-                  </TabsTrigger>
-                </TabsList>
-
-                {/* Pestaña Animales */}
-                <TabsContent value="animales" className="mt-4">
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-gray-50 border-b">
-                      <div className="grid grid-cols-12 gap-4 p-4 text-sm font-medium text-gray-700">
-                        <div className="col-span-4">Lote</div>
-                        <div className="col-span-4">Categoría Animal</div>
-                        <div className="col-span-4">Cantidad</div>
-                      </div>
-                    </div>
-                    <div className="min-h-[100px]">
-                      {detallesAnimales.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">No hay detalles de animales agregados</div>
-                      ) : (
-                        <div className="divide-y">
-                          {detallesAnimales.map((detalle, index) => (
-                            <div key={index} className="grid grid-cols-12 gap-4 p-4 text-sm min-h-[60px] items-center">
-                              <div className="col-span-4 font-medium">{detalle.lote_nombre}</div>
-                              <div className="col-span-4">{detalle.categoria_animal_nombre}</div>
-                              <div className="col-span-4">{detalle.cantidad}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+              {/* Lotes seleccionados */}
+              {lotesSeleccionados.length > 0 ? (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="text-sm font-medium text-green-800 mb-2">
+                    Lotes seleccionados ({lotesSeleccionados.length}):
                   </div>
-                </TabsContent>
-
-                {/* Pestaña Vacunas */}
-                <TabsContent value="vacunas" className="mt-4">
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-gray-50 border-b">
-                      <div className="grid grid-cols-12 gap-4 p-4 text-sm font-medium text-gray-700">
-                        <div className="col-span-5">Vacuna</div>
-                        <div className="col-span-3">Cantidad</div>
-                        <div className="col-span-4">Unidad Medida</div>
-                      </div>
-                    </div>
-                    <div className="min-h-[100px]">
-                      {detallesVacunas.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">No hay detalles de vacunas agregados</div>
-                      ) : (
-                        <div className="divide-y">
-                          {detallesVacunas.map((detalle, index) => (
-                            <div key={index} className="grid grid-cols-12 gap-4 p-4 text-sm min-h-[60px] items-center">
-                              <div className="col-span-5 font-medium">{detalle.insumo_nombre}</div>
-                              <div className="col-span-3">{detalle.cantidad}</div>
-                              <div className="col-span-4 text-gray-600">{detalle.unidad_medida}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    {lotesSeleccionados.map((lote, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
+                      >
+                        {lote}
+                      </span>
+                    ))}
                   </div>
-                </TabsContent>
-              </Tabs>
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg border">
+                  No se seleccionaron lotes
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Detalle Vacunas</h3>
+              </div>
+
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-gray-50 border-b">
+                  <div className="grid grid-cols-10 gap-4 p-4 text-sm font-medium text-gray-700">
+                    <div className="col-span-4">Vacuna</div>
+                    <div className="col-span-2">Cantidad</div>
+                    <div className="col-span-2">Unidad Medida</div>
+                    <div className="col-span-2"></div>
+                  </div>
+                </div>
+                <div className="min-h-[100px]">
+                  {detallesVacunas.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">No hay vacunas agregadas</div>
+                  ) : (
+                    <div className="divide-y">
+                      {detallesVacunas.map((detalle, index) => (
+                        <div
+                          key={index}
+                          className="grid grid-cols-10 gap-4 p-4 text-sm hover:bg-gray-50 items-center min-h-[48px]"
+                        >
+                          <div className="col-span-4 font-medium">{detalle.insumo_nombre}</div>
+                          <div className="col-span-2">{detalle.cantidad}</div>
+                          <div className="col-span-2 text-gray-600">{detalle.unidad_medida}</div>
+                          <div className="col-span-2"></div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Nota */}

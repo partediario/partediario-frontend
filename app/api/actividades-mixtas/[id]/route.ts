@@ -64,20 +64,49 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       console.error("❌ Error obteniendo detalles de insumos:", insumosError)
     }
 
-    // Obtener información completa de los insumos por separado
     let insumosConDetalles = []
     if (detallesInsumos && detallesInsumos.length > 0) {
       const insumosIds = detallesInsumos.map((d) => d.insumo_id)
 
-      // Primero intentar obtener los insumos básicos sin unidad de medida
-      const { data: insumosBasicos, error: insumosBasicosError } = await supabase
-        .from("pd_insumos")
-        .select("id, nombre")
-        .in("id", insumosIds)
+      try {
+        const { data: insumosData, error: insumosDataError } = await supabase
+          .from("pd_insumos")
+          .select(`
+            id,
+            nombre,
+            pd_unidad_medida_insumos!pd_insumos_unidad_medida_uso_fkey(
+              id,
+              nombre
+            )
+          `)
+          .in("id", insumosIds)
 
-      if (insumosBasicosError) {
-        console.error("❌ Error obteniendo información básica de insumos:", insumosBasicosError)
-        // Si falla, crear estructura básica
+        if (insumosDataError) {
+          // Silently handle error and use fallback
+          insumosConDetalles = detallesInsumos.map((detalle) => ({
+            ...detalle,
+            pd_insumos: {
+              id: detalle.insumo_id,
+              nombre: `Insumo ${detalle.insumo_id}`,
+              pd_unidad_medida_insumos: null,
+            },
+          }))
+        } else {
+          // Combinar los datos de insumos con los detalles
+          insumosConDetalles = detallesInsumos.map((detalle) => {
+            const insumoInfo = insumosData?.find((info) => info.id === detalle.insumo_id)
+            return {
+              ...detalle,
+              pd_insumos: insumoInfo || {
+                id: detalle.insumo_id,
+                nombre: `Insumo ${detalle.insumo_id}`,
+                pd_unidad_medida_insumos: null,
+              },
+            }
+          })
+        }
+      } catch (error) {
+        // Silently handle any query errors and use fallback
         insumosConDetalles = detallesInsumos.map((detalle) => ({
           ...detalle,
           pd_insumos: {
@@ -86,78 +115,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             pd_unidad_medida_insumos: null,
           },
         }))
-      } else {
-        // Intentar obtener las unidades de medida
-        // Primero necesitamos saber cuál es el nombre correcto de la columna
-        // Vamos a intentar diferentes nombres posibles
-        let insumosConUnidades = []
-
-        // Intentar con unidad_medida_insumo_id
-        const { data: insumosConUnidad1, error: error1 } = await supabase
-          .from("pd_insumos")
-          .select("id, nombre, unidad_medida_insumo_id")
-          .in("id", insumosIds)
-
-        if (!error1 && insumosConUnidad1) {
-          console.log("✅ Usando columna unidad_medida_insumo_id")
-          insumosConUnidades = insumosConUnidad1
-
-          // Obtener las unidades de medida
-          const unidadesIds = insumosConUnidades.map((i) => i.unidad_medida_insumo_id).filter(Boolean)
-          let unidadesMedida = []
-
-          if (unidadesIds.length > 0) {
-            const { data: unidadesData, error: unidadesError } = await supabase
-              .from("pd_unidad_medida_insumos")
-              .select("id, nombre")
-              .in("id", unidadesIds)
-
-            if (!unidadesError) {
-              unidadesMedida = unidadesData || []
-            }
-          }
-
-          // Combinar todos los datos
-          insumosConDetalles = detallesInsumos.map((detalle) => {
-            const insumoInfo = insumosConUnidades.find((info) => info.id === detalle.insumo_id)
-            const unidadMedida = unidadesMedida.find((u) => u.id === insumoInfo?.unidad_medida_insumo_id)
-
-            return {
-              ...detalle,
-              pd_insumos: insumoInfo
-                ? {
-                    id: insumoInfo.id,
-                    nombre: insumoInfo.nombre,
-                    pd_unidad_medida_insumos: unidadMedida
-                      ? {
-                          nombre: unidadMedida.nombre,
-                        }
-                      : null,
-                  }
-                : null,
-            }
-          })
-        } else {
-          // Si falla, intentar con otros nombres posibles o usar solo datos básicos
-          console.log("⚠️ No se pudo obtener unidades de medida, usando datos básicos")
-          insumosConDetalles = detallesInsumos.map((detalle) => {
-            const insumoInfo = insumosBasicos?.find((info) => info.id === detalle.insumo_id)
-            return {
-              ...detalle,
-              pd_insumos: insumoInfo
-                ? {
-                    id: insumoInfo.id,
-                    nombre: insumoInfo.nombre,
-                    pd_unidad_medida_insumos: null,
-                  }
-                : {
-                    id: detalle.insumo_id,
-                    nombre: `Insumo ${detalle.insumo_id}`,
-                    pd_unidad_medida_insumos: null,
-                  },
-            }
-          })
-        }
       }
     }
 
@@ -186,7 +143,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     console.log("📝 Actualizando actividad mixta ID:", actividadId)
     console.log("📝 Datos recibidos:", JSON.stringify(body, null, 2))
 
-    const { fecha, hora, nota, detalles_animales, detalles_insumos } = body
+    const { fecha, hora, nota, lotes_seleccionados, detalles, detalles_animales, detalles_insumos } = body
 
     // Validaciones básicas
     if (!fecha || !hora) {
@@ -243,13 +200,59 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Error al eliminar detalles de insumos" }, { status: 500 })
     }
 
-    // Insertar nuevos detalles de animales si existen
-    if (detalles_animales && detalles_animales.length > 0) {
-      console.log("🐄 Insertando detalles de animales:", detalles_animales)
+    const lotesParaInsertar = lotes_seleccionados || []
+    const animalesParaInsertar = detalles_animales || []
+
+    if (lotesParaInsertar.length > 0) {
+      console.log("🐄 Insertando lotes seleccionados:", lotesParaInsertar)
+
+      // Validar que todos los lotes existen
+      const { data: lotesExistentes, error: lotesError } = await supabase
+        .from("pd_lotes")
+        .select("id")
+        .in("id", lotesParaInsertar)
+
+      if (lotesError) {
+        console.error("❌ Error verificando lotes:", lotesError)
+        return NextResponse.json({ error: "Error al verificar lotes" }, { status: 500 })
+      }
+
+      const lotesExistentesIds = lotesExistentes?.map((l) => l.id) || []
+      const lotesInvalidos = lotesParaInsertar.filter((id: number) => !lotesExistentesIds.includes(id))
+
+      if (lotesInvalidos.length > 0) {
+        console.error("❌ Lotes no válidos:", lotesInvalidos)
+        return NextResponse.json(
+          {
+            error: `Lotes no válidos: ${lotesInvalidos.join(", ")}`,
+          },
+          { status: 400 },
+        )
+      }
+
+      const detallesLotesParaInsertar = lotesParaInsertar.map((loteId: number) => ({
+        actividad_id: Number.parseInt(actividadId),
+        lote_id: loteId,
+        cantidad: 0,
+        categoria_animal_id: null,
+        peso: null,
+        tipo_peso: null,
+      }))
+
+      const { error: insertLotesError } = await supabase.from("pd_actividad_animales").insert(detallesLotesParaInsertar)
+
+      if (insertLotesError) {
+        console.error("❌ Error insertando nuevos lotes:", insertLotesError)
+        return NextResponse.json({ error: "Error al insertar nuevos lotes" }, { status: 500 })
+      }
+    }
+
+    if (animalesParaInsertar.length > 0) {
+      console.log("🐄 Insertando detalles de animales:", animalesParaInsertar)
 
       // Validar que todos los detalles de animales tengan los campos requeridos
-      for (let i = 0; i < detalles_animales.length; i++) {
-        const detalle = detalles_animales[i]
+      for (let i = 0; i < animalesParaInsertar.length; i++) {
+        const detalle = animalesParaInsertar[i]
         if (!detalle.lote_id || detalle.lote_id === 0) {
           return NextResponse.json({ error: `Detalle de animal ${i + 1}: lote_id es requerido` }, { status: 400 })
         }
@@ -262,7 +265,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
 
       // Validar que todas las categorías de animales existen
-      const categoriasIds = detalles_animales.map((d: any) => Number.parseInt(d.categoria_animal_id)).filter(Boolean)
+      const categoriasIds = animalesParaInsertar.map((d: any) => Number.parseInt(d.categoria_animal_id)).filter(Boolean)
       if (categoriasIds.length > 0) {
         const { data: categoriasExistentes, error: categoriasError } = await supabase
           .from("pd_categoria_animales")
@@ -289,7 +292,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
 
       // Validar que todos los lotes existen
-      const lotesIds = detalles_animales.map((d: any) => Number.parseInt(d.lote_id)).filter(Boolean)
+      const lotesIds = animalesParaInsertar.map((d: any) => Number.parseInt(d.lote_id)).filter(Boolean)
       if (lotesIds.length > 0) {
         const { data: lotesExistentes, error: lotesError } = await supabase
           .from("pd_lotes")
@@ -315,7 +318,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         }
       }
 
-      const detallesAnimalesParaInsertar = detalles_animales.map((detalle: any) => {
+      const detallesAnimalesParaInsertar = animalesParaInsertar.map((detalle: any) => {
         const registro = {
           actividad_id: Number.parseInt(actividadId),
           categoria_animal_id: Number.parseInt(detalle.categoria_animal_id),
@@ -339,20 +342,22 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
     }
 
+    const insumosParaInsertar = detalles || detalles_insumos || []
+
     // Insertar nuevos detalles de insumos si existen
-    if (detalles_insumos && detalles_insumos.length > 0) {
-      console.log("📦 Insertando detalles de insumos:", detalles_insumos)
+    if (insumosParaInsertar.length > 0) {
+      console.log("📦 Insertando detalles de insumos:", insumosParaInsertar)
 
       // Validar que todos los detalles de insumos tengan los campos requeridos
-      for (let i = 0; i < detalles_insumos.length; i++) {
-        const detalle = detalles_insumos[i]
+      for (let i = 0; i < insumosParaInsertar.length; i++) {
+        const detalle = insumosParaInsertar[i]
         if (!detalle.insumo_id || detalle.insumo_id === 0) {
           return NextResponse.json({ error: `Detalle de insumo ${i + 1}: insumo_id es requerido` }, { status: 400 })
         }
       }
 
       // Validar que todos los insumos existen
-      const insumosIds = detalles_insumos.map((d: any) => Number.parseInt(d.insumo_id)).filter(Boolean)
+      const insumosIds = insumosParaInsertar.map((d: any) => Number.parseInt(d.insumo_id)).filter(Boolean)
       if (insumosIds.length > 0) {
         const { data: insumosExistentes, error: insumosError } = await supabase
           .from("pd_insumos")
@@ -378,7 +383,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         }
       }
 
-      const detallesInsumosParaInsertar = detalles_insumos.map((detalle: any) => {
+      const detallesInsumosParaInsertar = insumosParaInsertar.map((detalle: any) => {
         const registro = {
           actividad_id: Number.parseInt(actividadId),
           insumo_id: Number.parseInt(detalle.insumo_id),

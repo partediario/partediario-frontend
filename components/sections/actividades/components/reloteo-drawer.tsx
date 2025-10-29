@@ -12,7 +12,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { useUser } from "@/contexts/user-context"
@@ -226,13 +225,11 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
             ...lote,
             pd_detalles: lote.pd_detalles.map((detalle) => {
               if (detalle.categoria_animal_id === categoriaId) {
-                // Handle empty string or invalid input
                 if (value === "" || value === "0") {
                   return {
                     ...detalle,
                     cantidad_trasladar: 0,
-                    // Destildar automáticamente si la cantidad es 0
-                    seleccionada: false,
+                    // Don't uncheck when deleting quantity
                   }
                 }
 
@@ -246,8 +243,6 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
                 return {
                   ...detalle,
                   cantidad_trasladar: cantidadValida,
-                  // Destildar automáticamente si la cantidad es 0
-                  seleccionada: cantidadValida > 0 ? detalle.seleccionada : false,
                 }
               }
               return detalle
@@ -404,7 +399,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
                   onChange={(e) => {
                     handleCantidadChange(lote.lote_id, detalle.categoria_animal_id, e.target.value)
                   }}
-                  className="w-16 h-8 text-sm"
+                  className="w-16 h-8 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   disabled={!detalle.seleccionada}
                   placeholder="0"
                   onFocus={(e) => e.target.select()}
@@ -438,23 +433,36 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
     setLoading(true)
 
     try {
-      const movimientos = getResumenReloteo()
+      const todasLasCategorias = lotes.flatMap((lote) => lote.pd_detalles)
+      const categoriasSeleccionadas = todasLasCategorias.filter((detalle) => detalle.seleccionada)
 
-      if (movimientos.length === 0) {
+      if (categoriasSeleccionadas.length === 0) {
         toast({
           title: "Error",
           description: "Debe seleccionar al menos una categoría para relotear",
           variant: "destructive",
         })
+        setLoading(false)
         return
       }
 
-      // Validar que todas las categorías seleccionadas tengan lote destino
-      const categoriasSeleccionadas = lotes.flatMap((lote) =>
-        lote.pd_detalles.filter((detalle) => detalle.seleccionada && detalle.cantidad_trasladar > 0),
+      const categoriasConCantidadCero = categoriasSeleccionadas.filter(
+        (detalle) => !detalle.cantidad_trasladar || detalle.cantidad_trasladar === 0,
       )
 
-      const categoriasSinDestino = categoriasSeleccionadas.filter((detalle) => !detalle.lote_destino_id)
+      if (categoriasConCantidadCero.length > 0) {
+        toast({
+          title: "Error",
+          description: "Las categorías seleccionadas deben tener una cantidad válida mayor a 0",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      const categoriasConCantidadValida = categoriasSeleccionadas.filter((detalle) => detalle.cantidad_trasladar > 0)
+
+      const categoriasSinDestino = categoriasConCantidadValida.filter((detalle) => !detalle.lote_destino_id)
 
       if (categoriasSinDestino.length > 0) {
         toast({
@@ -462,8 +470,12 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
           description: "Todas las categorías seleccionadas deben tener un lote destino",
           variant: "destructive",
         })
+        setLoading(false)
         return
       }
+
+      // Now get the movements summary (should have valid data at this point)
+      const movimientos = getResumenReloteo()
 
       // Procesar movimientos por lote origen
       const movimientosPorLote = new Map<
@@ -658,43 +670,11 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {/* Datos Generales */}
+          {/* Fecha */}
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold mb-3">Datos Generales</h3>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                      Reloteo
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {nombreCompleto}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="tipo-actividad">Tipo de Actividad *</Label>
-                  <Input value="Reloteo" disabled className="bg-gray-50" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Fecha *</Label>
-                    <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
-                  </div>
-                  <div>
-                    <Label>Hora *</Label>
-                    <CustomTimePicker time={hora} onTimeChange={setHora} placeholder="Seleccionar hora" />
-                  </div>
-                </div>
-              </div>
+              <Label>Fecha *</Label>
+              <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
             </div>
 
             {/* Filtros */}
