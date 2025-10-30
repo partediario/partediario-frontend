@@ -144,35 +144,12 @@ export default function VerEntradaInsumosDrawer({ isOpen, onClose, parte }: VerE
             </div>
           ) : movimiento ? (
             <div className="space-y-6">
-              {/* Datos Generales */}
+              {/* Solo mostrar Fecha */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Datos Generales</h3>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                      <div className="mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium text-gray-900">
-                        Entrada
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                      <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                        {nombreCompleto}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Fecha *</Label>
-                      <Input value={formatDate(movimiento.fecha)} readOnly className="cursor-default" />
-                    </div>
-                    <div>
-                      <Label>Hora *</Label>
-                      <Input value={formatTime(movimiento.hora)} readOnly className="cursor-default" />
-                    </div>
+                  <div>
+                    <Label>Fecha *</Label>
+                    <Input value={formatDate(movimiento.fecha)} readOnly className="cursor-default" />
                   </div>
                 </div>
               </div>

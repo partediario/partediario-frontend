@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { useUser } from "@/contexts/user-context"
 import { toast } from "@/hooks/use-toast"
 import type { ParteDiario } from "@/lib/types"
@@ -337,40 +336,11 @@ export default function EditarLluviaDrawer({ isOpen, onClose, parte, onSuccess }
             </Alert>
           )}
 
-          {/* Datos Generales */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Datos Generales</h3>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                  Lluvia
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                  {loadingUsuario ? "Cargando..." : nombreCompleto}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
-                <div className="mt-1">
-                  <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Hora *</Label>
-                <div className="mt-1">
-                  <CustomTimePicker time={hora} onTimeChange={setHora} placeholder="Seleccionar hora" />
-                </div>
-              </div>
+          {/* Fecha field only */}
+          <div>
+            <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
+            <div className="mt-1">
+              <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
             </div>
           </div>
 

@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Plus, Trash2, Edit, Wrench, AlertCircle, X } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
@@ -353,7 +352,6 @@ export default function EditarReparacionAlambradosDrawer({
 
     if (!actividad) errores.push("Debe seleccionar un tipo de actividad")
     if (!fecha) errores.push("La fecha es requerida")
-    if (!hora) errores.push("La hora es requerida")
     if (!potreroId) errores.push("Debe seleccionar un potrero")
 
     return errores
@@ -446,12 +444,14 @@ export default function EditarReparacionAlambradosDrawer({
 
     setSaving(true)
     try {
+      const horaActual = new Date().toTimeString().slice(0, 5)
+
       const response = await fetch(`/api/reparacion-alambrados/${actividad?.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fecha: fecha.toISOString().split("T")[0],
-          hora,
+          hora: horaActual,
           nota: nota || null,
           potrero_id: Number.parseInt(potreroId),
           detalles: detalles,
@@ -617,28 +617,6 @@ export default function EditarReparacionAlambradosDrawer({
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                      <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                        Actividad
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                      <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                        {nombreCompleto}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Tipo de Actividad</Label>
-                      <Input value={actividad.pd_tipo_actividades?.nombre || ""} disabled className="bg-gray-50" />
-                      <p className="text-xs text-gray-500 mt-1">Este campo no se puede modificar</p>
-                    </div>
-
-                    <div>
                       <Label className="text-sm font-medium text-gray-700">Potrero *</Label>
                       <CustomCombobox
                         options={opcionesPotreros}
@@ -649,16 +627,10 @@ export default function EditarReparacionAlambradosDrawer({
                         emptyMessage="No se encontraron potreros."
                       />
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Fecha *</Label>
                       <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
-                    </div>
-                    <div>
-                      <Label>Hora *</Label>
-                      <CustomTimePicker time={hora} onTimeChange={setHora} placeholder="Seleccionar hora" />
                     </div>
                   </div>
                 </div>

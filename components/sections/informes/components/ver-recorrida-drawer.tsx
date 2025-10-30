@@ -149,48 +149,10 @@ export default function VerRecorridaDrawer({ isOpen, onClose, parte }: VerRecorr
           {(!loading || recorridaData) && (
             <>
               {/* Datos Generales */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Datos Generales</h3>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                      Actividad
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {getUserDisplayName()}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo de Actividad</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {recorridaData?.actividad?.detalle_tipo || "Recorrida"}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Fecha</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {formatDate(recorridaData?.actividad?.fecha || parte.pd_fecha)}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Hora</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {formatTime(recorridaData?.actividad?.hora || parte.pd_hora)}
-                    </div>
-                  </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Fecha</Label>
+                <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
+                  {formatDate(recorridaData?.actividad?.fecha || parte.pd_fecha)}
                 </div>
               </div>
 

@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Plus, Trash2, Edit, Users, AlertCircle, X, Scissors } from "lucide-react"
 import { useCurrentEstablishment } from "@/hooks/use-current-establishment"
@@ -63,7 +62,6 @@ export default function CastracionDrawer({
 
   // Formulario principal
   const [fecha, setFecha] = useState<Date>(new Date())
-  const [hora, setHora] = useState<string>(new Date().toTimeString().slice(0, 5))
   const [nota, setNota] = useState<string>("")
 
   // Formulario de detalle animales
@@ -98,7 +96,6 @@ export default function CastracionDrawer({
   useEffect(() => {
     if (isOpen) {
       setFecha(new Date())
-      setHora(new Date().toTimeString().slice(0, 5))
       setNota("")
       setDetallesAnimales([])
       limpiarFormularioDetalleAnimales()
@@ -162,7 +159,6 @@ export default function CastracionDrawer({
 
     if (!actividadSeleccionada) errores.push("Debe seleccionar un tipo de actividad")
     if (!fecha) errores.push("La fecha es requerida")
-    if (!hora) errores.push("La hora es requerida")
     if (detallesAnimales.length === 0) {
       errores.push("Debe agregar al menos un detalle de animales")
     }
@@ -244,6 +240,8 @@ export default function CastracionDrawer({
 
     setLoading(true)
     try {
+      const horaActual = new Date().toTimeString().slice(0, 5)
+
       const response = await fetch("/api/actividades-animales", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -251,7 +249,7 @@ export default function CastracionDrawer({
           establecimiento_id: establecimientoSeleccionado,
           tipo_actividad_id: 12, // Fixed tipo_actividad_id for castration
           fecha: fecha.toISOString().split("T")[0],
-          hora,
+          hora: horaActual,
           nota: nota || null,
           user_id: usuario?.id,
           detalles: detallesAnimales.map((d) => ({
@@ -301,7 +299,6 @@ export default function CastracionDrawer({
     onClose?.()
     // Reset form
     setFecha(new Date())
-    setHora(new Date().toTimeString().slice(0, 5))
     setNota("")
     setDetallesAnimales([])
     limpiarFormularioDetalleAnimales()
@@ -347,43 +344,10 @@ export default function CastracionDrawer({
             </div>
           )}
 
-          {/* Datos Generales */}
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold mb-4">Datos Generales</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                      Actividad
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {nombreCompleto}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="tipo-actividad">Tipo de Actividad *</Label>
-                  <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">Castración</div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Fecha *</Label>
-                    <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
-                  </div>
-                  <div>
-                    <Label>Hora *</Label>
-                    <CustomTimePicker time={hora} onTimeChange={setHora} placeholder="Seleccionar hora" />
-                  </div>
-                </div>
-              </div>
+              <Label>Fecha *</Label>
+              <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
             </div>
 
             <div>

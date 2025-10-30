@@ -11,7 +11,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { useUser } from "@/contexts/user-context"
@@ -46,7 +45,6 @@ export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividad
   const [loading, setLoading] = useState(false)
   const [lotes, setLotes] = useState<LoteStock[]>([])
   const [fecha, setFecha] = useState<Date>(new Date())
-  const [hora, setHora] = useState<string>(new Date().toTimeString().slice(0, 5))
   const [nota, setNota] = useState("")
   const [searchCategoria, setSearchCategoria] = useState("")
   const [lotesSeleccionados, setLotesSeleccionados] = useState<string[]>([])
@@ -56,8 +54,6 @@ export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividad
 
   const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
   const { usuario } = useUser()
-
-  const nombreCompleto = usuario ? `${usuario.nombres} ${usuario.apellidos}`.trim() : "Cargando..."
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -85,7 +81,6 @@ export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividad
   useEffect(() => {
     if (isOpen) {
       setFecha(new Date())
-      setHora(new Date().toTimeString().slice(0, 5))
       setNota("")
       setLotes([])
       setSearchCategoria("")
@@ -267,6 +262,8 @@ export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividad
           lote_id: detalle.lote_id,
         }))
 
+        const horaActual = new Date().toTimeString().slice(0, 5)
+
         const actividadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/guardar-pesaje-actividad`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -274,7 +271,7 @@ export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividad
             establecimiento_id: establecimientoSeleccionado,
             tipo_actividad_id: tipoActividadId,
             fecha: fecha.toISOString().split("T")[0],
-            hora: hora,
+            hora: horaActual,
             nota: nota.trim() || null,
             user_id: usuario.id,
             pesajes: pesajesParaActividad,
@@ -446,7 +443,6 @@ export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividad
   const handleClose = () => {
     onClose()
     setFecha(new Date())
-    setHora(new Date().toTimeString().slice(0, 5))
     setNota("")
     setLotes([])
     setSearchCategoria("")
@@ -471,40 +467,8 @@ export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividad
         <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold mb-3">Datos Generales</h3>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                      Pesaje
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {nombreCompleto}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="tipo-actividad">Tipo de Actividad *</Label>
-                  <Input value="Pesaje" disabled className="bg-gray-50" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Fecha *</Label>
-                    <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
-                  </div>
-                  <div>
-                    <Label>Hora *</Label>
-                    <CustomTimePicker time={hora} onTimeChange={setHora} placeholder="Seleccionar hora" />
-                  </div>
-                </div>
-              </div>
+              <Label>Fecha *</Label>
+              <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
             </div>
 
             <div>
