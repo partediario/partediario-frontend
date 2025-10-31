@@ -65,8 +65,8 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
 
   const [loading, setLoading] = useState(false)
   const [mostrarExito, setMostrarExito] = useState(false)
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
 
-  // Estados para los dropdowns
   const [clases, setClases] = useState<ClaseInsumo[]>([])
   const [tipos, setTipos] = useState<TipoInsumo[]>([])
   const [subtipos, setSubtipos] = useState<SubtipoInsumo[]>([])
@@ -89,11 +89,9 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
 
   const [errors, setErrors] = useState<string[]>([])
 
-  // Cargar datos cuando se abre el drawer
   useEffect(() => {
     if (isOpen) {
       fetchDropdownData().then(() => {
-        // Cargar datos del formulario después de que se carguen los dropdowns
         if (mode === "edit" && insumo) {
           setFormData({
             nombre: insumo.nombre || "",
@@ -127,7 +125,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
     }
   }, [insumo, isOpen, mode])
 
-  // Limpiar formulario cuando se cierra el drawer
   useEffect(() => {
     if (!isOpen) {
       setFormData({
@@ -151,43 +148,35 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
     }
   }, [isOpen])
 
-  // Filtrar tipos cuando cambia la clase
   useEffect(() => {
     if (formData.clase_insumo_id && tipos.length > 0) {
       const tiposFiltrados = tipos.filter((tipo) => tipo.clase_insumo_id.toString() === formData.clase_insumo_id)
-      // Solo limpiar si el tipo actual no está en los filtrados Y no estamos en modo edición inicial
       if (formData.tipo_insumo_id && !tiposFiltrados.find((t) => t.id.toString() === formData.tipo_insumo_id)) {
-        // Solo limpiar si no estamos cargando datos iniciales del insumo
         if (mode !== "edit" || !insumo) {
           setFormData((prev) => ({ ...prev, tipo_insumo_id: "", subtipo_insumo_id: "" }))
         }
       }
     } else if (!formData.clase_insumo_id) {
-      // Solo limpiar si no estamos en modo edición inicial
       if (mode !== "edit" || !insumo) {
         setFormData((prev) => ({ ...prev, tipo_insumo_id: "", subtipo_insumo_id: "" }))
       }
     }
   }, [formData.clase_insumo_id, tipos, mode, insumo])
 
-  // Filtrar subtipos cuando cambia el tipo
   useEffect(() => {
     if (formData.tipo_insumo_id && subtipos.length > 0) {
       const subtiposFiltrados = subtipos.filter(
         (subtipo) => subtipo.tipo_insumo_id.toString() === formData.tipo_insumo_id,
       )
-      // Solo limpiar si el subtipo actual no está en los filtrados Y no estamos en modo edición inicial
       if (
         formData.subtipo_insumo_id &&
         !subtiposFiltrados.find((s) => s.id.toString() === formData.subtipo_insumo_id)
       ) {
-        // Solo limpiar si no estamos cargando datos iniciales del insumo
         if (mode !== "edit" || !insumo) {
           setFormData((prev) => ({ ...prev, subtipo_insumo_id: "" }))
         }
       }
     } else if (!formData.tipo_insumo_id) {
-      // Solo limpiar si no estamos en modo edición inicial
       if (mode !== "edit" || !insumo) {
         setFormData((prev) => ({ ...prev, subtipo_insumo_id: "" }))
       }
@@ -197,7 +186,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
   const fetchDropdownData = async () => {
     setLoadingDropdowns(true)
     try {
-      // Cargar todas las opciones de los dropdowns
       const [clasesRes, tiposRes, subtiposRes, unidadesRes] = await Promise.all([
         fetch("/api/clase-insumos"),
         fetch("/api/tipos-insumo"),
@@ -283,7 +271,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
 
     setLoading(true)
     try {
-      // Crear el insumo primero
       const response = await fetch("/api/insumos-crud", {
         method: "POST",
         headers: {
@@ -354,7 +341,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
 
     setLoading(true)
     try {
-      // Actualizar el insumo primero
       const response = await fetch(`/api/insumos-crud/${insumo?.id}`, {
         method: "PUT",
         headers: {
@@ -374,7 +360,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
 
       if (stockData.cantidad && Number.parseInt(stockData.cantidad) >= 0) {
         if (insumo?.stock?.id) {
-          // Actualizar stock existente
           await fetch(`/api/insumos-stock/${insumo.stock.id}`, {
             method: "PUT",
             headers: {
@@ -385,7 +370,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
             }),
           })
         } else {
-          // Crear nuevo stock
           await fetch("/api/insumos-stock", {
             method: "POST",
             headers: {
@@ -426,6 +410,11 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
   }
 
   const handleSubmit = async () => {
+    if (!validateForm()) {
+      setMostrarModalErrores(true)
+      return
+    }
+
     if (mode === "create") {
       await crearInsumoConStock()
     } else {
@@ -437,7 +426,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
     onClose()
   }
 
-  // Obtener opciones filtradas
   const tiposFiltrados = tipos.filter((tipo) => tipo.clase_insumo_id.toString() === formData.clase_insumo_id)
   const subtiposFiltrados = subtipos.filter((subtipo) => subtipo.tipo_insumo_id.toString() === formData.tipo_insumo_id)
 
@@ -455,7 +443,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Mostrar mensaje de éxito */}
           {mostrarExito && (
             <Alert className="border-green-200 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
@@ -468,23 +455,6 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
                     ? `Se creó el insumo "${formData.nombre}" correctamente.`
                     : `Se actualizó el insumo "${formData.nombre}" correctamente.`}
                 </div>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Mostrar errores de validación */}
-          {errors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium mb-2">Se encontraron {errors.length} errores:</div>
-                <ul className="list-disc list-inside space-y-1">
-                  {errors.map((error, index) => (
-                    <li key={index} className="text-sm">
-                      {error}
-                    </li>
-                  ))}
-                </ul>
               </AlertDescription>
             </Alert>
           )}
@@ -689,6 +659,34 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
             {loading ? "Guardando..." : mode === "create" ? "Crear Insumo" : "Actualizar Insumo"}
           </Button>
         </div>
+
+        {/* Modal de errores */}
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">Se encontraron {errors.length} errores:</h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {errors.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErrores(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )

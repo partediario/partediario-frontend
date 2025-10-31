@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import AppLayout from "@/components/app-layout"
-import ActividadesView from "@/components/sections/actividades/actividades-view"
+import MovimientosView from "@/components/sections/movimientos/movimientos-view"
+import { useEstablishment } from "@/contexts/establishment-context"
 
-export default function ActividadesPage() {
+export default function MovimientosPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const { establecimientoSeleccionado } = useEstablishment()
 
   useEffect(() => {
     const token = localStorage.getItem("supabase_token")
@@ -27,8 +29,8 @@ export default function ActividadesPage() {
   }
 
   return (
-    <AppLayout activeSection="Actividades">
-      <ActividadesView />
+    <AppLayout activeSection="Movimientos">
+      <MovimientosView establecimientoId={establecimientoSeleccionado} />
     </AppLayout>
   )
 }

@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import AppLayout from "@/components/app-layout"
-import ActividadesView from "@/components/sections/actividades/actividades-view"
+import InsumosView from "@/components/sections/insumos/insumos-view"
 
-export default function ActividadesPage() {
+export default function InsumosPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
@@ -27,8 +27,8 @@ export default function ActividadesPage() {
   }
 
   return (
-    <AppLayout activeSection="Actividades">
-      <ActividadesView />
+    <AppLayout activeSection="Insumos">
+      <InsumosView />
     </AppLayout>
   )
 }

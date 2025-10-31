@@ -45,6 +45,8 @@ import VerDesteteDrawer from "./ver-destete-drawer"
 import VerActividadVariasCorralDrawer from "./ver-actividad-varias-corral-drawer"
 import EditarActividadVariasCorralDrawer from "./editar-actividad-varias-corral-drawer"
 import VerPesajeDrawer from "./ver-pesaje-drawer"
+import VerUsoCombustiblesLubricantesDrawer from "./ver-uso-combustibles-lubricantes-drawer"
+import EditarUsoCombustiblesLubricantesDrawer from "./editar-uso-combustibles-lubricantes-drawer"
 
 interface ParteDiarioCardProps {
   parte: ParteDiario
@@ -108,6 +110,10 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
   const [isEditarActividadVariasCorralDrawerOpen, setIsEditarActividadVariasCorralDrawerOpen] = useState(false)
 
   const [isVerPesajeDrawerOpen, setIsVerPesajeDrawerOpen] = useState(false)
+
+  // Estados para drawers de Uso de Combustibles y Lubricantes
+  const [isVerUsoCombustiblesDrawerOpen, setIsVerUsoCombustiblesDrawerOpen] = useState(false)
+  const [isEditarUsoCombustiblesDrawerOpen, setIsEditarUsoCombustiblesDrawerOpen] = useState(false)
 
   const [tipoActividad, setTipoActividad] = useState<{ animales: string; insumos: string } | null>(null)
 
@@ -180,6 +186,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
       case "PESAJE":
         return "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200"
+      case "USO DE COMBUSTIBLES Y LUBRICANTES":
+        return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
       default:
         return "bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200"
     }
@@ -227,6 +235,8 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         return "Actividad Varias de Corral"
       case "PESAJE":
         return "Pesaje"
+      case "USO DE COMBUSTIBLES Y LUBRICANTES":
+        return "Uso de Combustibles y Lubricantes"
       default:
         return tipo
     }
@@ -277,6 +287,11 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         setIsVerEntradaInsumosDrawerOpen(true)
       }
     } else if (parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id) {
+      if (parte.pd_detalles.detalle_tipo_id === 39) {
+        setIsVerUsoCombustiblesDrawerOpen(true)
+        return
+      }
+
       if (parte.pd_detalles.detalle_tipo_id === 30) {
         setIsVerActividadVariasCorralDrawerOpen(true)
         return
@@ -406,6 +421,11 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         })
       }
     } else if (parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id) {
+      if (parte.pd_detalles.detalle_tipo_id === 39) {
+        setIsEditarUsoCombustiblesDrawerOpen(true)
+        return
+      }
+
       if (parte.pd_detalles.detalle_tipo_id === 30) {
         setIsEditarActividadVariasCorralDrawerOpen(true)
         return
@@ -820,6 +840,21 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
 
       {/* Drawer de Pesaje */}
       <VerPesajeDrawer isOpen={isVerPesajeDrawerOpen} onClose={() => setIsVerPesajeDrawerOpen(false)} parte={parte} />
+
+      {/* Drawers de Uso de Combustibles y Lubricantes */}
+      <VerUsoCombustiblesLubricantesDrawer
+        isOpen={isVerUsoCombustiblesDrawerOpen}
+        onClose={() => setIsVerUsoCombustiblesDrawerOpen(false)}
+        parte={parte}
+      />
+      <EditarUsoCombustiblesLubricantesDrawer
+        isOpen={isEditarUsoCombustiblesDrawerOpen}
+        onClose={() => setIsEditarUsoCombustiblesDrawerOpen(false)}
+        parte={parte}
+        onSuccess={() => {
+          window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
+        }}
+      />
     </Card>
   )
 }

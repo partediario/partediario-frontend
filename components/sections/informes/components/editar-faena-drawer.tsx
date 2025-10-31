@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Trash2, Edit, Users, AlertCircle, X } from "lucide-react"
@@ -770,33 +769,14 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Datos Generales</h3>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                        <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                          Actividad
+                        <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
+                        <div className="mt-1">
+                          <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
                         </div>
                       </div>
-
-                      <div>
-                        <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                        <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                          {nombreCompleto}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium text-gray-700">Tipo de Actividad</Label>
-                        <div className="mt-1 px-3 py-2 bg-gray-100 border rounded-md text-sm text-gray-900 font-medium">
-                          {tipoActividadNombre || "Faena"}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">Este campo no se puede modificar</p>
-                      </div>
-
                       <div>
                         <Label className="text-sm font-medium text-gray-700">Tipo de Movimiento *</Label>
                         <div className="mt-1">
@@ -811,21 +791,6 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
                             searchPlaceholder="Buscar tipo de movimiento..."
                             emptyMessage="No se encontraron tipos de movimiento."
                           />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
-                        <div className="mt-1">
-                          <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium text-gray-700">Hora *</Label>
-                        <div className="mt-1">
-                          <CustomTimePicker time={hora} onTimeChange={setHora} placeholder="Seleccionar hora" />
                         </div>
                       </div>
                     </div>

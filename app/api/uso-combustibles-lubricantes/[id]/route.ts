@@ -7,12 +7,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   try {
     const actividadId = params.id
     const body = await request.json()
-    console.log("📝 Actualizando actividad varias de corral ID:", actividadId)
+    console.log("📝 Actualizando uso de combustibles y lubricantes ID:", actividadId)
     console.log("📝 Datos recibidos:", JSON.stringify(body, null, 2))
 
-    const { fecha, hora, nota, lotes_seleccionados, detalles } = body
+    const { fecha, hora, nota, maquinarias_seleccionadas, detalles } = body
 
-    // Validaciones básicas
     if (!fecha) {
       return NextResponse.json({ error: "Fecha es requerida" }, { status: 400 })
     }
@@ -29,7 +28,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Actividad no encontrada" }, { status: 404 })
     }
 
-    // Actualizar la actividad principal
     const { error: updateError } = await supabase
       .from("pd_actividades")
       .update({
@@ -44,15 +42,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Error al actualizar la actividad" }, { status: 500 })
     }
 
-    // Eliminar detalles existentes de animales (lotes)
-    const { error: deleteAnimalesError } = await supabase
-      .from("pd_actividad_animales")
+    // Eliminar maquinarias existentes
+    const { error: deleteMaquinariasError } = await supabase
+      .from("pd_actividad_maquinarias")
       .delete()
       .eq("actividad_id", actividadId)
 
-    if (deleteAnimalesError) {
-      console.error("❌ Error eliminando detalles de animales:", deleteAnimalesError)
-      return NextResponse.json({ error: "Error al eliminar detalles de lotes" }, { status: 500 })
+    if (deleteMaquinariasError) {
+      console.error("❌ Error eliminando maquinarias:", deleteMaquinariasError)
+      return NextResponse.json({ error: "Error al eliminar maquinarias" }, { status: 500 })
     }
 
     // Eliminar detalles existentes de insumos
@@ -66,48 +64,48 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Error al eliminar detalles de insumos" }, { status: 500 })
     }
 
-    // Insertar nuevos lotes seleccionados si existen
-    if (lotes_seleccionados && lotes_seleccionados.length > 0) {
-      console.log("🐄 Insertando lotes seleccionados:", lotes_seleccionados)
+    // Insertar nuevas maquinarias seleccionadas si existen
+    if (maquinarias_seleccionadas && maquinarias_seleccionadas.length > 0) {
+      console.log("🚜 Insertando maquinarias seleccionadas:", maquinarias_seleccionadas)
 
-      // Validar que todos los lotes existen
-      const { data: lotesExistentes, error: lotesError } = await supabase
-        .from("pd_lotes")
+      // Validar que todas las maquinarias existen
+      const { data: maquinariasExistentes, error: maquinariasError } = await supabase
+        .from("pd_maquinarias")
         .select("id")
-        .in("id", lotes_seleccionados)
+        .in("id", maquinarias_seleccionadas)
 
-      if (lotesError) {
-        console.error("❌ Error verificando lotes:", lotesError)
-        return NextResponse.json({ error: "Error al verificar lotes" }, { status: 500 })
+      if (maquinariasError) {
+        console.error("❌ Error verificando maquinarias:", maquinariasError)
+        return NextResponse.json({ error: "Error al verificar maquinarias" }, { status: 500 })
       }
 
-      const lotesExistentesIds = lotesExistentes?.map((l) => l.id) || []
-      const lotesInvalidos = lotes_seleccionados.filter((id: number) => !lotesExistentesIds.includes(id))
+      const maquinariasExistentesIds = maquinariasExistentes?.map((m) => m.id) || []
+      const maquinariasInvalidas = maquinarias_seleccionadas.filter(
+        (id: number) => !maquinariasExistentesIds.includes(id),
+      )
 
-      if (lotesInvalidos.length > 0) {
-        console.error("❌ Lotes no válidos:", lotesInvalidos)
+      if (maquinariasInvalidas.length > 0) {
+        console.error("❌ Maquinarias no válidas:", maquinariasInvalidas)
         return NextResponse.json(
           {
-            error: `Lotes no válidos: ${lotesInvalidos.join(", ")}`,
+            error: `Maquinarias no válidas: ${maquinariasInvalidas.join(", ")}`,
           },
           { status: 400 },
         )
       }
 
-      const detallesLotesParaInsertar = lotes_seleccionados.map((loteId: number) => ({
+      const detallesMaquinariasParaInsertar = maquinarias_seleccionadas.map((maquinariaId: number) => ({
         actividad_id: Number.parseInt(actividadId),
-        lote_id: loteId,
-        cantidad: 0, // No hay cantidad específica de animales para actividades varias
-        categoria_animal_id: null, // No hay categoría específica
-        peso: null,
-        tipo_peso: null,
+        maquinaria_id: maquinariaId,
       }))
 
-      const { error: insertLotesError } = await supabase.from("pd_actividad_animales").insert(detallesLotesParaInsertar)
+      const { error: insertMaquinariasError } = await supabase
+        .from("pd_actividad_maquinarias")
+        .insert(detallesMaquinariasParaInsertar)
 
-      if (insertLotesError) {
-        console.error("❌ Error insertando nuevos lotes:", insertLotesError)
-        return NextResponse.json({ error: "Error al insertar nuevos lotes" }, { status: 500 })
+      if (insertMaquinariasError) {
+        console.error("❌ Error insertando nuevas maquinarias:", insertMaquinariasError)
+        return NextResponse.json({ error: "Error al insertar nuevas maquinarias" }, { status: 500 })
       }
     }
 
@@ -166,14 +164,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
     }
 
-    console.log("✅ Actividad varias de corral actualizada exitosamente")
+    console.log("✅ Uso de combustibles y lubricantes actualizado exitosamente")
 
     return NextResponse.json({
       success: true,
-      message: "Actividad varias de corral actualizada correctamente",
+      message: "Actividad actualizada correctamente",
     })
   } catch (error) {
-    console.error("❌ Error en API actividades-varias-corral PUT:", error)
+    console.error("❌ Error en API uso-combustibles-lubricantes PUT:", error)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
@@ -184,7 +182,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const body = await request.json()
     const { deleted, deleted_at, deleted_user_id } = body
 
-    console.log("🗑️ Soft delete para actividad varias corral ID:", id)
+    console.log("🗑️ Soft delete para uso de combustibles y lubricantes ID:", id)
     console.log("📝 Datos recibidos:", { deleted, deleted_at, deleted_user_id })
 
     // Validar datos requeridos
@@ -225,14 +223,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Error al eliminar", details: error.message }, { status: 500 })
     }
 
-    console.log("✅ Actividad varias corral eliminada exitosamente")
+    console.log("✅ Uso de combustibles y lubricantes eliminado exitosamente")
 
     return NextResponse.json({
       message: "Actividad eliminada exitosamente",
       data,
     })
   } catch (error) {
-    console.error("❌ Error en PATCH actividades-varias-corral:", error)
+    console.error("❌ Error en PATCH uso-combustibles-lubricantes:", error)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }

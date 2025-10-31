@@ -45,6 +45,7 @@ import CaneriasBebederosDrawer from "../../actividades/components/canerias-bebed
 import DesteteDrawer from "../../actividades/components/destete-drawer" // Importando el drawer de destete
 import ActividadVariasCorralDrawer from "../../actividades/components/actividad-varias-corral-drawer" // Importando el drawer de actividad varias de corral
 import PesajeDrawer from "../../actividades/components/pesaje-drawer" // Importar el drawer de Pesaje
+import UsoCombustiblesLubricantesDrawer from "../../actividades/components/uso-combustibles-lubricantes-drawer" // Importar el nuevo drawer
 
 interface TipoActividad {
   id: number
@@ -109,6 +110,9 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   const [actividadVariasCorralSeleccionada, setActividadVariasCorralSeleccionada] = useState<TipoActividad | null>(null)
   const [pesajeDrawerOpen, setPesajeDrawerOpen] = useState(false) // Agregar estados para el drawer de Pesaje
   const [actividadPesajeSeleccionada, setActividadPesajeSeleccionada] = useState<TipoActividad | null>(null) // Agregar estados para el drawer de Pesaje
+  const [usoCombustiblesLubricantesDrawerOpen, setUsoCombustiblesLubricantesDrawerOpen] = useState(false) // Agregar estados para el drawer de Uso de Combustibles y Lubricantes
+  const [actividadUsoCombustiblesSeleccionada, setActividadUsoCombustiblesSeleccionada] =
+    useState<TipoActividad | null>(null) // Agregar estados para el drawer de Uso de Combustibles y Lubricantes
 
   const { currentEstablishment } = useCurrentEstablishment()
 
@@ -316,6 +320,14 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
         return
       }
 
+      if (actividad.id === 39 || actividad.nombre === "Uso de Combustibles y Lubricantes") {
+        console.log("✅ Actividad de uso de combustibles y lubricantes detectada")
+        setActividadUsoCombustiblesSeleccionada(actividad)
+        setUsoCombustiblesLubricantesDrawerOpen(true)
+        onClose()
+        return
+      }
+
       if (
         (actividad.animales === "OBLIGATORIO" || actividad.animales === "OPCIONAL") &&
         actividad.insumos === "NO APLICA"
@@ -371,6 +383,7 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   const actividadesReclasificacion = actividadesAdministracion.filter((act) => act.id === 37 || act.id === 38)
   const actividadesGestionPotreros = actividadesAdministracion.filter((act) => act.id === 5 || act.id === 11)
   const actividadesVariasCorral = actividadesAdministracion.filter((act) => act.id === 30)
+  const actividadesUsoCombustiblesLubricantes = actividadesAdministracion.filter((act) => act.id === 39)
 
   const actividadesOtrasUbicaciones = Object.entries(actividadesPorUbicacion).filter(
     ([ubicacion]) => ubicacion !== "ADMINISTRACION",
@@ -381,6 +394,7 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   console.log("📋 Actividades de Reclasificación:", actividadesReclasificacion)
   console.log("📋 Actividades de Gestión Potreros:", actividadesGestionPotreros)
   console.log("📋 Actividades Varias de Corral:", actividadesVariasCorral)
+  console.log("📋 Actividades de Uso de Combustibles y Lubricantes:", actividadesUsoCombustiblesLubricantes)
 
   const iconosUbicacion = {
     CAMPO: { icon: Wrench, color: "green" },
@@ -668,6 +682,44 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
                         {expandedSections.includes("VARIAS_CORRAL") && (
                           <div className="pl-4 py-2 space-y-1 max-h-60 overflow-y-auto">
                             {actividadesVariasCorral.map((actividad) => (
+                              <button
+                                key={actividad.id}
+                                onClick={() => handleOptionClick(actividad.nombre, actividad)}
+                                className="w-full text-left py-2 px-3 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-all duration-200 hover:translate-x-1"
+                              >
+                                {actividad.nombre}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {actividadesUsoCombustiblesLubricantes.length > 0 && (
+                      <div className="space-y-1">
+                        <button
+                          onClick={() => toggleSection("USO_COMBUSTIBLES_LUBRICANTES")}
+                          className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <Package className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">Uso de Combustibles y Lubricantes</p>
+                            <p className="text-sm text-gray-500">
+                              {actividadesUsoCombustiblesLubricantes.length} actividades
+                            </p>
+                          </div>
+                          {expandedSections.includes("USO_COMBUSTIBLES_LUBRICANTES") ? (
+                            <ChevronDown className="h-4 w-4 text-gray-400" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-gray-400" />
+                          )}
+                        </button>
+
+                        {expandedSections.includes("USO_COMBUSTIBLES_LUBRICANTES") && (
+                          <div className="pl-4 py-2 space-y-1 max-h-60 overflow-y-auto">
+                            {actividadesUsoCombustiblesLubricantes.map((actividad) => (
                               <button
                                 key={actividad.id}
                                 onClick={() => handleOptionClick(actividad.nombre, actividad)}
@@ -1025,6 +1077,16 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
           onRefresh?.()
         }}
         tipoActividadId={actividadPesajeSeleccionada?.id}
+      />
+
+      <UsoCombustiblesLubricantesDrawer
+        isOpen={usoCombustiblesLubricantesDrawerOpen}
+        onClose={() => setUsoCombustiblesLubricantesDrawerOpen(false)}
+        actividadSeleccionada={actividadUsoCombustiblesSeleccionada}
+        onSuccess={() => {
+          console.log("Uso de combustibles y lubricantes guardado exitosamente")
+          onRefresh?.()
+        }}
       />
     </>
   )

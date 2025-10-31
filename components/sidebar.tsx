@@ -25,14 +25,16 @@ import { useEstablishment } from "@/contexts/establishment-context"
 import { useUser } from "@/contexts/user-context"
 import { usePermissions } from "@/hooks/use-permissions"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
 interface SidebarProps {
-  onMenuClick?: (menuItem: string) => void
+  activeSection?: string
   onEstablishmentChange?: (establishment: string) => void
   onCompanyChange?: (company: string) => void
 }
 
-export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyChange }: SidebarProps) {
+export default function Sidebar({ activeSection, onEstablishmentChange, onCompanyChange }: SidebarProps) {
+  const router = useRouter()
   const {
     empresas,
     establecimientos,
@@ -74,6 +76,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: BarChart3,
       label: "Registros",
       key: "registros",
+      path: "/registros",
       visible: permissions.canViewDashboard("partes"),
       requiresAuth: true,
     },
@@ -81,6 +84,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: FileText,
       label: "Reportes",
       key: "reportes",
+      path: "/reportes",
       visible: true,
       requiresAuth: true,
     },
@@ -88,6 +92,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: TrendingUp,
       label: "Movimientos",
       key: "movimientos",
+      path: "/movimientos",
       visible: permissions.canViewDashboard("movimientos"),
       requiresAuth: true,
     },
@@ -95,6 +100,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: Activity,
       label: "Actividades",
       key: "actividades",
+      path: "/actividades",
       visible: true,
       requiresAuth: true,
     },
@@ -102,6 +108,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: Cloud,
       label: "Clima",
       key: "clima",
+      path: "/clima",
       visible: permissions.canViewDashboard("clima"),
       requiresAuth: true,
     },
@@ -109,6 +116,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: Map,
       label: "Potreros/Parcelas",
       key: "potreros",
+      path: "/potreros",
       visible: false,
       requiresAuth: true,
     },
@@ -116,6 +124,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: Package,
       label: "Insumos",
       key: "insumos",
+      path: "/insumos",
       visible: true,
       requiresAuth: true,
     },
@@ -123,6 +132,7 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: Tractor,
       label: "Maquinarias",
       key: "maquinarias",
+      path: "/maquinarias",
       visible: false,
       requiresAuth: true,
     },
@@ -130,25 +140,26 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
       icon: Settings,
       label: "Configuración",
       key: "configuracion",
+      path: "/configuracion",
       visible: permissions.canViewConfiguration(),
       requiresAuth: true,
     },
   ]
 
-  const handleMenuItemClick = (menuItem: string) => {
-    console.log("🔍 [SIDEBAR] Menu clicked:", menuItem)
+  const handleMenuItemClick = (path: string, label: string) => {
+    console.log("🔍 [SIDEBAR] Menu clicked:", label)
     console.log("🔐 [SIDEBAR] Permisos actuales:", {
       isAdmin: permissions.isAdmin,
       isConsultor: permissions.isConsultor,
       canEdit: permissions.canEdit,
       canAddParteDiario: permissions.canAddParteDiario(),
     })
-    onMenuClick?.(menuItem)
+    router.push(path)
   }
 
   const handleLogoClick = () => {
     console.log("🏠 [SIDEBAR] Logo clicked - Redirigiendo a Registros")
-    onMenuClick?.("Registros")
+    router.push("/registros")
   }
 
   const handleLogout = () => {
@@ -390,13 +401,16 @@ export default function Sidebar({ onMenuClick, onEstablishmentChange, onCompanyC
               .filter((item) => item.visible && (!item.requiresAuth || isAuthenticated))
               .map((item) => {
                 const IconComponent = item.icon
+                const isActive = activeSection === item.label
                 return (
                   <li key={item.key}>
                     <button
-                      onClick={() => handleMenuItemClick(item.label)}
-                      className="w-full flex items-center gap-3 text-sm text-gray-200 py-3 px-4 hover:bg-gray-600 rounded-md transition-colors duration-200"
+                      onClick={() => handleMenuItemClick(item.path, item.label)}
+                      className={`w-full flex items-center gap-3 text-sm py-3 px-4 rounded-md transition-colors duration-200 ${
+                        isActive ? "bg-gray-700 text-white font-medium" : "text-gray-200 hover:bg-gray-600"
+                      }`}
                     >
-                      <IconComponent className="h-5 w-5 text-[#8C9C78]" />
+                      <IconComponent className={`h-5 w-5 ${isActive ? "text-[#A8C090]" : "text-[#8C9C78]"}`} />
                       {item.label}
                     </button>
                   </li>

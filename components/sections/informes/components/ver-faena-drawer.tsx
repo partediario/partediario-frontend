@@ -216,41 +216,7 @@ export default function VerFaenaDrawer({ isOpen, onClose, parte }: VerFaenaDrawe
           {(!loading || faenaData) && (
             <>
               {/* Datos Generales */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Datos Generales</h3>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                      Actividad
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {getUserDisplayName()}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo de Actividad</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {faenaData?.actividad?.detalle_tipo || "Faena"}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo de Movimiento</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {faenaData?.tipoMovimiento || "No especificado"}
-                    </div>
-                  </div>
-                </div>
-
+              <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Fecha</Label>
@@ -260,9 +226,9 @@ export default function VerFaenaDrawer({ isOpen, onClose, parte }: VerFaenaDrawe
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium text-gray-700">Hora</Label>
+                    <Label className="text-sm font-medium text-gray-700">Tipo de Movimiento</Label>
                     <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {formatTime(faenaData?.actividad?.hora || parte.pd_hora)}
+                      {faenaData?.tipoMovimiento || "No especificado"}
                     </div>
                   </div>
                 </div>

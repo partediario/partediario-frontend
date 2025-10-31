@@ -7,9 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Trash2, Edit, Users, AlertCircle, X } from "lucide-react"
 import { useCurrentEstablishment } from "@/hooks/use-current-establishment"
 import { useUser } from "@/contexts/user-context"
@@ -74,6 +72,8 @@ export default function SeñaladaDrawer({
   // Errores
   const [errores, setErrores] = useState<string[]>([])
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
+  const [mostrarModalErroresDetalle, setMostrarModalErroresDetalle] = useState(false)
 
   const { currentEstablishment } = useCurrentEstablishment()
   const { usuario, loading: loadingUsuario } = useUser()
@@ -125,7 +125,6 @@ export default function SeñaladaDrawer({
 
     if (!actividadSeleccionada) errores.push("Debe seleccionar un tipo de actividad")
     if (!fecha) errores.push("La fecha es requerida")
-    if (!hora) errores.push("La hora es requerida")
     if (detalles.length === 0) errores.push("Debe agregar al menos un detalle")
 
     return errores
@@ -151,11 +150,7 @@ export default function SeñaladaDrawer({
     const erroresValidacion = validarDetalle()
     if (erroresValidacion.length > 0) {
       setErroresDetalle(erroresValidacion)
-      toast({
-        title: "Error en validación",
-        description: erroresValidacion.join(", "),
-        variant: "destructive",
-      })
+      setMostrarModalErroresDetalle(true)
       return
     }
 
@@ -246,6 +241,7 @@ export default function SeñaladaDrawer({
     const erroresValidacion = validarFormularioPrincipal()
     if (erroresValidacion.length > 0) {
       setErrores(erroresValidacion)
+      setMostrarModalErrores(true)
       return
     }
 
@@ -357,63 +353,14 @@ export default function SeñaladaDrawer({
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {/* Errores principales */}
-          {errores.length > 0 && (
-            <Alert variant="destructive" className="mb-6 sticky top-0 z-50 bg-red-50 shadow-md">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium mb-2">Se encontraron {errores.length} errores:</div>
-                <ul className="list-disc list-inside space-y-1">
-                  {errores.map((error, index) => (
-                    <li key={index} className="text-sm">
-                      {error}
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-
           <div className="space-y-6">
             {/* Datos Generales */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Datos Generales</h3>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                      Actividad
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {nombreCompleto}
-                    </div>
-                  </div>
-                </div>
-
                 <div>
-                  <Label className="text-sm font-medium text-gray-700">Tipo de Actividad *</Label>
+                  <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
                   <div className="mt-1">
-                    <Input value={actividadSeleccionada?.nombre || ""} disabled className="bg-gray-50" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
-                    <div className="mt-1">
-                      <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Hora *</Label>
-                    <div className="mt-1">
-                      <CustomTimePicker time={hora} onTimeChange={setHora} placeholder="Seleccionar hora" />
-                    </div>
+                    <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
                   </div>
                 </div>
               </div>
@@ -436,22 +383,6 @@ export default function SeñaladaDrawer({
               {/* Formulario de detalle expandido */}
               {mostrarFormDetalle && (
                 <div className="bg-gray-50 border rounded-lg p-6 mb-4">
-                  {erroresDetalle.length > 0 && (
-                    <Alert variant="destructive" className="mb-4">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        <div className="font-medium mb-2">Campos faltantes:</div>
-                        <ul className="list-disc list-inside space-y-1">
-                          {erroresDetalle.map((error, index) => (
-                            <li key={index} className="text-sm">
-                              {error}
-                            </li>
-                          ))}
-                        </ul>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
                   <h4 className="font-medium mb-4">{editandoDetalle !== null ? "Editar Detalle" : "Nuevo Detalle"}</h4>
 
                   <div className="space-y-4">
@@ -614,6 +545,62 @@ export default function SeñaladaDrawer({
             {loading ? "Guardando..." : "Guardar Actividad"}
           </Button>
         </div>
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">Se encontraron {errores.length} errores:</h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {errores.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErrores(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mostrarModalErroresDetalle && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">
+                    Se encontraron {erroresDetalle.length} errores:
+                  </h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {erroresDetalle.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErroresDetalle(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )

@@ -9,6 +9,7 @@ import { Lotes } from "./tabs/lotes"
 import { Usuarios } from "./tabs/usuarios"
 import { PermissionWrapper } from "@/components/permission-wrapper"
 import { Insumos } from "./tabs/insumos"
+import { Maquinarias } from "./tabs/maquinarias"
 
 interface ConfigurationTabsProps {
   activeTab: string
@@ -24,13 +25,14 @@ export function ConfigurationTabs({ activeTab, onTabChange }: ConfigurationTabsP
       </div>
 
       <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-7 mb-6">
+        <TabsList className="grid w-full grid-cols-8 mb-6">
           <TabsTrigger value="datos-empresa">Datos de empresa</TabsTrigger>
           <TabsTrigger value="establecimientos">Establecimientos</TabsTrigger>
           <TabsTrigger value="categoria-animales">Categoría Animales</TabsTrigger>
           <TabsTrigger value="potreros">Potreros</TabsTrigger>
           <TabsTrigger value="lotes">Lotes</TabsTrigger>
           <TabsTrigger value="insumos">Insumos</TabsTrigger>
+          <TabsTrigger value="maquinarias">Maquinarias</TabsTrigger>
 
           {/* Tab Usuarios - solo visible para usuarios que pueden ver usuarios */}
           <PermissionWrapper requirePermission="canViewUsers">
@@ -60,6 +62,10 @@ export function ConfigurationTabs({ activeTab, onTabChange }: ConfigurationTabsP
 
         <TabsContent value="insumos">
           <Insumos />
+        </TabsContent>
+
+        <TabsContent value="maquinarias">
+          <Maquinarias />
         </TabsContent>
 
         {/* Contenido Usuarios - solo visible para usuarios que pueden ver usuarios */}

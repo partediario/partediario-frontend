@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Home } from "lucide-react"
+import { X, Fuel } from "lucide-react"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -9,13 +9,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import type { ParteDiario } from "@/lib/types"
 
-interface VerActividadVariasCorralDrawerProps {
+interface VerUsoCombustiblesLubricantesDrawerProps {
   isOpen: boolean
   onClose: () => void
   parte: ParteDiario | null
 }
 
-interface ActividadVariasCorralData {
+interface UsoCombustiblesLubricantesData {
   actividad: {
     id: number
     tipo_actividad_id: number
@@ -25,18 +25,10 @@ interface ActividadVariasCorralData {
     detalle_tipo: string
     detalle_ubicacion: string
   }
-  detalles_animales: Array<{
+  detalles_maquinarias: Array<{
     id: number
-    lote_id: number
-    lote_nombre: string
-    categoria_animal_id: number | null
-    categoria_animal: string | null
-    categoria_animal_id_anterior: number | null
-    categoria_animal_anterior: string | null
-    cantidad: number
-    peso: number | null
-    tipo_peso: string | null
-    meses_destete: string | null
+    maquinaria_id: number
+    maquinaria_nombre: string
   }>
   detalles_insumos: Array<{
     id: number
@@ -47,12 +39,12 @@ interface ActividadVariasCorralData {
   }>
 }
 
-export default function VerActividadVariasCorralDrawer({
+export default function VerUsoCombustiblesLubricantesDrawer({
   isOpen,
   onClose,
   parte,
-}: VerActividadVariasCorralDrawerProps) {
-  const [actividadData, setActividadData] = useState<ActividadVariasCorralData | null>(null)
+}: VerUsoCombustiblesLubricantesDrawerProps) {
+  const [actividadData, setActividadData] = useState<UsoCombustiblesLubricantesData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -74,27 +66,27 @@ export default function VerActividadVariasCorralDrawer({
         detalles = JSON.parse(detalles)
       }
 
-      console.log("✅ Cargando datos de Actividad Varias de Corral desde pd_detalles:", detalles)
+      console.log("✅ Cargando datos de Uso de Combustibles y Lubricantes desde pd_detalles:", detalles)
 
       // Crear estructura de datos
-      const actividadData: ActividadVariasCorralData = {
+      const actividadData: UsoCombustiblesLubricantesData = {
         actividad: {
           id: parte.pd_id || 0,
           tipo_actividad_id: detalles.detalle_tipo_id || 0,
           fecha: parte.pd_fecha || "",
           hora: parte.pd_hora || "",
           nota: parte.pd_nota || null,
-          detalle_tipo: detalles.detalle_tipo || "Actividad Varias de Corral",
-          detalle_ubicacion: detalles.detalle_ubicacion || "CORRAL",
+          detalle_tipo: detalles.detalle_tipo || "Uso de Combustibles y Lubricantes",
+          detalle_ubicacion: detalles.detalle_ubicacion || "ESTANCIA",
         },
-        detalles_animales: detalles.detalles_animales || [],
+        detalles_maquinarias: detalles.detalles_maquinarias || [],
         detalles_insumos: detalles.detalles_insumos || [],
       }
 
-      console.log("✅ Datos de actividad varias de corral procesados:", actividadData)
+      console.log("✅ Datos de uso de combustibles y lubricantes procesados:", actividadData)
       setActividadData(actividadData)
     } catch (err) {
-      console.error("❌ Error parseando detalles de Actividad Varias de Corral:", err)
+      console.error("❌ Error parseando detalles de Uso de Combustibles y Lubricantes:", err)
       setError("Error al cargar los datos de la actividad")
     } finally {
       setLoading(false)
@@ -146,8 +138,8 @@ export default function VerActividadVariasCorralDrawer({
       <DrawerContent className="h-full w-[850px] ml-auto">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
           <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Home className="w-6 h-6 text-orange-600" />
-            Ver Actividad Varias de Corral
+            <Fuel className="w-6 h-6 text-orange-600" />
+            Ver Uso de Combustibles y Lubricantes
           </DrawerTitle>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <X className="h-5 w-5 text-gray-500" />
@@ -169,7 +161,6 @@ export default function VerActividadVariasCorralDrawer({
 
           {(!loading || actividadData) && (
             <div className="space-y-6">
-              {/* Datos Generales */}
               <div>
                 <Label>Fecha</Label>
                 <Input
@@ -179,32 +170,32 @@ export default function VerActividadVariasCorralDrawer({
                 />
               </div>
 
-              {/* Lotes */}
+              {/* Maquinarias */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Lotes</h3>
+                  <h3 className="text-lg font-semibold">Maquinarias</h3>
                 </div>
 
-                {/* Lotes seleccionados */}
-                {actividadData?.detalles_animales && actividadData.detalles_animales.length > 0 ? (
+                {/* Maquinarias seleccionadas */}
+                {actividadData?.detalles_maquinarias && actividadData.detalles_maquinarias.length > 0 ? (
                   <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                     <div className="text-sm font-medium text-orange-800 mb-2">
-                      Lotes seleccionados ({actividadData.detalles_animales.length}):
+                      Maquinarias seleccionadas ({actividadData.detalles_maquinarias.length}):
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {actividadData.detalles_animales.map((detalle, index) => (
+                      {actividadData.detalles_maquinarias.map((detalle, index) => (
                         <span
                           key={detalle.id || index}
                           className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full"
                         >
-                          {detalle.lote_nombre || `Lote ${detalle.lote_id}`}
+                          {detalle.maquinaria_nombre || `Maquinaria ${detalle.maquinaria_id}`}
                         </span>
                       ))}
                     </div>
                   </div>
                 ) : (
                   <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg border">
-                    No se seleccionaron lotes
+                    No se seleccionaron maquinarias
                   </div>
                 )}
               </div>

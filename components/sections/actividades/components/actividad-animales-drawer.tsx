@@ -83,6 +83,8 @@ export default function ActividadAnimalesDrawer({
   // Errores
   const [errores, setErrores] = useState<string[]>([])
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
+  const [mostrarModalErroresDetalle, setMostrarModalErroresDetalle] = useState(false)
 
   const { currentEstablishment } = useCurrentEstablishment()
   const { usuario, loading: loadingUsuario } = useUser()
@@ -229,6 +231,7 @@ export default function ActividadAnimalesDrawer({
     const erroresValidacion = validarDetalle()
     if (erroresValidacion.length > 0) {
       setErroresDetalle(erroresValidacion)
+      setMostrarModalErroresDetalle(true)
       return
     }
 
@@ -290,6 +293,7 @@ export default function ActividadAnimalesDrawer({
     const erroresValidacion = validarFormularioPrincipal()
     if (erroresValidacion.length > 0) {
       setErrores(erroresValidacion)
+      setMostrarModalErrores(true)
       return
     }
 
@@ -383,20 +387,6 @@ export default function ActividadAnimalesDrawer({
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {errores.length > 0 && (
-            <div className="sticky top-0 z-50 bg-red-50 mb-6 p-4 border border-red-200 rounded-lg shadow-md">
-              <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
-                <AlertCircle className="w-5 h-5" />
-                Se encontraron {errores.length} errores:
-              </div>
-              <ul className="list-disc list-inside text-red-700 space-y-1">
-                {errores.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
           {/* Datos Generales */}
           <div className="space-y-6">
             <div>
@@ -453,21 +443,6 @@ export default function ActividadAnimalesDrawer({
               {/* Formulario de detalle expandido - ARRIBA de la tabla */}
               {mostrarFormDetalle && (
                 <div className="bg-gray-50 border rounded-lg p-6 mb-4">
-                  {/* Errores de detalle */}
-                  {erroresDetalle.length > 0 && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
-                      <div className="flex items-center gap-2 text-red-800 font-medium mb-1">
-                        <AlertCircle className="w-4 h-4" />
-                        Errores encontrados:
-                      </div>
-                      <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
-                        {erroresDetalle.map((error, index) => (
-                          <li key={index}>{error}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
                   <h4 className="font-medium mb-4">{editandoDetalle !== null ? "Editar Detalle" : "Nuevo Detalle"}</h4>
 
                   <div className="space-y-4">
@@ -637,6 +612,62 @@ export default function ActividadAnimalesDrawer({
             {loading ? "Guardando..." : "Guardar Actividad"}
           </Button>
         </div>
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">Se encontraron {errores.length} errores:</h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {errores.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErrores(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mostrarModalErroresDetalle && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">
+                    Se encontraron {erroresDetalle.length} errores:
+                  </h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {erroresDetalle.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErroresDetalle(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )
