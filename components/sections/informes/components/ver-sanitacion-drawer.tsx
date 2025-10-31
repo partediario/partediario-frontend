@@ -110,43 +110,11 @@ export default function VerSanitacionDrawer({ isOpen = false, onClose, parte }: 
           {/* Datos Generales */}
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold mb-4">Datos Generales</h3>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                      Actividad
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {nombreCompleto}
-                    </div>
-                  </div>
-                </div>
-
                 <div>
-                  <Label className="text-sm font-medium text-gray-700">Tipo de Actividad</Label>
+                  <Label className="text-sm font-medium text-gray-700">Fecha</Label>
                   <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                    {parte?.pd_detalles?.detalle_tipo || "Sanitación"}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Fecha</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {parte?.pd_fecha ? formatDate(parte.pd_fecha) : ""}
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Hora</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {parte?.pd_hora ? formatTime(parte.pd_hora) : ""}
-                    </div>
+                    {parte?.pd_fecha ? formatDate(parte.pd_fecha) : ""}
                   </div>
                 </div>
               </div>

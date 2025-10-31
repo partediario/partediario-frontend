@@ -13,8 +13,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const { fecha, hora, nota, lotes_seleccionados, detalles } = body
 
     // Validaciones básicas
-    if (!fecha || !hora) {
-      return NextResponse.json({ error: "Fecha y hora son requeridos" }, { status: 400 })
+    if (!fecha) {
+      return NextResponse.json({ error: "Fecha es requerida" }, { status: 400 })
     }
 
     // Verificar que la actividad existe
@@ -34,7 +34,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       .from("pd_actividades")
       .update({
         fecha,
-        hora,
         nota: nota || null,
         updated_at: new Date().toISOString(),
       })

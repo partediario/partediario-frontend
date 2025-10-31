@@ -85,8 +85,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const { tipo_actividad_id, fecha, hora, nota, user_id, detalles, tipo_movimiento_animal_id, establecimiento_id } =
       body
 
-    if (!tipo_actividad_id || !fecha || !hora || !establecimiento_id) {
-      console.error("❌ [v0] Campos faltantes:", { tipo_actividad_id, fecha, hora, establecimiento_id })
+    if (!tipo_actividad_id || !fecha || !establecimiento_id) {
+      console.error("❌ [v0] Campos faltantes:", { tipo_actividad_id, fecha, establecimiento_id })
       return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 })
     }
 
@@ -112,7 +112,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       .update({
         tipo_actividad_id,
         fecha,
-        hora,
         nota: nota || null,
         user_id,
         updated_at: new Date().toISOString(),

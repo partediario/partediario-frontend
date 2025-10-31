@@ -143,14 +143,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const movimientoId = params.id
     const body = await request.json()
 
-    const { fecha, hora, nota, insumo_id, cantidad, tipo_movimiento_insumo } = body
+    const { fecha, nota, insumo_id, cantidad, tipo_movimiento_insumo } = body
 
     // Actualizar el movimiento
     const { data: movimientoActualizado, error } = await supabase
       .from("pd_movimiento_insumos")
       .update({
         fecha,
-        hora,
         nota,
         insumo_id,
         cantidad,

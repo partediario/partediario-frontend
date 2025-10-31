@@ -80,7 +80,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const body = await request.json()
     console.log("Actualizando actividad de insumos:", params.id, body)
 
-    const { fecha, hora, nota, detalles } = body
+    const { fecha, nota, detalles } = body
 
     // Primero obtener la actividad actual de la tabla pd_actividades
     const { data: actividadActual, error: actividadError } = await supabase
@@ -99,7 +99,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       .from("pd_actividades")
       .update({
         fecha,
-        hora,
         nota,
         updated_at: new Date().toISOString(),
       })

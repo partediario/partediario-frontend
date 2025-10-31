@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { CustomTimePicker } from "@/components/ui/custom-time-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Trash2, Edit, Users, AlertCircle, X } from "lucide-react"
@@ -125,7 +124,6 @@ export default function SeñaladaDrawer({
 
     if (!actividadSeleccionada) errores.push("Debe seleccionar un tipo de actividad")
     if (!fecha) errores.push("La fecha es requerida")
-    if (!hora) errores.push("La hora es requerida")
     if (detalles.length === 0) errores.push("Debe agregar al menos un detalle")
 
     return errores
@@ -377,43 +375,11 @@ export default function SeñaladaDrawer({
           <div className="space-y-6">
             {/* Datos Generales */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Datos Generales</h3>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
-                      Actividad
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
-                      {nombreCompleto}
-                    </div>
-                  </div>
-                </div>
-
                 <div>
-                  <Label className="text-sm font-medium text-gray-700">Tipo de Actividad *</Label>
+                  <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
                   <div className="mt-1">
-                    <Input value={actividadSeleccionada?.nombre || ""} disabled className="bg-gray-50" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
-                    <div className="mt-1">
-                      <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Hora *</Label>
-                    <div className="mt-1">
-                      <CustomTimePicker time={hora} onTimeChange={setHora} placeholder="Seleccionar hora" />
-                    </div>
+                    <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
                   </div>
                 </div>
               </div>

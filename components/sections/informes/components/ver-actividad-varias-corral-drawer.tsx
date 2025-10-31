@@ -171,44 +171,12 @@ export default function VerActividadVariasCorralDrawer({
             <div className="space-y-6">
               {/* Datos Generales */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Datos Generales</h3>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Tipo</Label>
-                      <Input value="Actividad" disabled className="bg-gray-50" />
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Usuario</Label>
-                      <Input value={getUserDisplayName()} disabled className="bg-gray-50" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="tipo-actividad">Tipo de Actividad</Label>
-                    <Input value="Actividad Varias de Corral" disabled className="bg-gray-50" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Fecha</Label>
-                      <Input
-                        value={formatDate(actividadData?.actividad?.fecha || parte.pd_fecha)}
-                        disabled
-                        className="bg-gray-50"
-                      />
-                    </div>
-                    <div>
-                      <Label>Hora</Label>
-                      <Input
-                        value={formatTime(actividadData?.actividad?.hora || parte.pd_hora)}
-                        disabled
-                        className="bg-gray-50"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <Label>Fecha</Label>
+                <Input
+                  value={formatDate(actividadData?.actividad?.fecha || parte.pd_fecha)}
+                  disabled
+                  className="bg-gray-50"
+                />
               </div>
 
               {/* Lotes */}
