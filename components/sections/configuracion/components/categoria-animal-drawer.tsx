@@ -16,7 +16,7 @@ interface CategoriaAnimal {
   sexo: "HEMBRA" | "MACHO"
   edad: "JOVEN" | "ADULTO"
   empresa_id: number
-  categoria_animal_estandar_id?: number | null // Added standard category field
+  categoria_animal_estandar_id?: number | null
 }
 
 interface CategoriaAnimalDrawerProps {
@@ -44,7 +44,7 @@ export function CategoriaAnimalDrawer({
     nombre: "",
     sexo: "",
     edad: "",
-    categoria_animal_estandar_id: "", // Changed default to empty string to make validation work
+    categoria_animal_estandar_id: "",
   })
   const [errors, setErrors] = useState<string[]>([])
   const [categoriasEstandar, setCategoriasEstandar] = useState<CategoriaAnimal[]>([])
@@ -80,14 +80,14 @@ export function CategoriaAnimalDrawer({
           nombre: categoria.nombre || "",
           sexo: categoria.sexo || "",
           edad: categoria.edad || "",
-          categoria_animal_estandar_id: categoria.categoria_animal_estandar_id?.toString() || "", // Changed default to empty string
+          categoria_animal_estandar_id: categoria.categoria_animal_estandar_id?.toString() || "",
         })
       } else if (mode === "create") {
         setFormData({
           nombre: "",
           sexo: "",
           edad: "",
-          categoria_animal_estandar_id: "", // Changed default to empty string
+          categoria_animal_estandar_id: "",
         })
       }
       setErrors([])
@@ -98,11 +98,26 @@ export function CategoriaAnimalDrawer({
   // Limpiar formulario cuando se cierra el drawer
   useEffect(() => {
     if (!isOpen) {
-      setFormData({ nombre: "", sexo: "", edad: "", categoria_animal_estandar_id: "" }) // Changed default to empty string
+      setFormData({ nombre: "", sexo: "", edad: "", categoria_animal_estandar_id: "" })
       setErrors([])
       setMostrarExito(false)
     }
   }, [isOpen])
+
+  const handleCategoriaEstandarChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, categoria_animal_estandar_id: value }))
+
+    // Buscar la categoría estándar seleccionada y auto-cargar sexo y edad
+    const categoriaSeleccionada = categoriasEstandar.find((cat) => cat.id.toString() === value)
+    if (categoriaSeleccionada) {
+      setFormData((prev) => ({
+        ...prev,
+        categoria_animal_estandar_id: value,
+        sexo: categoriaSeleccionada.sexo,
+        edad: categoriaSeleccionada.edad,
+      }))
+    }
+  }
 
   const validateForm = () => {
     const newErrors: string[] = []
@@ -111,14 +126,6 @@ export function CategoriaAnimalDrawer({
       newErrors.push("El nombre es requerido")
     } else if (formData.nombre.trim().length < 3) {
       newErrors.push("El nombre debe tener al menos 3 caracteres")
-    }
-
-    if (!formData.sexo) {
-      newErrors.push("El sexo es requerido")
-    }
-
-    if (!formData.edad) {
-      newErrors.push("La edad es requerida")
     }
 
     if (!formData.categoria_animal_estandar_id) {
@@ -272,11 +279,11 @@ export function CategoriaAnimalDrawer({
 
             <div>
               <Label htmlFor="categoria-estandar" className="text-sm font-medium text-gray-700">
-                Categoría estándar * {/* Added asterisk to show it's required */}
+                Categoría estándar *
               </Label>
               <Select
                 value={formData.categoria_animal_estandar_id}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, categoria_animal_estandar_id: value }))}
+                onValueChange={handleCategoriaEstandarChange}
                 disabled={loading || loadingEstandar}
               >
                 <SelectTrigger className="mt-1">
@@ -291,49 +298,26 @@ export function CategoriaAnimalDrawer({
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-sm text-gray-500 mt-1">Selecciona una categoría estándar del sistema</p>{" "}
-              {/* Updated help text to reflect it's required */}
+              <p className="text-sm text-gray-500 mt-1">
+                El sexo y edad se cargarán automáticamente según la categoría seleccionada
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="sexo" className="text-sm font-medium text-gray-700">
-                  Sexo *
-                </Label>
-                <Select
-                  value={formData.sexo}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, sexo: value }))}
-                  disabled={loading}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Seleccionar sexo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HEMBRA">Hembra</SelectItem>
-                    <SelectItem value="MACHO">Macho</SelectItem>
-                  </SelectContent>
-                </Select>
+            {formData.categoria_animal_estandar_id && (
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-900 mb-2">Información de la categoría seleccionada</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-blue-700 font-medium">Sexo:</span>{" "}
+                    <span className="text-blue-900">{formData.sexo === "HEMBRA" ? "Hembra" : "Macho"}</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-700 font-medium">Edad:</span>{" "}
+                    <span className="text-blue-900">{formData.edad === "JOVEN" ? "Joven" : "Adulto"}</span>
+                  </div>
+                </div>
               </div>
-
-              <div>
-                <Label htmlFor="edad" className="text-sm font-medium text-gray-700">
-                  Edad *
-                </Label>
-                <Select
-                  value={formData.edad}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, edad: value }))}
-                  disabled={loading}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Seleccionar edad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="JOVEN">Joven</SelectItem>
-                    <SelectItem value="ADULTO">Adulto</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Información adicional */}
