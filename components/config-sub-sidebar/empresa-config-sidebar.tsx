@@ -5,7 +5,7 @@ import { useConfigNavigation } from "@/contexts/config-navigation-context"
 import { cn } from "@/lib/utils"
 
 const configOptions = [
-  { id: "datos-empresa", label: "Datos de Empresa", icon: Building2 },
+  { id: "datos-empresa", label: "Datos Empresa", icon: Building2 },
   { id: "establecimientos", label: "Establecimientos", icon: MapPin },
   { id: "categoria-animales", label: "Categoría Animales", icon: Beef },
   { id: "maquinarias", label: "Maquinarias", icon: Truck },
