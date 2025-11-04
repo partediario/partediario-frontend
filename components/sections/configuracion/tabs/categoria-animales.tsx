@@ -243,7 +243,7 @@ export function CategoriaAnimales() {
             </div>
           ) : categorias.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">No hay categorías registradas para esta empresa</p>
+              <p className="text-gray-500 mb-4">No hay categorías registradas</p>
               {/* Solo mostrar botón si NO es consultor */}
               {!permissions.isConsultor && (
                 <Button onClick={handleNuevaCategoria} className="bg-green-700 hover:bg-green-800">

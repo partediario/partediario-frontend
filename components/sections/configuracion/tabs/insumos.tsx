@@ -176,8 +176,13 @@ export function Insumos() {
             </div>
           ) : insumos.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-500 mb-2">No hay insumos registrados</p>
-              <p className="text-sm text-slate-400">Crea tu primer insumo para comenzar</p>
+              <p className="text-slate-600 mb-4">No hay insumos registrados</p>
+              {!permissions.isConsultor && (
+                <Button onClick={handleCreate} className="bg-green-700 hover:bg-green-800">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear primer insumo
+                </Button>
+              )}
             </div>
           ) : (
             <Table>
