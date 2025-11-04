@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Edit, Plus, Loader2, HelpCircle, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useEstablishment } from "@/contexts/establishment-context"
+import { useConfigNavigation } from "@/contexts/config-navigation-context"
 import { CategoriaAnimalDrawer } from "../components/categoria-animal-drawer"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -24,7 +24,8 @@ interface CategoriaAnimal {
 
 export function CategoriaAnimales() {
   const { toast } = useToast()
-  const { empresaSeleccionada } = useEstablishment()
+  const { state } = useConfigNavigation()
+  const empresaSeleccionada = state.selectedEmpresaId ? Number(state.selectedEmpresaId) : null
   const permissions = usePermissions()
 
   const [categorias, setCategorias] = useState<CategoriaAnimal[]>([])

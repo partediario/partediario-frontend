@@ -26,6 +26,7 @@ import { useUser } from "@/contexts/user-context"
 import { usePermissions } from "@/hooks/use-permissions"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import UsuarioViewDrawer from "@/components/sections/configuracion/components/usuario-view-drawer"
 
 interface SidebarProps {
   activeSection?: string
@@ -54,8 +55,8 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
   const [isContextDialogOpen, setIsContextDialogOpen] = useState(false)
   const [tempEmpresa, setTempEmpresa] = useState<string>("")
   const [tempEstablecimiento, setTempEstablecimiento] = useState<string>("")
+  const [isUserViewDrawerOpen, setIsUserViewDrawerOpen] = useState(false)
 
-  // Mostrar resumen de permisos cuando el usuario se carga
   useEffect(() => {
     if (usuario && !loadingUsuario) {
       console.log("🔐 [SIDEBAR] Permisos del usuario cargados:")
@@ -134,14 +135,6 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
       key: "maquinarias",
       path: "/maquinarias",
       visible: false,
-      requiresAuth: true,
-    },
-    {
-      icon: Settings,
-      label: "Configuración",
-      key: "configuracion",
-      path: "/configuracion",
-      visible: permissions.canViewConfiguration(),
       requiresAuth: true,
     },
   ]
@@ -419,6 +412,25 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
           </ul>
         </nav>
 
+        {/* Configuración button above user info */}
+        {permissions.canViewConfiguration() && isAuthenticated && (
+          <div className="pb-4 border-b border-gray-600">
+            <button
+              onClick={() => handleMenuItemClick("/configuracion", "Configuración")}
+              className={`w-full flex items-center gap-3 text-sm py-3 px-4 rounded-md transition-colors duration-200 ${
+                activeSection === "Configuración"
+                  ? "bg-gray-700 text-white font-medium"
+                  : "text-gray-200 hover:bg-gray-600"
+              }`}
+            >
+              <Settings
+                className={`h-5 w-5 ${activeSection === "Configuración" ? "text-[#A8C090]" : "text-[#8C9C78]"}`}
+              />
+              Configuración
+            </button>
+          </div>
+        )}
+
         {/* Información del usuario */}
         <div className="mt-auto pt-4 border-t border-gray-600">
           <div className="flex items-center mb-3">
@@ -426,10 +438,15 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
               {iniciales}
             </div>
             <div className="ml-3 flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsUserViewDrawerOpen(true)}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity w-full text-left"
+              >
                 {getRoleIcon()}
-                <p className="text-sm font-medium text-white truncate">{nombreCompleto}</p>
-              </div>
+                <p className="text-sm font-medium text-white truncate hover:text-blue-400 transition-colors">
+                  {nombreCompleto}
+                </p>
+              </button>
               <p className="text-xs text-gray-300 truncate">{usuario.email}</p>
               <div className="flex items-center gap-1 mt-1">
                 <Badge variant="default" className="text-xs bg-gray-800 text-white hover:bg-gray-700">
@@ -447,6 +464,20 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
           </button>
         </div>
       </div>
+      {usuario && (
+        <UsuarioViewDrawer
+          open={isUserViewDrawerOpen}
+          onOpenChange={setIsUserViewDrawerOpen}
+          usuario={{
+            id: usuario.id,
+            nombres: usuario.nombres,
+            apellidos: usuario.apellidos,
+            email: usuario.email,
+            telefono: usuario.telefono || "",
+            created_at: usuario.created_at || new Date().toISOString(),
+          }}
+        />
+      )}
     </div>
   )
 }

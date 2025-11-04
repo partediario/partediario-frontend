@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { useEstablishment } from "@/contexts/establishment-context"
+import { useConfigNavigation } from "@/contexts/config-navigation-context"
 import { HelpCircle, X } from "lucide-react"
 import { PermissionWrapper } from "@/components/permission-wrapper"
 
@@ -24,7 +24,8 @@ interface EmpresaData {
 
 export function DatosEmpresa() {
   const { toast } = useToast()
-  const { empresaSeleccionada } = useEstablishment()
+  const { state } = useConfigNavigation()
+  const empresaSeleccionada = state.selectedEmpresaId ? Number(state.selectedEmpresaId) : null
 
   const [formData, setFormData] = useState<EmpresaData>({
     id: 0,

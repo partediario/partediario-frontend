@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Edit, Plus, HelpCircle, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useEstablishment } from "@/contexts/establishment-context"
+import { useConfigNavigation } from "@/contexts/config-navigation-context"
 import { InsumoDrawer } from "../components/insumo-drawer"
 import { usePermissions } from "@/hooks/use-permissions"
 
@@ -46,7 +46,7 @@ interface Insumo {
 
 export function Insumos() {
   const { toast } = useToast()
-  const { establecimientoSeleccionado } = useEstablishment()
+  const { state } = useConfigNavigation()
   const permissions = usePermissions()
 
   const [insumos, setInsumos] = useState<Insumo[]>([])
@@ -57,21 +57,20 @@ export function Insumos() {
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null)
 
-  // Cargar insumos cuando cambia el establecimiento
   useEffect(() => {
-    if (establecimientoSeleccionado) {
+    if (state.selectedEstablecimientoId) {
       fetchInsumos()
     } else {
       setInsumos([])
     }
-  }, [establecimientoSeleccionado])
+  }, [state.selectedEstablecimientoId])
 
   const fetchInsumos = async () => {
-    if (!establecimientoSeleccionado) return
+    if (!state.selectedEstablecimientoId) return
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/insumos-crud?establecimiento_id=${establecimientoSeleccionado}`)
+      const response = await fetch(`/api/insumos-crud?establecimiento_id=${state.selectedEstablecimientoId}`)
       const data = await response.json()
 
       if (!response.ok) {
@@ -121,7 +120,7 @@ export function Insumos() {
     }
   }
 
-  if (!establecimientoSeleccionado) {
+  if (!state.selectedEstablecimientoId) {
     return (
       <div className="space-y-6">
         <div>
@@ -147,7 +146,6 @@ export function Insumos() {
           <h3 className="text-lg font-semibold">Insumos Agropecuarios</h3>
           <p className="text-sm text-slate-600">Gestiona los insumos y su stock en el establecimiento</p>
         </div>
-        {/* Solo mostrar botón Nuevo Insumo si NO es consultor */}
         {!permissions.isConsultor && (
           <Button onClick={handleCreate} className="bg-green-700 hover:bg-green-800">
             <Plus className="w-4 h-4 mr-2" />
@@ -213,7 +211,6 @@ export function Insumos() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {/* Solo mostrar botón editar si NO es consultor */}
                         {!permissions.isConsultor && (
                           <Button size="sm" variant="ghost" onClick={() => handleEdit(insumo)}>
                             <Edit className="w-4 h-4" />
@@ -235,10 +232,9 @@ export function Insumos() {
         onClose={() => setDrawerOpen(false)}
         onSuccess={handleDrawerSuccess}
         mode={drawerMode}
-        establecimientoId={establecimientoSeleccionado || ""}
+        establecimientoId={state.selectedEstablecimientoId || ""}
       />
 
-      {/* Tooltip manual */}
       {activeTooltip === "insumos-registrados" && tooltipPosition && (
         <div
           className="fixed w-96 bg-white border border-gray-200 rounded-lg shadow-xl p-5 z-[9999]"
@@ -274,7 +270,6 @@ export function Insumos() {
         </div>
       )}
 
-      {/* Overlay para cerrar tooltip al hacer clic fuera */}
       {activeTooltip && <div className="fixed inset-0 z-40" onClick={() => setActiveTooltip(null)} />}
     </div>
   )

@@ -63,6 +63,7 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
 
   const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
 
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
   // Estados para mostrar errores de validación
   const [erroresValidacion, setErroresValidacion] = useState<string[]>([])
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
@@ -373,10 +374,7 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
     const errores = validarFormulario()
     if (errores.length > 0) {
       setErroresValidacion(errores)
-      const drawerContent = document.querySelector('[role="dialog"]')
-      if (drawerContent) {
-        drawerContent.scrollTop = 0
-      }
+      setMostrarModalErrores(true)
       return
     }
 
@@ -466,22 +464,6 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
                   Se registraron {detalles.length} detalles con {detalles.reduce((sum, d) => sum + d.cantidad, 0)}{" "}
                   animales
                 </div>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {erroresValidacion.length > 0 && (
-            <Alert variant="destructive" className="sticky top-0 z-10 bg-red-50 shadow-md">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium mb-2">Se encontraron {erroresValidacion.length} errores:</div>
-                <ul className="list-disc list-inside space-y-1">
-                  {erroresValidacion.map((error, index) => (
-                    <li key={index} className="text-sm">
-                      {error}
-                    </li>
-                  ))}
-                </ul>
               </AlertDescription>
             </Alert>
           )}
@@ -744,6 +726,35 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
             {loading ? "Guardando..." : "Guardar"}
           </Button>
         </div>
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">
+                    Se encontraron {erroresValidacion.length} errores:
+                  </h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {erroresValidacion.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErrores(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )

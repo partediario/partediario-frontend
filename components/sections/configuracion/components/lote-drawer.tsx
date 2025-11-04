@@ -60,6 +60,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
   const [loading, setLoading] = useState(false)
   const [loadingPotreros, setLoadingPotreros] = useState(false)
   const [mostrarExito, setMostrarExito] = useState(false)
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
   const [potreros, setPotreros] = useState<Potrero[]>([])
   const [lotesExistentes, setLotesExistentes] = useState<Lote[]>([])
   const [formData, setFormData] = useState({
@@ -69,7 +70,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
   const [errors, setErrors] = useState<string[]>([])
 
   const [stock, setStock] = useState<LoteStock[]>([])
-  const [stockOriginal, setStockOriginal] = useState<LoteStock[]>([]) // Para modo editar
+  const [stockOriginal, setStockOriginal] = useState<LoteStock[]>([])
   const [categorias, setCategorias] = useState<CategoriaAnimal[]>([])
   const [loadingStock, setLoadingStock] = useState(false)
   const [loadingCategorias, setLoadingCategorias] = useState(false)
@@ -79,11 +80,11 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
     categoria_animal_id: "",
     cantidad: "",
     peso: "",
-    tipo_peso: "PROMEDIO", // Cambiado de vacío a "PROMEDIO"
+    tipo_peso: "PROMEDIO",
   })
   const [stockErrors, setStockErrors] = useState<string[]>([])
+  const [mostrarModalErroresStock, setMostrarModalErroresStock] = useState(false)
 
-  // Cargar potreros cuando se abre el drawer
   useEffect(() => {
     if (isOpen && establecimientoId) {
       fetchPotreros()
@@ -91,7 +92,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
     }
   }, [isOpen, establecimientoId])
 
-  // Cargar datos del lote cuando se abre el drawer
   useEffect(() => {
     if (isOpen) {
       if (mode === "edit" && lote) {
@@ -99,7 +99,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
           nombre: lote.nombre || "",
           potrero_id: lote.potrero_id?.toString() || "",
         })
-        // Cargar stock del lote
         fetchStock(lote.id)
       } else if (mode === "create") {
         setFormData({
@@ -112,12 +111,10 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
       setErrors([])
       setStockErrors([])
       setMostrarExito(false)
-      // Cargar categorías
       fetchCategorias()
     }
   }, [lote, isOpen, mode, establecimientoId, empresaSeleccionada])
 
-  // Limpiar formulario cuando se cierra el drawer
   useEffect(() => {
     if (!isOpen) {
       setFormData({
@@ -175,16 +172,11 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
   }
 
   const getPotrerosDisponibles = () => {
-    // Obtener IDs de potreros que ya tienen lotes asignados
     const potrerosOcupados = lotesExistentes.map((lote) => lote.potrero_id)
-
-    // Filtrar potreros
     return potreros.filter((potrero) => {
-      // Si estamos en modo edición y este es el potrero actual del lote, incluirlo
       if (mode === "edit" && lote && potrero.id === lote.potrero_id) {
         return true
       }
-      // Si el potrero no está ocupado, incluirlo
       return !potrerosOcupados.includes(potrero.id)
     })
   }
@@ -222,7 +214,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
 
       const stockData = data.stock || []
       setStock(stockData)
-      setStockOriginal(stockData) // Guardar copia original
+      setStockOriginal(stockData)
     } catch (error) {
       console.error("Error fetching stock:", error)
       toast({
@@ -238,7 +230,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
   const fetchCategorias = async () => {
     setLoadingCategorias(true)
     try {
-      // Modificado para usar el ID de la empresa seleccionada
       const response = await fetch(`/api/categorias-animales-empresa?empresa_id=${empresaSeleccionada}`)
       const data = await response.json()
 
@@ -266,7 +257,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
       categoria_animal_id: "",
       cantidad: "",
       peso: "",
-      tipo_peso: "PROMEDIO", // Cambiado de vacío a "PROMEDIO"
+      tipo_peso: "PROMEDIO",
     })
     setStockErrors([])
   }
@@ -275,12 +266,11 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
     setEditandoStock(stockItem)
     setMostrandoFormularioStock(true)
 
-    // Al editar, siempre por defecto "total" pero permite cambiar
     setStockForm({
       categoria_animal_id: stockItem.categoria_animal_id.toString(),
       cantidad: stockItem.cantidad.toString(),
       peso: stockItem.peso_total?.toString() || "",
-      tipo_peso: "PROMEDIO", // Cambiado de vacío a "PROMEDIO"
+      tipo_peso: "PROMEDIO",
     })
     setStockErrors([])
   }
@@ -292,7 +282,7 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
       categoria_animal_id: "",
       cantidad: "",
       peso: "",
-      tipo_peso: "PROMEDIO", // Cambiado de vacío a "PROMEDIO"
+      tipo_peso: "PROMEDIO",
     })
     setStockErrors([])
   }
@@ -310,14 +300,12 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
       newErrors.push("La cantidad debe ser mayor a 0")
     }
 
-    // Peso ahora es requerido y debe ser mayor a 0
     if (!stockForm.peso) {
       newErrors.push("El peso es requerido")
     } else if (Number.parseInt(stockForm.peso) <= 0) {
       newErrors.push("El peso debe ser mayor a 0")
     }
 
-    // Tipo de peso ahora es requerido
     if (!stockForm.tipo_peso) {
       newErrors.push("Debe seleccionar el tipo de peso")
     }
@@ -340,13 +328,16 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
   }
 
   const guardarStock = () => {
-    if (!validateStockForm()) return
+    if (!validateStockForm()) {
+      setMostrarModalErroresStock(true)
+      return
+    }
 
     const nuevaCategoria = categorias.find((c) => c.id.toString() === stockForm.categoria_animal_id)
     const pesoTotal = calcularPesoTotal()
 
     const nuevoStock: LoteStock = {
-      id: editandoStock ? editandoStock.id : Date.now(), // ID temporal para nuevos
+      id: editandoStock ? editandoStock.id : Date.now(),
       lote_id: lote?.id || 0,
       categoria_animal_id: Number.parseInt(stockForm.categoria_animal_id),
       cantidad: Number.parseInt(stockForm.cantidad),
@@ -369,10 +360,8 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
 
   const aplicarCambiosStock = async (loteId: number) => {
     try {
-      // Obtener stock actual de la base de datos
       const stockActual = stockOriginal
 
-      // Identificar cambios
       const stockParaEliminar = stockActual.filter((original) => !stock.find((actual) => actual.id === original.id))
       const stockParaAgregar = stock.filter((actual) => !stockActual.find((original) => original.id === actual.id))
       const stockParaActualizar = stock.filter((actual) => {
@@ -386,14 +375,12 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
         )
       })
 
-      // Eliminar stock
       for (const stockItem of stockParaEliminar) {
         await fetch(`/api/lote-stock/record/${stockItem.id}`, {
           method: "DELETE",
         })
       }
 
-      // Agregar nuevo stock
       for (const stockItem of stockParaAgregar) {
         await fetch("/api/lote-stock", {
           method: "POST",
@@ -409,7 +396,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
         })
       }
 
-      // Actualizar stock existente
       for (const stockItem of stockParaActualizar) {
         await fetch(`/api/lote-stock/record/${stockItem.id}`, {
           method: "PUT",
@@ -434,7 +420,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
 
     setLoading(true)
     try {
-      // Crear el lote primero
       const response = await fetch("/api/lotes-crud", {
         method: "POST",
         headers: {
@@ -455,7 +440,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
 
       const nuevoLoteId = data.lote.id
 
-      // Crear stock si existe
       if (stock.length > 0) {
         for (const stockItem of stock) {
           await fetch("/api/lote-stock", {
@@ -504,7 +488,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
 
     setLoading(true)
     try {
-      // Actualizar datos básicos del lote
       const response = await fetch(`/api/lotes-crud/${lote?.id}`, {
         method: "PUT",
         headers: {
@@ -519,7 +502,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
         throw new Error(data.error || "Error al actualizar lote")
       }
 
-      // Aplicar cambios de stock
       if (lote?.id) {
         await aplicarCambiosStock(lote.id)
       }
@@ -551,6 +533,11 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
   }
 
   const handleSubmit = async () => {
+    if (!validateForm()) {
+      setMostrarModalErrores(true)
+      return
+    }
+
     if (mode === "create") {
       await crearLoteConStock()
     } else {
@@ -576,7 +563,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Mostrar mensaje de éxito */}
           {mostrarExito && (
             <Alert className="border-green-200 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
@@ -591,24 +577,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
             </Alert>
           )}
 
-          {/* Mostrar errores de validación */}
-          {errors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium mb-2">Se encontraron {errors.length} errores:</div>
-                <ul className="list-disc list-inside space-y-1">
-                  {errors.map((error, index) => (
-                    <li key={index} className="text-sm">
-                      {error}
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Datos del Lote */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Datos del Lote</h3>
 
@@ -657,7 +625,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
             </div>
           </div>
 
-          {/* Stock del Lote */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">Stock del Lote</h3>
@@ -667,31 +634,11 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
               </Button>
             </div>
 
-            {/* Formulario de stock */}
             {mostrandoFormularioStock && (
               <div className="bg-gray-50 p-4 rounded-lg space-y-4">
                 <h4 className="font-medium text-gray-900">{editandoStock ? "Editar Stock" : "Nuevo Stock"}</h4>
 
-                {/* Errores de stock */}
-                {stockErrors.length > 0 && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      <div className="font-medium mb-2">Se encontraron {stockErrors.length} errores:</div>
-                      <ul className="list-disc list-inside space-y-1">
-                        {stockErrors.map((error, index) => (
-                          <li key={index} className="text-sm">
-                            {error}
-                          </li>
-                        ))}
-                      </ul>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {/* Layout reorganizado: Categoría y Tipo de peso en columna izquierda, Cantidad y Peso en columnas derechas */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Primera columna: Categoría Animal y Tipo de peso */}
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="categoria_animal_id" className="text-sm font-medium text-gray-700">
@@ -731,7 +678,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
                     </div>
                   </div>
 
-                  {/* Segunda columna: Cantidad */}
                   <div>
                     <Label htmlFor="cantidad" className="text-sm font-medium text-gray-700">
                       Cantidad *
@@ -747,7 +693,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
                     />
                   </div>
 
-                  {/* Tercera columna: Peso */}
                   <div>
                     <Label htmlFor="peso" className="text-sm font-medium text-gray-700">
                       Peso (kg) *
@@ -765,7 +710,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
                   </div>
                 </div>
 
-                {/* Información del cálculo */}
                 {stockForm.tipo_peso === "promedio" && stockForm.peso && stockForm.cantidad && (
                   <p className="text-xs text-blue-600 mt-1">
                     Peso total calculado:{" "}
@@ -784,7 +728,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
               </div>
             )}
 
-            {/* Tabla de stock */}
             <div className="border rounded-lg overflow-hidden">
               <table className="w-full">
                 <thead className="bg-gray-50">
@@ -850,7 +793,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
             </div>
           </div>
 
-          {/* Información adicional */}
           <div className="bg-blue-50 p-4 rounded-lg">
             <h4 className="font-medium text-blue-900 mb-2">Información sobre los lotes</h4>
             <ul className="text-sm text-blue-800 space-y-1">
@@ -868,7 +810,6 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
           </div>
         </div>
 
-        {/* Footer */}
         <div className="border-t p-6 flex gap-3 justify-end">
           <Button onClick={cancelar} variant="outline">
             Cancelar
@@ -877,6 +818,62 @@ export function LoteDrawer({ lote, isOpen, onClose, onSuccess, mode, establecimi
             {loading ? "Guardando..." : mode === "create" ? "Crear Lote" : "Actualizar"}
           </Button>
         </div>
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">Se encontraron {errors.length} errores:</h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {errors.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErrores(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mostrarModalErroresStock && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">
+                    Se encontraron {stockErrors.length} errores:
+                  </h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {stockErrors.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErroresStock(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )

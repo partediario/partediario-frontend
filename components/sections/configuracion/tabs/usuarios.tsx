@@ -5,9 +5,8 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { Users, Plus, Edit, Phone, Calendar, Building, HelpCircle, X, Mail, Shield, Trash2 } from "lucide-react"
+import { Users, Plus, Edit, Building, HelpCircle, X, Mail, Shield, Trash2, Eye } from "lucide-react"
 import { UsuarioDrawer } from "../components/usuario-drawer"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { useUser } from "@/contexts/user-context"
@@ -22,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { UsuarioViewDrawer } from "../components/usuario-view-drawer"
 
 interface Usuario {
   id: string
@@ -43,7 +43,7 @@ interface Usuario {
 
 export function Usuarios() {
   const { toast } = useToast()
-  const { empresaSeleccionada } = useEstablishment()
+  const { empresas, empresaSeleccionada } = useEstablishment()
   const { usuario } = useUser()
   const permissions = usePermissions()
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
@@ -56,10 +56,12 @@ export function Usuarios() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [usuarioToDelete, setUsuarioToDelete] = useState<Usuario | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [viewDrawerOpen, setViewDrawerOpen] = useState(false)
+  const [viewUsuario, setViewUsuario] = useState<Usuario | null>(null)
 
   const fetchUsuarios = async () => {
-    if (!empresaSeleccionada) {
-      console.log("⚠️ No empresa seleccionada")
+    if (!empresas || empresas.length === 0) {
+      console.log("⚠️ No hay empresas disponibles")
       setUsuarios([])
       setLoading(false)
       return
@@ -67,9 +69,10 @@ export function Usuarios() {
 
     try {
       setLoading(true)
-      console.log("🔍 Fetching usuarios for empresa:", empresaSeleccionada)
+      const empresasIds = empresas.map((e) => e.empresa_id).join(",")
+      console.log("🔍 Fetching usuarios for empresas:", empresasIds)
 
-      const response = await fetch(`/api/usuarios-empresa?empresaId=${empresaSeleccionada}`)
+      const response = await fetch(`/api/usuarios-empresa?empresasIds=${empresasIds}`)
       const data = await response.json()
 
       console.log("📡 API Response:", data)
@@ -134,9 +137,9 @@ export function Usuarios() {
   }
 
   useEffect(() => {
-    console.log("🔄 Empresa seleccionada changed:", empresaSeleccionada)
+    console.log("🔄 Empresas disponibles changed:", empresas?.length)
     fetchUsuarios()
-  }, [empresaSeleccionada])
+  }, [empresas])
 
   const handleCreateUsuario = () => {
     setSelectedUsuario(null)
@@ -156,19 +159,22 @@ export function Usuarios() {
   }
 
   const confirmDeleteUsuario = async () => {
-    if (!usuarioToDelete || !empresaSeleccionada || !usuario?.id) return
+    if (!usuarioToDelete || !empresas || empresas.length === 0 || !usuario?.id) return
 
     setDeleting(true)
 
     try {
-      const response = await fetch("/api/eliminar-usuario", {
+      // Obtener IDs de todas las empresas del administrador
+      const empresasIds = empresas.map((e) => e.empresa_id)
+
+      const response = await fetch("/api/eliminar-usuario-completo", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           usuarioId: usuarioToDelete.id,
-          empresaId: empresaSeleccionada,
+          empresasIds: empresasIds,
           usuarioEliminadorId: usuario.id,
         }),
       })
@@ -254,13 +260,16 @@ export function Usuarios() {
     }
   }
 
+  const handleViewUsuario = (usuario: Usuario) => {
+    setViewUsuario(usuario)
+    setViewDrawerOpen(true)
+  }
+
   const canDeleteUsuario = (usuarioAEliminar: Usuario): boolean => {
-    // 1. Un usuario no puede eliminarse a sí mismo
     if (usuario?.id === usuarioAEliminar.id) {
       return false
     }
 
-    // 2. No se puede eliminar al administrador principal (is_owner)
     if (usuarioAEliminar.is_owner) {
       return false
     }
@@ -268,15 +277,15 @@ export function Usuarios() {
     return true
   }
 
-  console.log("🏢 Empresa seleccionada:", empresaSeleccionada)
+  console.log("🏢 Empresas disponibles:", empresas?.length)
   console.log("👥 Usuarios count:", usuarios.length)
 
-  if (!empresaSeleccionada) {
+  if (!empresas || empresas.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Building className="w-16 h-16 text-gray-300 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Selecciona una empresa</h3>
-        <p className="text-gray-500 text-center max-w-md">Debes seleccionar una empresa para gestionar sus usuarios</p>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay empresas disponibles</h3>
+        <p className="text-gray-500 text-center max-w-md">No tienes acceso a ninguna empresa en el sistema</p>
       </div>
     )
   }
@@ -312,7 +321,7 @@ export function Usuarios() {
               <HelpCircle className="h-4 w-4" />
             </button>
           </div>
-          <CardDescription>Lista de usuarios únicos de la empresa seleccionada</CardDescription>
+          <CardDescription>Lista de usuarios de todas tus empresas</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -339,22 +348,6 @@ export function Usuarios() {
                   <tr className="border-b">
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Usuario</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Teléfono</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                      <div className="flex items-center gap-2">
-                        <span>Rol</span>
-                        <button
-                          type="button"
-                          className="text-gray-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-1 transition-colors"
-                          aria-label="Información sobre Roles de Usuario"
-                          onClick={(e) => handleTooltipToggle("roles-info", e)}
-                        >
-                          <HelpCircle className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Establecimientos</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Fecha Creación</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Acciones</th>
                   </tr>
                 </thead>
@@ -367,9 +360,12 @@ export function Usuarios() {
                             <Users className="w-5 h-5 text-green-600" />
                           </div>
                           <div>
-                            <div className="font-semibold text-gray-900">
+                            <button
+                              onClick={() => handleViewUsuario(usuario)}
+                              className="font-semibold text-gray-900 hover:text-blue-600 transition-colors text-left"
+                            >
                               {usuario.nombres} {usuario.apellidos}
-                            </div>
+                            </button>
                           </div>
                         </div>
                       </td>
@@ -380,40 +376,16 @@ export function Usuarios() {
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Phone className="w-4 h-4 text-gray-400" />
-                          <span>{formatPhone(usuario.telefono)}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
                         <div className="flex items-center gap-2">
-                          <Shield className={`w-4 h-4 ${usuario.is_owner ? "text-amber-500" : "text-blue-500"}`} />
-                          <Badge variant="secondary" className="text-xs">
-                            {usuario.rol}
-                          </Badge>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex flex-wrap gap-1">
-                          {usuario.establecimientos && usuario.establecimientos.length > 0 ? (
-                            usuario.establecimientos.map((establecimiento) => (
-                              <Badge key={establecimiento.id} variant="outline" className="text-xs">
-                                {establecimiento.nombre}
-                              </Badge>
-                            ))
-                          ) : (
-                            <span className="text-gray-400 text-sm">Sin asignar</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <span>{formatDate(usuario.created_at)}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewUsuario(usuario)}
+                            className="text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                            title="Ver detalles del usuario"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
                           {!permissions.isConsultor && (
                             <>
                               <Button
@@ -455,9 +427,11 @@ export function Usuarios() {
         onClose={() => setDrawerOpen(false)}
         onSuccess={handleDrawerSuccess}
         mode={drawerMode}
-        empresaId={empresaSeleccionada?.toString() || ""}
+        empresaId={empresaSeleccionada?.toString() || (empresas.length > 0 ? empresas[0].empresa_id : "")}
         usuarioCreadorId={usuario?.id || "current-user-id"}
       />
+
+      <UsuarioViewDrawer usuario={viewUsuario} isOpen={viewDrawerOpen} onClose={() => setViewDrawerOpen(false)} />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -474,9 +448,9 @@ export function Usuarios() {
                   </div>
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                     <div className="text-sm text-amber-800">
-                      <strong>Importante:</strong> Si este usuario solo pertenece a esta empresa, se eliminará
-                      completamente del sistema. Si pertenece a otras empresas, solo se eliminará su acceso a esta
-                      empresa.
+                      <strong>Importante:</strong> Se eliminarán todas las asignaciones de este usuario en todas tus
+                      empresas. Si el usuario tiene asignaciones en otras empresas a las que no tienes acceso, mantendrá
+                      su acceso a esas empresas.
                     </div>
                   </div>
                 </div>
@@ -556,7 +530,6 @@ export function Usuarios() {
           </p>
 
           <div className="space-y-4">
-            {/* Administrador */}
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-5 h-5 text-blue-600" />
@@ -576,7 +549,6 @@ export function Usuarios() {
               </div>
             </div>
 
-            {/* Gerente */}
             <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-5 h-5 text-green-600" />
@@ -597,7 +569,6 @@ export function Usuarios() {
               </div>
             </div>
 
-            {/* Consultor */}
             <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-5 h-5 text-purple-600" />
@@ -615,7 +586,6 @@ export function Usuarios() {
               </div>
             </div>
 
-            {/* Operativo */}
             <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-5 h-5 text-amber-600" />

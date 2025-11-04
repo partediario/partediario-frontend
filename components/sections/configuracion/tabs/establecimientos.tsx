@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { MapPin, Edit, Plus, Loader2, HelpCircle, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useConfigNavigation } from "@/contexts/config-navigation-context"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { useUser } from "@/contexts/user-context"
 import { EditarEstablecimientoDrawer } from "../components/editar-establecimiento-drawer"
@@ -23,7 +24,9 @@ interface Establecimiento {
 
 export function Establecimientos() {
   const { toast } = useToast()
-  const { empresaSeleccionada, refreshData } = useEstablishment()
+  const { state } = useConfigNavigation()
+  const empresaSeleccionada = state.selectedEmpresaId ? Number(state.selectedEmpresaId) : null
+  const { refreshData } = useEstablishment()
   const { usuario } = useUser()
 
   const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>([])

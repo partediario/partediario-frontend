@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Edit, Plus, HelpCircle, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useEstablishment } from "@/contexts/establishment-context"
+import { useConfigNavigation } from "@/contexts/config-navigation-context"
 import { PotreroDrawer } from "../components/potrero-drawer"
 import { usePermissions } from "@/hooks/use-permissions"
 
@@ -25,7 +25,7 @@ interface Potrero {
 
 export function Potreros() {
   const { toast } = useToast()
-  const { establecimientoSeleccionado } = useEstablishment()
+  const { state } = useConfigNavigation()
   const permissions = usePermissions()
 
   const [potreros, setPotreros] = useState<Potrero[]>([])
@@ -36,21 +36,20 @@ export function Potreros() {
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null)
 
-  // Cargar potreros cuando cambia el establecimiento
   useEffect(() => {
-    if (establecimientoSeleccionado) {
+    if (state.selectedEstablecimientoId) {
       loadPotreros()
     } else {
       setPotreros([])
     }
-  }, [establecimientoSeleccionado])
+  }, [state.selectedEstablecimientoId])
 
   const loadPotreros = async () => {
-    if (!establecimientoSeleccionado) return
+    if (!state.selectedEstablecimientoId) return
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/potreros-crud?establecimiento_id=${establecimientoSeleccionado}`)
+      const response = await fetch(`/api/potreros-crud?establecimiento_id=${state.selectedEstablecimientoId}`)
       const data = await response.json()
 
       if (!response.ok) {
@@ -100,21 +99,18 @@ export function Potreros() {
     }
   }
 
-  // Función para formatear la receptividad con el label correcto y coma decimal
   const formatReceptividad = (receptividad: number | null, unidad: string | null) => {
     if (!receptividad || !unidad) return "-"
 
-    // Convertir unidad de API a label de display
     const unidadLabel = unidad === "KILOS" ? "Kg" : unidad === "UG" ? "Ug" : unidad
 
-    // Formatear número con coma decimal si tiene decimales
     const numeroFormateado =
       receptividad % 1 === 0 ? receptividad.toString() : receptividad.toString().replace(".", ",")
 
     return `${numeroFormateado} ${unidadLabel}`
   }
 
-  if (!establecimientoSeleccionado) {
+  if (!state.selectedEstablecimientoId) {
     return (
       <div className="space-y-6">
         <div className="text-center py-8">
@@ -131,7 +127,6 @@ export function Potreros() {
           <h3 className="text-lg font-semibold">Potreros</h3>
           <p className="text-sm text-slate-600">Gestiona las divisiones de pastoreo de tu establecimiento</p>
         </div>
-        {/* Solo mostrar botón Nuevo Potrero si NO es consultor */}
         {!permissions.isConsultor && (
           <Button onClick={handleNuevoPotrero} className="bg-green-700 hover:bg-green-800">
             <Plus className="w-4 h-4 mr-2" />
@@ -165,7 +160,6 @@ export function Potreros() {
           ) : potreros.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-slate-600 mb-4">No hay potreros registrados</p>
-              {/* Solo mostrar botón si NO es consultor */}
               {!permissions.isConsultor && (
                 <Button onClick={handleNuevoPotrero} className="bg-green-700 hover:bg-green-800">
                   <Plus className="w-4 h-4 mr-2" />
@@ -195,7 +189,6 @@ export function Potreros() {
                     <TableCell>{formatReceptividad(potrero.receptividad, potrero.receptividad_unidad)}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {/* Solo mostrar botón editar si NO es consultor */}
                         {!permissions.isConsultor && (
                           <Button size="sm" variant="ghost" onClick={() => handleEditPotrero(potrero)}>
                             <Edit className="w-4 h-4" />
@@ -217,10 +210,9 @@ export function Potreros() {
         onClose={() => setDrawerOpen(false)}
         onSuccess={handleDrawerSuccess}
         mode={drawerMode}
-        establecimientoId={establecimientoSeleccionado}
+        establecimientoId={Number(state.selectedEstablecimientoId)}
       />
 
-      {/* Tooltip manual */}
       {activeTooltip === "potreros-registrados" && tooltipPosition && (
         <div
           className="fixed w-96 bg-white border border-gray-200 rounded-lg shadow-xl p-5 z-[9999]"
@@ -256,7 +248,6 @@ export function Potreros() {
         </div>
       )}
 
-      {/* Overlay para cerrar tooltip al hacer clic fuera */}
       {activeTooltip && <div className="fixed inset-0 z-40" onClick={() => setActiveTooltip(null)} />}
     </div>
   )

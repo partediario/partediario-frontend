@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Edit, Plus, HelpCircle, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useEstablishment } from "@/contexts/establishment-context"
+import { useConfigNavigation } from "@/contexts/config-navigation-context"
 import { MaquinariaDrawer } from "../components/maquinaria-drawer"
 import { usePermissions } from "@/hooks/use-permissions"
 
@@ -24,7 +24,8 @@ interface Maquinaria {
 
 export function Maquinarias() {
   const { toast } = useToast()
-  const { empresaSeleccionada } = useEstablishment()
+  const { state } = useConfigNavigation()
+  const empresaSeleccionada = state.selectedEmpresaId ? Number(state.selectedEmpresaId) : null
   const permissions = usePermissions()
 
   const [maquinarias, setMaquinarias] = useState<Maquinaria[]>([])
