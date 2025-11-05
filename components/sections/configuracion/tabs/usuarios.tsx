@@ -431,7 +431,7 @@ export function Usuarios() {
         usuarioCreadorId={usuario?.id || "current-user-id"}
       />
 
-      <UsuarioViewDrawer usuario={viewUsuario} isOpen={viewDrawerOpen} onClose={() => setViewDrawerOpen(false)} />
+      <UsuarioViewDrawer usuario={viewUsuario} open={viewDrawerOpen} onOpenChange={setViewDrawerOpen} />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
