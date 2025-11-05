@@ -31,11 +31,6 @@ export const categoriasConfig: Record<string, CategoriaConfig> = {
     emoji: "⛽",
     descripcion: "Gasoil, nafta, aceites y lubricantes",
   },
-  semillas: {
-    nombre: "Semillas",
-    emoji: "🌱",
-    descripcion: "Semillas de cultivos y pasturas",
-  },
 }
 
 // Tipos de datos
@@ -177,9 +172,6 @@ export const insumosData: Record<string, Insumo[]> = {
   ],
   materiales: [
     // Placeholder for material data
-  ],
-  semillas: [
-    // Placeholder for seed data
   ],
 }
 
