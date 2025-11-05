@@ -103,8 +103,8 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
 
     if (!formData.nombre.trim()) {
       newErrors.push("El nombre es requerido")
-    } else if (formData.nombre.trim().length < 3) {
-      newErrors.push("El nombre debe tener al menos 3 caracteres")
+    } else if (formData.nombre.trim().length < 1) {
+      newErrors.push("El nombre debe tener al menos 1 carácter")
     }
 
     if (!formData.superficie_total.trim()) {
@@ -316,7 +316,7 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
                   disabled={loading}
                   className="mt-1"
                 />
-                <p className="text-sm text-gray-500 mt-1">Mínimo 3 caracteres</p>
+                <p className="text-sm text-gray-500 mt-1">Mínimo 1 carácter</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
