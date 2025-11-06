@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Edit, Plus, HelpCircle, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useEstablishment } from "@/contexts/establishment-context"
+import { useConfigNavigation } from "@/contexts/config-navigation-context"
 import { MaquinariaDrawer } from "../components/maquinaria-drawer"
 import { usePermissions } from "@/hooks/use-permissions"
 
@@ -24,7 +24,8 @@ interface Maquinaria {
 
 export function Maquinarias() {
   const { toast } = useToast()
-  const { empresaSeleccionada } = useEstablishment()
+  const { state } = useConfigNavigation()
+  const empresaSeleccionada = state.selectedEmpresaId ? Number(state.selectedEmpresaId) : null
   const permissions = usePermissions()
 
   const [maquinarias, setMaquinarias] = useState<Maquinaria[]>([])
@@ -158,8 +159,13 @@ export function Maquinarias() {
             </div>
           ) : maquinarias.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-500 mb-2">No hay maquinarias registradas</p>
-              <p className="text-sm text-slate-400">Crea tu primera maquinaria para comenzar</p>
+              <p className="text-slate-600 mb-4">No hay maquinarias registradas</p>
+              {!permissions.isConsultor && (
+                <Button onClick={handleCreate} className="bg-green-700 hover:bg-green-800">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear primera maquinaria
+                </Button>
+              )}
             </div>
           ) : (
             <Table>

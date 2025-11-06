@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import AppLayout from "@/components/app-layout"
-import ConfiguracionView from "@/components/sections/configuracion/configuracion-view"
+import { useConfigNavigation } from "@/contexts/config-navigation-context"
+import Sidebar from "@/components/sidebar"
+import { NuevaConfiguracionView } from "@/components/sections/configuracion/nueva-configuracion-view"
 
 export default function ConfiguracionPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const { state, navigateToEmpresas } = useConfigNavigation()
 
   useEffect(() => {
     const token = localStorage.getItem("supabase_token")
@@ -17,6 +19,9 @@ export default function ConfiguracionPage() {
       router.push("/login")
     } else {
       setIsAuthenticated(true)
+      if (state.level === "main") {
+        navigateToEmpresas()
+      }
     }
 
     setIsLoading(false)
@@ -27,8 +32,12 @@ export default function ConfiguracionPage() {
   }
 
   return (
-    <AppLayout activeSection="Configuración">
-      <ConfiguracionView />
-    </AppLayout>
+    <div className="flex h-screen">
+      {state.level === "main" && <Sidebar activeSection="Configuración" />}
+
+      <div className={`flex-1 ${state.level === "main" ? "ml-64" : ""}`}>
+        <NuevaConfiguracionView />
+      </div>
+    </div>
   )
 }

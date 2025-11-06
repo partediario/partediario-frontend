@@ -1,0 +1,6 @@
+export { AnalisisMensual } from "./analisis-mensual"
+export { ClimaKpiCards } from "./clima-kpi-cards"
+export { ForecastChart } from "./forecast-chart"
+export { PluviometriaTable } from "./pluviometria-table"
+export { WeatherCard } from "./weather-card"
+export { DistribucionChart } from "./distribucion-chart"

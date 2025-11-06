@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Edit, Plus, Loader2, HelpCircle, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useEstablishment } from "@/contexts/establishment-context"
+import { useConfigNavigation } from "@/contexts/config-navigation-context"
 import { CategoriaAnimalDrawer } from "../components/categoria-animal-drawer"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -24,7 +24,8 @@ interface CategoriaAnimal {
 
 export function CategoriaAnimales() {
   const { toast } = useToast()
-  const { empresaSeleccionada } = useEstablishment()
+  const { state } = useConfigNavigation()
+  const empresaSeleccionada = state.selectedEmpresaId ? Number(state.selectedEmpresaId) : null
   const permissions = usePermissions()
 
   const [categorias, setCategorias] = useState<CategoriaAnimal[]>([])
@@ -242,7 +243,7 @@ export function CategoriaAnimales() {
             </div>
           ) : categorias.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">No hay categorías registradas para esta empresa</p>
+              <p className="text-gray-500 mb-4">No hay categorías registradas</p>
               {/* Solo mostrar botón si NO es consultor */}
               {!permissions.isConsultor && (
                 <Button onClick={handleNuevaCategoria} className="bg-green-700 hover:bg-green-800">

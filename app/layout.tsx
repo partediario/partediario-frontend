@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { UserProvider } from "@/contexts/user-context"
 import { EstablishmentProvider } from "@/contexts/establishment-context"
+import { ConfigNavigationProvider } from "@/contexts/config-navigation-context"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -33,10 +34,12 @@ export default function RootLayout({
       <body className={inter.className}>
         <UserProvider>
           <EstablishmentProvider>
-            <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-              {children}
-              <Toaster />
-            </ThemeProvider>
+            <ConfigNavigationProvider>
+              <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+                {children}
+                <Toaster />
+              </ThemeProvider>
+            </ConfigNavigationProvider>
           </EstablishmentProvider>
         </UserProvider>
       </body>

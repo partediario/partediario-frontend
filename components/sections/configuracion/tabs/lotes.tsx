@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Edit, Plus, HelpCircle, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useEstablishment } from "@/contexts/establishment-context"
+import { useConfigNavigation } from "@/contexts/config-navigation-context"
 import { LoteDrawer } from "../components/lote-drawer"
 import { usePermissions } from "@/hooks/use-permissions"
 
@@ -34,7 +34,7 @@ interface LoteStock {
 
 export function Lotes() {
   const { toast } = useToast()
-  const { establecimientoSeleccionado } = useEstablishment()
+  const { state } = useConfigNavigation()
   const permissions = usePermissions()
 
   const [lotes, setLotes] = useState<Lote[]>([])
@@ -46,22 +46,21 @@ export function Lotes() {
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null)
   const [lotesStock, setLotesStock] = useState<Record<number, LoteStock[]>>({})
 
-  // Cargar lotes cuando cambia el establecimiento
   useEffect(() => {
-    if (establecimientoSeleccionado) {
+    if (state.selectedEstablecimientoId) {
       fetchLotes()
     } else {
       setLotes([])
       setLotesStock({})
     }
-  }, [establecimientoSeleccionado])
+  }, [state.selectedEstablecimientoId])
 
   const fetchLotes = async () => {
-    if (!establecimientoSeleccionado) return
+    if (!state.selectedEstablecimientoId) return
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/lotes-crud?establecimiento_id=${establecimientoSeleccionado}`)
+      const response = await fetch(`/api/lotes-crud?establecimiento_id=${state.selectedEstablecimientoId}`)
       const data = await response.json()
 
       if (!response.ok) {
@@ -113,18 +112,15 @@ export function Lotes() {
   const calcularEstadoLote = (loteId: number): "Cargado" | "Vacío" => {
     const stock = lotesStock[loteId] || []
 
-    // Si no tiene categorías, está vacío
     if (stock.length === 0) {
       return "Vacío"
     }
 
-    // Si todas las categorías tienen cantidad 0, está vacío
     const todasCantidadesCero = stock.every((item) => item.cantidad === 0)
     if (todasCantidadesCero) {
       return "Vacío"
     }
 
-    // Si tiene al menos una categoría con cantidad > 0, está cargado
     return "Cargado"
   }
 
@@ -158,7 +154,7 @@ export function Lotes() {
     }
   }
 
-  if (!establecimientoSeleccionado) {
+  if (!state.selectedEstablecimientoId) {
     return (
       <div className="space-y-6">
         <div>
@@ -184,7 +180,6 @@ export function Lotes() {
           <h3 className="text-lg font-semibold">Lotes de Animales</h3>
           <p className="text-sm text-slate-600">Gestiona los grupos de animales y su ubicación en potreros</p>
         </div>
-        {/* Solo mostrar botón Nuevo Lote si NO es consultor */}
         {!permissions.isConsultor && (
           <Button onClick={handleCreate} className="bg-green-700 hover:bg-green-800">
             <Plus className="w-4 h-4 mr-2" />
@@ -215,8 +210,13 @@ export function Lotes() {
             </div>
           ) : lotes.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-500 mb-2">No hay lotes registrados</p>
-              <p className="text-sm text-slate-400">Crea tu primer lote para comenzar</p>
+              <p className="text-slate-600 mb-4">No hay lotes registrados</p>
+              {!permissions.isConsultor && (
+                <Button onClick={handleCreate} className="bg-green-700 hover:bg-green-800">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear primer lote
+                </Button>
+              )}
             </div>
           ) : (
             <Table>
@@ -250,7 +250,6 @@ export function Lotes() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          {/* Solo mostrar botón editar si NO es consultor */}
                           {!permissions.isConsultor && (
                             <Button size="sm" variant="ghost" onClick={() => handleEdit(lote)}>
                               <Edit className="w-4 h-4" />
@@ -273,10 +272,9 @@ export function Lotes() {
         onClose={() => setDrawerOpen(false)}
         onSuccess={handleDrawerSuccess}
         mode={drawerMode}
-        establecimientoId={establecimientoSeleccionado || ""}
+        establecimientoId={state.selectedEstablecimientoId || ""}
       />
 
-      {/* Tooltip manual */}
       {activeTooltip === "lotes-registrados" && tooltipPosition && (
         <div
           className="fixed w-96 bg-white border border-gray-200 rounded-lg shadow-xl p-5 z-[9999]"
@@ -312,7 +310,6 @@ export function Lotes() {
         </div>
       )}
 
-      {/* Overlay para cerrar tooltip al hacer clic fuera */}
       {activeTooltip && <div className="fixed inset-0 z-40" onClick={() => setActiveTooltip(null)} />}
     </div>
   )
