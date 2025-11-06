@@ -92,6 +92,7 @@ export default function EditarCaneriasBebederosDrawer({
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [errores, setErrores] = useState<string[]>([])
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
   const [erroresDetallePotreros, setErroresDetallePotreros] = useState<string[]>([])
   const [erroresDetalleInsumos, setErroresDetalleInsumos] = useState<string[]>([])
 
@@ -455,6 +456,7 @@ export default function EditarCaneriasBebederosDrawer({
     if (erroresValidacion.length > 0) {
       console.log("[v0] Errores de validación:", erroresValidacion)
       setErrores(erroresValidacion)
+      setMostrarModalErrores(true)
       return
     }
 
@@ -595,6 +597,7 @@ export default function EditarCaneriasBebederosDrawer({
     limpiarFormularioDetallePotreros()
     limpiarFormularioDetalleInsumos()
     setErrores([])
+    setMostrarModalErrores(false) // Reset modal state on close
   }
 
   const getUserDisplayName = () => {
@@ -678,20 +681,6 @@ export default function EditarCaneriasBebederosDrawer({
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {errores.length > 0 && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
-                <AlertCircle className="w-5 h-5" />
-                Se encontraron {errores.length} errores:
-              </div>
-              <ul className="list-disc list-inside text-red-700 space-y-1">
-                {errores.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
           <div className="space-y-6">
             <div>
               <div className="space-y-4">
@@ -1056,6 +1045,33 @@ export default function EditarCaneriasBebederosDrawer({
                 </Button>
                 <Button variant="destructive" onClick={eliminarActividad} disabled={deleting}>
                   {deleting ? "Eliminando..." : "Eliminar"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">Se encontraron {errores.length} errores:</h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {errores.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErrores(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
                 </Button>
               </div>
             </div>

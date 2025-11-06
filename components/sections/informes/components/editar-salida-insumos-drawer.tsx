@@ -73,6 +73,7 @@ export default function EditarSalidaInsumosDrawer({
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
 
   // Formulario
   const [fecha, setFecha] = useState<Date>(new Date())
@@ -269,6 +270,7 @@ export default function EditarSalidaInsumosDrawer({
     const erroresValidacion = validarFormulario()
     if (erroresValidacion.length > 0) {
       setErrores(erroresValidacion)
+      setMostrarModalErrores(true)
       return
     }
 
@@ -316,6 +318,7 @@ export default function EditarSalidaInsumosDrawer({
   const handleClose = () => {
     onClose?.()
     setErrores([])
+    setMostrarModalErrores(false)
     setShowDeleteConfirm(false)
   }
 
@@ -365,21 +368,6 @@ export default function EditarSalidaInsumosDrawer({
             </div>
           ) : movimiento ? (
             <div className="space-y-6">
-              {/* Errores principales */}
-              {errores.length > 0 && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
-                    <AlertCircle className="w-5 h-5" />
-                    Se encontraron {errores.length} errores:
-                  </div>
-                  <ul className="list-disc list-inside text-red-700 space-y-1">
-                    {errores.map((error, index) => (
-                      <li key={index}>{error}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               {/* Solo mostrar Fecha */}
               <div>
                 <Label>Fecha *</Label>
@@ -489,6 +477,35 @@ export default function EditarSalidaInsumosDrawer({
             </Button>
           </div>
         </div>
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">Se encontraron {errores.length} errores:</h3>
+                  <ul className="space-y-2 text-gray-700">
+                    {errores.map((error, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-gray-400 mt-1.5">•</span>
+                        <span>{error}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button
+                  onClick={() => setMostrarModalErrores(false)}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -67,8 +67,8 @@ export default function EditarCastracionDrawer({ isOpen, onClose, onSuccess, par
   // Detalles agregados
   const [detallesAnimales, setDetallesAnimales] = useState<DetalleActividad[]>([])
 
-  // Errores
-  const [errores, setErrores] = useState<string[]>([])
+  const [erroresValidacion, setErroresValidacion] = useState<string[]>([])
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
   const [erroresDetalleAnimales, setErroresDetalleAnimales] = useState<string[]>([])
 
   const { currentEstablishment } = useCurrentEstablishment()
@@ -256,9 +256,10 @@ export default function EditarCastracionDrawer({ isOpen, onClose, onSuccess, par
   }
 
   const handleSubmit = async () => {
-    const erroresValidacion = validarFormularioPrincipal()
-    if (erroresValidacion.length > 0) {
-      setErrores(erroresValidacion)
+    const errores = validarFormularioPrincipal()
+    if (errores.length > 0) {
+      setErroresValidacion(errores)
+      setMostrarModalErrores(true)
       return
     }
 
@@ -371,7 +372,8 @@ export default function EditarCastracionDrawer({ isOpen, onClose, onSuccess, par
     setNota("")
     setDetallesAnimales([])
     limpiarFormularioDetalleAnimales()
-    setErrores([])
+    setErroresValidacion([])
+    setMostrarModalErrores(false)
   }
 
   const opcionesLotes = lotes.map((lote) => ({
@@ -404,21 +406,6 @@ export default function EditarCastracionDrawer({ isOpen, onClose, onSuccess, par
             </div>
           ) : (
             <>
-              {/* Errores principales */}
-              {errores.length > 0 && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
-                    <AlertCircle className="w-5 h-5" />
-                    Se encontraron {errores.length} errores:
-                  </div>
-                  <ul className="list-disc list-inside text-red-700 space-y-1">
-                    {errores.map((error, index) => (
-                      <li key={index}>{error}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               <div className="space-y-6">
                 {/* Fecha */}
                 <div>
@@ -580,6 +567,35 @@ export default function EditarCastracionDrawer({ isOpen, onClose, onSuccess, par
             </>
           )}
         </div>
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">
+                    Se encontraron {erroresValidacion.length} errores:
+                  </h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {erroresValidacion.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErrores(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

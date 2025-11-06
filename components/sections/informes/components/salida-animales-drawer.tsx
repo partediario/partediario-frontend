@@ -63,6 +63,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
   const [tiposMovimiento, setTiposMovimiento] = useState<TipoMovimiento[]>([])
   const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
 
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
   // Estados para mostrar errores de validación
   const [erroresValidacion, setErroresValidacion] = useState<string[]>([])
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
@@ -496,33 +497,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
       console.log("❌ Errores de validación encontrados:", errores)
 
       setErroresValidacion(errores)
-
-      // Separar errores por categorías para mejor presentación
-      const erroresGenerales = errores.filter((e) => !e.includes("Detalle") && !e.includes("Error del sistema"))
-      const erroresDetalles = errores.filter((e) => e.includes("Detalle"))
-      const erroresSistema = errores.filter((e) => e.includes("Error del sistema"))
-
-      let mensajeError = ""
-
-      if (erroresGenerales.length > 0) {
-        mensajeError += "Datos generales: " + erroresGenerales.join(", ") + ". "
-      }
-
-      if (erroresDetalles.length > 0) {
-        mensajeError += "Detalles: " + erroresDetalles.join(", ") + ". "
-      }
-
-      if (erroresSistema.length > 0) {
-        mensajeError += erroresSistema.join(", ")
-      }
-
-      console.log("Mensaje de error a mostrar:", mensajeError)
-
-      toast({
-        title: `Se encontraron ${errores.length} error${errores.length > 1 ? "es" : ""} de validación`,
-        description: mensajeError.trim(),
-        variant: "destructive",
-      })
+      setMostrarModalErrores(true)
       return
     }
 
@@ -984,6 +959,35 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
             {loading ? "Guardando..." : "Guardar"}
           </Button>
         </div>
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">
+                    Se encontraron {erroresValidacion.length} errores:
+                  </h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {erroresValidacion.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErrores(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )

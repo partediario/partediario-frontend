@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Plus, Trash2, Edit, MapPin, AlertCircle, X, CheckCircle, AlertTriangle } from "lucide-react"
@@ -74,6 +73,7 @@ export default function EditarRecorridaDrawer({
 
   // Errores
   const [errores, setErrores] = useState<string[]>([])
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
 
   const { usuario, loading: loadingUsuario } = useUser()
@@ -288,6 +288,7 @@ export default function EditarRecorridaDrawer({
     const erroresValidacion = validarFormularioPrincipal()
     if (erroresValidacion.length > 0) {
       setErrores(erroresValidacion)
+      setMostrarModalErrores(true)
       return
     }
 
@@ -456,21 +457,6 @@ export default function EditarRecorridaDrawer({
 
           {!loadingData && (
             <>
-              {/* Errores principales */}
-              {errores.length > 0 && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
-                    <AlertCircle className="w-5 h-5" />
-                    Se encontraron {errores.length} errores:
-                  </div>
-                  <ul className="list-disc list-inside text-red-700 space-y-1">
-                    {errores.map((error, index) => (
-                      <li key={index}>{error}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               <div className="space-y-6">
                 <div>
                   <Label>Fecha *</Label>
@@ -492,140 +478,36 @@ export default function EditarRecorridaDrawer({
 
                   {mostrarFormDetalle && (
                     <div className="bg-gray-50 border rounded-lg p-6 mb-4">
-                      {/* Errores de detalle */}
-                      {erroresDetalle.length > 0 && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
-                          <div className="flex items-center gap-2 text-red-800 font-medium mb-1">
-                            <AlertCircle className="w-4 h-4" />
-                            Errores encontrados:
-                          </div>
-                          <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
-                            {erroresDetalle.map((error, index) => (
-                              <li key={index}>{error}</li>
-                            ))}
-                          </ul>
+                      {incidentes.length === 0 ? (
+                        <div className="text-center py-4 text-gray-500 text-sm border-2 border-dashed border-gray-300 rounded-lg">
+                          No hay incidentes agregados. Haz clic en "Agregar Incidente" para añadir uno.
                         </div>
-                      )}
-
-                      <h4 className="font-medium mb-4">
-                        {editandoDetalle !== null ? "Editar Detalle" : "Nuevo Detalle"}
-                      </h4>
-
-                      <div className="space-y-4">
-                        {/* Selector de Potrero */}
-                        <div>
-                          <Label>Potrero *</Label>
-                          <CustomCombobox
-                            options={opcionesPotreros}
-                            value={potreroId}
-                            onValueChange={setPotreroId}
-                            placeholder="Selecciona potrero..."
-                            searchPlaceholder="Buscar potrero..."
-                            emptyMessage="No se encontraron potreros disponibles."
-                            loading={loadingPotreros}
-                          />
-                          {potrerosDisponibles.length === 0 && detalles.length > 0 && (
-                            <p className="text-sm text-gray-500 mt-1">
-                              Todos los potreros disponibles ya han sido agregados.
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Toggle Todo OK / Reporte Incidente */}
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 mb-3 block">Estado del Potrero</Label>
-                          <div className="flex gap-3">
-                            <Button
-                              type="button"
-                              variant={!tieneIncidente ? "default" : "outline"}
-                              onClick={() => {
-                                setTieneIncidente(false)
-                                setIncidentes([])
-                              }}
-                              className={`flex items-center gap-2 ${
-                                !tieneIncidente
-                                  ? "bg-green-600 hover:bg-green-700 text-white"
-                                  : "border-green-600 text-green-600 hover:bg-green-50"
-                              }`}
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                              Todo OK
-                            </Button>
-                            <Button
-                              type="button"
-                              variant={tieneIncidente ? "default" : "outline"}
-                              onClick={() => setTieneIncidente(true)}
-                              className={`flex items-center gap-2 ${
-                                tieneIncidente
-                                  ? "bg-orange-600 hover:bg-orange-700 text-white"
-                                  : "border-orange-600 text-orange-600 hover:bg-orange-50"
-                              }`}
-                            >
-                              <AlertTriangle className="w-4 h-4" />
-                              Reporte Incidente
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Lista de Incidentes */}
-                        {tieneIncidente && (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-sm font-medium text-gray-700">Detalles de Incidentes</Label>
+                      ) : (
+                        <div className="space-y-2">
+                          {incidentes.map((incidente, index) => (
+                            <div key={incidente.id} className="flex gap-2 items-start">
+                              <div className="flex-1">
+                                <Textarea
+                                  value={incidente.descripcion}
+                                  onChange={(e) => actualizarIncidente(incidente.id, e.target.value)}
+                                  placeholder={`Descripción del incidente ${index + 1}...`}
+                                  rows={2}
+                                  className="text-sm"
+                                />
+                              </div>
                               <Button
                                 type="button"
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
-                                onClick={agregarIncidente}
-                                className="text-orange-600 border-orange-600 hover:bg-orange-50 bg-transparent"
+                                onClick={() => eliminarIncidente(incidente.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 mt-1"
                               >
-                                <Plus className="w-3 h-3 mr-1" />
-                                Agregar Incidente
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
-
-                            {incidentes.length === 0 ? (
-                              <div className="text-center py-4 text-gray-500 text-sm border-2 border-dashed border-gray-300 rounded-lg">
-                                No hay incidentes agregados. Haz clic en "Agregar Incidente" para añadir uno.
-                              </div>
-                            ) : (
-                              <div className="space-y-2">
-                                {incidentes.map((incidente, index) => (
-                                  <div key={incidente.id} className="flex gap-2 items-start">
-                                    <div className="flex-1">
-                                      <Textarea
-                                        value={incidente.descripcion}
-                                        onChange={(e) => actualizarIncidente(incidente.id, e.target.value)}
-                                        placeholder={`Descripción del incidente ${index + 1}...`}
-                                        rows={2}
-                                        className="text-sm"
-                                      />
-                                    </div>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => eliminarIncidente(incidente.id)}
-                                      className="text-red-600 hover:text-red-700 hover:bg-red-50 mt-1"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex gap-2 mt-6">
-                        <Button onClick={agregarDetalle} className="bg-green-600 hover:bg-green-700">
-                          {editandoDetalle !== null ? "Actualizar" : "Agregar"}
-                        </Button>
-                        <Button variant="outline" onClick={limpiarFormularioDetalle}>
-                          Cancelar
-                        </Button>
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -743,6 +625,33 @@ export default function EditarRecorridaDrawer({
                 </Button>
                 <Button onClick={eliminarRecorrida} variant="destructive" disabled={deleting}>
                   {deleting ? "Eliminando..." : "Sí"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">Se encontraron {errores.length} errores:</h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {errores.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErrores(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
                 </Button>
               </div>
             </div>

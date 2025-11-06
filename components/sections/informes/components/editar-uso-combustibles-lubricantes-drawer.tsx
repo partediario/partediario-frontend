@@ -80,6 +80,7 @@ export default function EditarUsoCombustiblesLubricantesDrawer({
   // Errores
   const [errores, setErrores] = useState<string[]>([])
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
+  const [mostrarModalValidacion, setMostrarModalValidacion] = useState(false)
 
   const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
 
@@ -233,12 +234,8 @@ export default function EditarUsoCombustiblesLubricantesDrawer({
 
     if (!fecha) errores.push("La fecha es requerida")
 
-    const tieneMaquinariasSeleccionadas = maquinariasSeleccionadas.length > 0
-    const tieneDetalles = detalles.length > 0
-    const tieneNota = nota.trim().length > 0
-
-    if (!tieneMaquinariasSeleccionadas && !tieneDetalles && !tieneNota) {
-      errores.push("Debe seleccionar maquinarias, agregar detalles de insumos, o escribir una nota")
+    if (detalles.length === 0) {
+      errores.push("Debe agregar al menos un detalle de insumos")
     }
 
     return errores
@@ -329,6 +326,7 @@ export default function EditarUsoCombustiblesLubricantesDrawer({
     setDetalles([])
     limpiarFormularioDetalle()
     setErrores([])
+    setMostrarModalValidacion(false) // Reset modal state
   }
 
   const handleEliminar = async () => {
@@ -373,6 +371,7 @@ export default function EditarUsoCombustiblesLubricantesDrawer({
     const erroresValidacion = validarFormularioPrincipal()
     if (erroresValidacion.length > 0) {
       setErrores(erroresValidacion)
+      setMostrarModalValidacion(true)
       return
     }
 
@@ -464,18 +463,39 @@ export default function EditarUsoCombustiblesLubricantesDrawer({
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {/* Errores principales */}
-          {errores.length > 0 && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg sticky top-0 z-50 shadow-md">
-              <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
-                <AlertCircle className="w-5 h-5" />
-                Se encontraron {errores.length} errores:
+          {/* Modal de validación de errores */}
+          {mostrarModalValidacion && errores.length > 0 && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+              <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-red-600 mb-3">
+                      Se encontraron {errores.length} errores:
+                    </h3>
+                    <ul className="list-disc list-inside space-y-2 text-gray-700">
+                      {errores.map((error, index) => (
+                        <li key={index} className="text-sm">
+                          {error}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <div className="flex justify-end mt-6">
+                  <Button
+                    onClick={() => {
+                      setMostrarModalValidacion(false)
+                      setErrores([])
+                    }}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Aceptar
+                  </Button>
+                </div>
               </div>
-              <ul className="list-disc list-inside text-red-700 space-y-1">
-                {errores.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
             </div>
           )}
 
@@ -671,7 +691,7 @@ export default function EditarUsoCombustiblesLubricantesDrawer({
                 </div>
               )}
 
-              {/* Tabla de detalles */}
+              {/*Tabla de detalles */}
               <div className="border rounded-lg overflow-hidden">
                 {/* Headers de la tabla */}
                 <div className="bg-gray-50 border-b">

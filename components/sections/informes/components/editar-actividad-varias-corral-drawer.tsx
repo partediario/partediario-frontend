@@ -81,6 +81,7 @@ export default function EditarActividadVariasCorralDrawer({
   // Errores
   const [errores, setErrores] = useState<string[]>([])
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
 
   const { currentEstablishment } = useCurrentEstablishment()
   const { usuario, loading: loadingUsuario } = useUser()
@@ -180,13 +181,17 @@ export default function EditarActividadVariasCorralDrawer({
     if (!fecha) errores.push("La fecha es requerida")
     if (!hora) errores.push("La hora es requerida")
 
-    const tieneLotsSeleccionados = lotesSeleccionados.length > 0
-    const tieneDetalles = detalles.length > 0
-    const tieneNota = nota.trim().length > 0
-
-    if (!tieneLotsSeleccionados && !tieneDetalles && !tieneNota) {
-      errores.push("Debe seleccionar lotes, agregar detalles de insumos, o escribir una nota")
+    if (detalles.length === 0) {
+      errores.push("Debe agregar al menos un detalle de insumos")
     }
+
+    // const tieneLotsSeleccionados = lotesSeleccionados.length > 0
+    // const tieneDetalles = detalles.length > 0
+    // const tieneNota = nota.trim().length > 0
+
+    // if (!tieneLotsSeleccionados && !tieneDetalles && !tieneNota) {
+    //   errores.push("Debe seleccionar lotes, agregar detalles de insumos, o escribir una nota")
+    // }
 
     return errores
   }
@@ -405,6 +410,7 @@ export default function EditarActividadVariasCorralDrawer({
     const erroresValidacion = validarFormularioPrincipal()
     if (erroresValidacion.length > 0) {
       setErrores(erroresValidacion)
+      setMostrarModalErrores(true)
       return
     }
 
@@ -555,7 +561,7 @@ export default function EditarActividadVariasCorralDrawer({
 
         <div className="flex-1 overflow-y-auto p-6">
           {/* Errores principales */}
-          {errores.length > 0 && (
+          {/* {errores.length > 0 && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
                 <AlertCircle className="w-5 h-5" />
@@ -567,7 +573,7 @@ export default function EditarActividadVariasCorralDrawer({
                 ))}
               </ul>
             </div>
-          )}
+          )} */}
 
           {/* Datos Generales */}
           <div className="space-y-6">
@@ -835,19 +841,27 @@ export default function EditarActividadVariasCorralDrawer({
           </div>
         </div>
 
-        {showDeleteConfirm && (
+        {mostrarModalErrores && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
-              <p className="text-gray-600 mb-6">
-                ¿Está seguro que desea eliminar esta actividad? Esta acción no se puede deshacer.
-              </p>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
-                  Cancelar
-                </Button>
-                <Button variant="destructive" onClick={eliminarActividad} disabled={deleting}>
-                  {deleting ? "Eliminando..." : "Eliminar"}
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">Se encontraron {errores.length} errores:</h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {errores.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErrores(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
                 </Button>
               </div>
             </div>

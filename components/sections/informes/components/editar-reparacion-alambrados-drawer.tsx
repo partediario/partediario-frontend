@@ -112,6 +112,7 @@ export default function EditarReparacionAlambradosDrawer({
 
   const [detalles, setDetalles] = useState<DetalleInsumo[]>([])
   const [errores, setErrores] = useState<string[]>([])
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
 
   const { establecimientoSeleccionado } = useEstablishment()
@@ -353,6 +354,7 @@ export default function EditarReparacionAlambradosDrawer({
     if (!actividad) errores.push("Debe seleccionar un tipo de actividad")
     if (!fecha) errores.push("La fecha es requerida")
     if (!potreroId) errores.push("Debe seleccionar un potrero")
+    if (detalles.length === 0) errores.push("Debe agregar al menos un insumo")
 
     return errores
   }
@@ -439,6 +441,7 @@ export default function EditarReparacionAlambradosDrawer({
     const erroresValidacion = validarFormularioPrincipal()
     if (erroresValidacion.length > 0) {
       setErrores(erroresValidacion)
+      setMostrarModalErrores(true)
       return
     }
 
@@ -542,6 +545,7 @@ export default function EditarReparacionAlambradosDrawer({
     onClose?.()
     limpiarFormularioDetalle()
     setErrores([])
+    setMostrarModalErrores(false)
   }
 
   const puedeEliminar = () => {
@@ -598,20 +602,6 @@ export default function EditarReparacionAlambradosDrawer({
             </div>
           ) : actividad ? (
             <div className="space-y-6">
-              {errores.length > 0 && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
-                    <AlertCircle className="w-5 h-5" />
-                    Se encontraron {errores.length} errores:
-                  </div>
-                  <ul className="list-disc list-inside text-red-700 space-y-1">
-                    {errores.map((error, index) => (
-                      <li key={index}>{error}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               <div>
                 <h3 className="text-lg font-semibold mb-4">Datos Generales</h3>
                 <div className="space-y-4">
@@ -780,6 +770,36 @@ export default function EditarReparacionAlambradosDrawer({
             <div className="text-center py-8 text-gray-500">No se pudo cargar la información de la reparación</div>
           )}
         </div>
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">Se encontraron {errores.length} errores:</h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {errores.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button
+                  onClick={() => setMostrarModalErrores(false)}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

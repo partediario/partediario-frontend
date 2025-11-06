@@ -25,6 +25,7 @@ export default function EditarLluviaDrawer({ isOpen, onClose, parte, onSuccess }
   const { usuario, loading: loadingUsuario } = useUser()
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
   const [mostrarExito, setMostrarExito] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -52,6 +53,7 @@ export default function EditarLluviaDrawer({ isOpen, onClose, parte, onSuccess }
       setHora("")
       setNota("")
       setErrors([])
+      setMostrarModalErrores(false)
       setMostrarExito(false)
       setShowDeleteConfirm(false)
     }
@@ -124,8 +126,8 @@ export default function EditarLluviaDrawer({ isOpen, onClose, parte, onSuccess }
       newErrors.push("La medida de lluvia es requerida")
     } else {
       const medidaNum = Number.parseInt(medida)
-      if (isNaN(medidaNum) || medidaNum < 0 || !Number.isInteger(Number.parseFloat(medida))) {
-        newErrors.push("La medida debe ser un número entero mayor o igual a 0")
+      if (isNaN(medidaNum) || medidaNum <= 0 || !Number.isInteger(Number.parseFloat(medida))) {
+        newErrors.push("La medida debe ser un número entero mayor a 0")
       }
     }
 
@@ -147,6 +149,7 @@ export default function EditarLluviaDrawer({ isOpen, onClose, parte, onSuccess }
     console.log("🔄 INICIANDO ACTUALIZACIÓN DE REGISTRO DE LLUVIA...")
 
     if (!validateForm()) {
+      setMostrarModalErrores(true)
       return
     }
 
@@ -319,23 +322,6 @@ export default function EditarLluviaDrawer({ isOpen, onClose, parte, onSuccess }
             </Alert>
           )}
 
-          {/* Mostrar errores de validación */}
-          {errors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium mb-2">Se encontraron {errors.length} errores:</div>
-                <ul className="list-disc list-inside space-y-1">
-                  {errors.map((error, index) => (
-                    <li key={index} className="text-sm">
-                      {error}
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-
           {/* Fecha field only */}
           <div>
             <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
@@ -416,6 +402,37 @@ export default function EditarLluviaDrawer({ isOpen, onClose, parte, onSuccess }
                 </Button>
                 <Button onClick={eliminarRegistro} variant="destructive" disabled={deleting}>
                   {deleting ? "Eliminando..." : "Sí"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de errores */}
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">Se encontraron {errors.length} errores:</h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {errors.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button
+                  onClick={() => setMostrarModalErrores(false)}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Aceptar
                 </Button>
               </div>
             </div>

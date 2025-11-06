@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
 import { useUser } from "@/contexts/user-context"
 import { toast } from "sonner"
@@ -22,16 +21,15 @@ interface LluviaDrawerProps {
 export default function LluviaDrawer({ isOpen, onClose, onSuccess }: LluviaDrawerProps) {
   const { usuario } = useUser()
   const [loading, setLoading] = useState(false)
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
   const { establecimientoSeleccionado } = useEstablishment()
 
-  // Estados del formulario
   const [medida, setMedida] = useState("")
   const [fecha, setFecha] = useState<Date>(new Date())
   const [hora, setHora] = useState<string>("")
   const [nota, setNota] = useState("")
 
-  // Inicializar hora actual
   useEffect(() => {
     if (isOpen) {
       const now = new Date()
@@ -40,7 +38,6 @@ export default function LluviaDrawer({ isOpen, onClose, onSuccess }: LluviaDrawe
     }
   }, [isOpen])
 
-  // Limpiar formulario al cerrar
   useEffect(() => {
     if (!isOpen) {
       setMedida("")
@@ -48,6 +45,7 @@ export default function LluviaDrawer({ isOpen, onClose, onSuccess }: LluviaDrawe
       setHora("")
       setNota("")
       setErrors([])
+      setMostrarModalErrores(false)
     }
   }, [isOpen])
 
@@ -85,6 +83,7 @@ export default function LluviaDrawer({ isOpen, onClose, onSuccess }: LluviaDrawe
 
   const handleSubmit = async () => {
     if (!validateForm()) {
+      setMostrarModalErrores(true)
       return
     }
 
@@ -121,7 +120,6 @@ export default function LluviaDrawer({ isOpen, onClose, onSuccess }: LluviaDrawe
 
       console.log("✅ Datos de lluvia guardados:", result)
 
-      // Disparar evento para recargar partes diarios
       console.log("🔄 Disparando evento reloadPartesDiarios desde lluvia drawer")
       window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
 
@@ -154,36 +152,19 @@ export default function LluviaDrawer({ isOpen, onClose, onSuccess }: LluviaDrawe
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Errores */}
-          {errors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium mb-2">Se encontraron {errors.length} errores:</div>
-                <ul className="list-disc list-inside space-y-1">
-                  {errors.map((error, index) => (
-                    <li key={index} className="text-sm">
-                      {error}
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
+          {fecha && (
+            <div>
+              <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
+              <div className="mt-1">
+                <CustomDatePicker
+                  date={fecha}
+                  onDateChange={(newDate) => setFecha(newDate || new Date())}
+                  placeholder="Seleccionar fecha"
+                />
+              </div>
+            </div>
           )}
 
-          {/* Fecha field only */}
-          <div>
-            <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
-            <div className="mt-1">
-              <CustomDatePicker
-                date={fecha}
-                onDateChange={(newDate) => setFecha(newDate || new Date())}
-                placeholder="Seleccionar fecha"
-              />
-            </div>
-          </div>
-
-          {/* Medición */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Medición</h3>
 
@@ -210,7 +191,6 @@ export default function LluviaDrawer({ isOpen, onClose, onSuccess }: LluviaDrawe
             </div>
           </div>
 
-          {/* Nota */}
           <div>
             <Label htmlFor="nota" className="text-sm font-medium text-gray-700">
               Nota
@@ -225,7 +205,6 @@ export default function LluviaDrawer({ isOpen, onClose, onSuccess }: LluviaDrawe
           </div>
         </div>
 
-        {/* Footer */}
         <div className="border-t p-6 flex gap-3 justify-end">
           <Button onClick={onClose} variant="outline" disabled={loading}>
             Cancelar
@@ -234,6 +213,33 @@ export default function LluviaDrawer({ isOpen, onClose, onSuccess }: LluviaDrawe
             {loading ? "Guardando..." : "Guardar"}
           </Button>
         </div>
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">Se encontraron {errors.length} errores:</h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {errors.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErrores(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )

@@ -9,7 +9,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Trash2, Edit, Users, AlertCircle, X } from "lucide-react"
 import { useUser } from "@/contexts/user-context"
 import { useEstablishment } from "@/contexts/establishment-context"
@@ -95,8 +94,10 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
 
   // Estados de datos
   const [detalles, setDetalles] = useState<DetalleActividad[]>([])
-  const [errores, setErrores] = useState<string[]>([])
+  const [erroresValidacion, setErroresValidacion] = useState<string[]>([])
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
+  const [mostrarModalErroresDetalle, setMostrarModalErroresDetalle] = useState(false)
 
   // Contextos
   const { usuario, loading: loadingUsuario } = useUser()
@@ -226,8 +227,11 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
     setTiposMovimiento([])
     setCategorias([])
     limpiarFormularioDetalle()
-    setErrores([])
+    setErroresValidacion([])
     setLoadingData(false)
+    setMostrarModalErrores(false) // Also reset error modal
+    setErroresDetalle([])
+    setMostrarModalErroresDetalle(false) // Reset detail error modal
   }, [])
 
   // Función para cargar lotes
@@ -484,6 +488,7 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
     if (!hora) errores.push("La hora es requerida")
     if (!tipoActividadId) errores.push("Debe tener un tipo de actividad válido")
     if (!tipoMovimiento) errores.push("Debe seleccionar un tipo de movimiento")
+    if (detalles.length === 0) errores.push("Debe agregar al menos un detalle")
 
     return errores
   }
@@ -528,13 +533,7 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
     const erroresValidacion = validarDetalle()
     if (erroresValidacion.length > 0) {
       setErroresDetalle(erroresValidacion)
-
-      // También mostrar toast
-      toast({
-        title: "Error en validación",
-        description: erroresValidacion.join(", "),
-        variant: "destructive",
-      })
+      setMostrarModalErroresDetalle(true)
       return
     }
 
@@ -581,6 +580,8 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
     setTipoPeso(detalle.tipo_peso)
     setMostrarFormDetalle(true)
     setErroresDetalle([])
+    // Explicitly close the detail error modal if it was open
+    setMostrarModalErroresDetalle(false)
   }
 
   const eliminarDetalle = (id: string) => {
@@ -599,9 +600,10 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
   }
 
   const handleSubmit = async () => {
-    const erroresValidacion = validarFormularioPrincipal()
-    if (erroresValidacion.length > 0) {
-      setErrores(erroresValidacion)
+    const errores = validarFormularioPrincipal()
+    if (errores.length > 0) {
+      setErroresValidacion(errores)
+      setMostrarModalErrores(true)
       return
     }
 
@@ -709,6 +711,11 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
 
   const handleClose = () => {
     onClose?.()
+    setErroresValidacion([])
+    setMostrarModalErrores(false)
+    // Clear detail errors and hide modal on close as well
+    setErroresDetalle([])
+    setMostrarModalErroresDetalle(false)
   }
 
   const puedeEliminar = () => {
@@ -753,20 +760,6 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
 
           {!loadingData && (
             <>
-              {errores.length > 0 && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
-                    <AlertCircle className="w-5 h-5" />
-                    Se encontraron {errores.length} errores:
-                  </div>
-                  <ul className="list-disc list-inside text-red-700 space-y-1">
-                    {errores.map((error, index) => (
-                      <li key={index}>{error}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               <div className="space-y-6">
                 <div>
                   <div className="space-y-4">
@@ -800,7 +793,15 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold">Detalles</h3>
-                    <Button onClick={() => setMostrarFormDetalle(true)} className="bg-green-600 hover:bg-green-700">
+                    <Button
+                      onClick={() => {
+                        setMostrarFormDetalle(true)
+                        setEditandoDetalle(null) // Ensure we are adding a new detail
+                        setErroresDetalle([]) // Clear previous errors
+                        setMostrarModalErroresDetalle(false) // Hide modal if open
+                      }}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Agregar línea
                     </Button>
@@ -808,22 +809,6 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
 
                   {mostrarFormDetalle && (
                     <div className="bg-gray-50 border rounded-lg p-6 mb-4">
-                      {erroresDetalle.length > 0 && (
-                        <Alert variant="destructive" className="mb-4">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription>
-                            <div className="font-medium mb-2">Campos faltantes:</div>
-                            <ul className="list-disc list-inside space-y-1">
-                              {erroresDetalle.map((error, index) => (
-                                <li key={index} className="text-sm">
-                                  {error}
-                                </li>
-                              ))}
-                            </ul>
-                          </AlertDescription>
-                        </Alert>
-                      )}
-
                       <h4 className="font-medium mb-4">{editandoDetalle ? "Editar Detalle" : "Nuevo Detalle"}</h4>
 
                       <div className="space-y-4">
@@ -1005,6 +990,67 @@ export default function EditarFaenaDrawer({ isOpen = false, onClose, onSuccess, 
             </>
           )}
         </div>
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">
+                    Se encontraron {erroresValidacion.length} errores:
+                  </h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {erroresValidacion.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button
+                  onClick={() => setMostrarModalErrores(false)}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mostrarModalErroresDetalle && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">
+                    Se encontraron {erroresDetalle.length} errores:
+                  </h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {erroresDetalle.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErroresDetalle(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -52,6 +52,7 @@ export default function EntradaInsumosDrawer({ isOpen, onClose, onSuccess }: Ent
   const [tipoMovimientoSeleccionado, setTipoMovimientoSeleccionado] = useState("")
   const [cantidad, setCantidad] = useState(0)
 
+  const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
   const [erroresValidacion, setErroresValidacion] = useState<string[]>([])
   const [mostrarExito, setMostrarExito] = useState(false)
 
@@ -84,6 +85,7 @@ export default function EntradaInsumosDrawer({ isOpen, onClose, onSuccess }: Ent
       setCantidad(0)
       setErroresValidacion([])
       setMostrarExito(false)
+      setMostrarModalErrores(false) // Reset modal error state
     }
   }, [isOpen])
 
@@ -138,6 +140,7 @@ export default function EntradaInsumosDrawer({ isOpen, onClose, onSuccess }: Ent
     const err = validarFormulario()
     if (err.length) {
       setErroresValidacion(err)
+      setMostrarModalErrores(true)
       return
     }
     setErroresValidacion([])
@@ -225,21 +228,6 @@ export default function EntradaInsumosDrawer({ isOpen, onClose, onSuccess }: Ent
               <AlertDescription className="space-y-1">
                 <p className="font-medium text-green-800">¡Entrada guardada exitosamente!</p>
                 <p className="text-sm text-green-700">Se registró el movimiento correctamente</p>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* errores */}
-          {erroresValidacion.length > 0 && (
-            <Alert variant="destructive" className="sticky top-0 z-50 bg-red-50 shadow-md">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <p className="font-medium mb-1">Se encontraron {erroresValidacion.length} errores:</p>
-                <ul className="list-disc list-inside text-sm space-y-0.5">
-                  {erroresValidacion.map((e, idx) => (
-                    <li key={idx}>{e}</li>
-                  ))}
-                </ul>
               </AlertDescription>
             </Alert>
           )}
@@ -332,6 +320,35 @@ export default function EntradaInsumosDrawer({ isOpen, onClose, onSuccess }: Ent
             {loading ? "Guardando..." : "Guardar"}
           </Button>
         </div>
+
+        {mostrarModalErrores && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-600 mb-3">
+                    Se encontraron {erroresValidacion.length} errores:
+                  </h3>
+                  <ul className="list-disc list-inside space-y-2 text-gray-700">
+                    {erroresValidacion.map((error, index) => (
+                      <li key={index} className="text-sm">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setMostrarModalErrores(false)} className="bg-red-600 hover:bg-red-700">
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   )
