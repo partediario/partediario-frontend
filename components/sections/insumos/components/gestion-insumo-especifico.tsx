@@ -370,21 +370,19 @@ export function GestionInsumoEspecifico({
 
   useEffect(() => {
     if (resumenPorTipo.length > 0 && tiposExpandidos.size === 0) {
-      const tiposConStock = new Set<string>()
-      const subtiposConStock = new Set<string>()
+      const todosTipos = new Set<string>()
+      const todosSubtipos = new Set<string>()
 
       resumenPorTipo.forEach((tipo) => {
+        todosTipos.add(tipo.tipo_nombre)
         tipo.subtipos.forEach((subtipo) => {
-          const tieneStock = subtipo.productos.some((producto) => producto.stock_actual > 0)
-          if (tieneStock) {
-            tiposConStock.add(tipo.tipo_nombre)
-            subtiposConStock.add(`${tipo.tipo_nombre}-${subtipo.subtipo_nombre}`)
-          }
+          todosSubtipos.add(`${tipo.tipo_nombre}-${subtipo.subtipo_nombre}`)
         })
       })
 
-      setTiposExpandidos(tiposConStock)
-      setSubtiposExpandidos(subtiposConStock)
+      setTiposExpandidos(todosTipos)
+      setSubtiposExpandidos(todosSubtipos)
+      setTodoExpandido(true)
     }
   }, [resumenPorTipo])
 
@@ -1058,7 +1056,6 @@ export function GestionInsumoEspecifico({
                                     {/* Product Rows */}
                                     {isSubtipoExpanded &&
                                       productosAMostrar.map((producto) => {
-                                        const contenidoTotal = producto.stock_actual * producto.contenido_por_unidad
                                         const consumoMensual = calcularConsumoMensual(producto)
                                         const diasRestantes = calcularDiasRestantes(
                                           producto.stock_actual,
@@ -1091,15 +1088,18 @@ export function GestionInsumoEspecifico({
                                               <div className="flex flex-col gap-0.5">
                                                 <div className="flex items-center justify-center gap-1">
                                                   <span className="text-[13px] font-semibold text-[#2563EB]">
-                                                    {contenidoTotal.toLocaleString("es-ES")}
+                                                    {producto.stock_actual.toLocaleString("es-ES")}
                                                   </span>
                                                   <span className="text-[13px] font-semibold text-[#2563EB]">
-                                                    {producto.unidad_uso}
+                                                    {producto.unidad}
                                                   </span>
                                                 </div>
                                                 <div className="flex items-center justify-center gap-1">
                                                   <span className="text-xs text-[#6B7280]">
-                                                    {producto.stock_actual.toLocaleString("es-ES")} {producto.unidad}
+                                                    {(
+                                                      producto.stock_actual * producto.contenido_por_unidad
+                                                    ).toLocaleString("es-ES")}{" "}
+                                                    {producto.unidad_uso}
                                                   </span>
                                                 </div>
                                               </div>
@@ -1227,7 +1227,7 @@ export function GestionInsumoEspecifico({
                       <div>
                         <p className="text-xs text-gray-600 mb-1">Stock Total</p>
                         <p className="text-[22px] font-bold text-[#2563EB]">{stockActual}</p>
-                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_producto_nombre}</p>
+                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_uso_nombre}</p>
                       </div>
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                         <Package className="w-5 h-5 text-[#2563EB]" />
@@ -1243,7 +1243,7 @@ export function GestionInsumoEspecifico({
                       <div>
                         <p className="text-xs text-gray-600 mb-1">Total Entradas</p>
                         <p className="text-[22px] font-bold text-[#16A34A]">{totalEntradas}</p>
-                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_producto_nombre}</p>
+                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_uso_nombre}</p>
                       </div>
                       <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                         <TrendingUp className="w-5 h-5 text-[#16A34A]" />
@@ -1259,7 +1259,7 @@ export function GestionInsumoEspecifico({
                       <div>
                         <p className="text-xs text-gray-600 mb-1">Total Salidas</p>
                         <p className="text-[22px] font-bold text-[#DC2626]">{totalSalidas}</p>
-                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_producto_nombre}</p>
+                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_uso_nombre}</p>
                       </div>
                       <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                         <TrendingUp className="w-5 h-5 text-[#DC2626] rotate-180" />
@@ -1294,7 +1294,7 @@ export function GestionInsumoEspecifico({
                               })
                             : "0"}
                         </p>
-                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_producto_nombre}</p>
+                        <p className="text-xs text-gray-500">{insumoData.unidad_medida_uso_nombre}</p>
                       </div>
                       <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
                         <Box className="w-5 h-5 text-[#F59E0B]" />
@@ -1322,7 +1322,6 @@ export function GestionInsumoEspecifico({
                 </Card>
               </div>
 
-              {/* START CHANGED SECTION */}
               <Card className="bg-white border border-[#E57EB] rounded-[10px] shadow-sm hover:shadow-md transition-shadow duration-200">
                 <CardHeader className="pb-3 p-6">
                   <CardTitle className="flex items-center gap-2 text-lg">
@@ -1355,7 +1354,7 @@ export function GestionInsumoEspecifico({
                     <div>
                       <p className="text-[13px] font-medium text-[#6B7280] mb-1">Contenido por Unidad</p>
                       <p className="text-[14px] font-semibold text-[#111827]">
-                        {insumoData.contenido || 0} {insumoData.unidad_medida_uso_nombre || "kg"}
+                        {insumoData.contenido || 0} {insumoData.unidad_medida_producto_nombre || "kg"}
                       </p>
                     </div>
 
@@ -1368,7 +1367,6 @@ export function GestionInsumoEspecifico({
                   </div>
                 </CardContent>
               </Card>
-              {/* END CHANGED SECTION */}
             </div>
           )
         })()}
