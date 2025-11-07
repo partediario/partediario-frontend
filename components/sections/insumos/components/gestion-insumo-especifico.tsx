@@ -123,12 +123,8 @@ export function GestionInsumoEspecifico({
   const [filtrosAvanzados, setFiltrosAvanzados] = useState({
     usuarioEspecifico: "",
     tipoMovimiento: [] as string[],
-    // Removed from here:
-    // fechaDesde: undefined as Date | undefined,
-    // fechaHasta: undefined as Date | undefined,
-    // tipoInsumo: "",
-    // subtipoInsumo: "",
-    // insumoEspecifico: "",
+    tipoInsumo: "",
+    subtipoInsumo: "",
   })
 
   const [filtrosAvanzadosAbiertos, setFiltrosAvanzadosAbiertos] = useState(false)
@@ -579,19 +575,14 @@ export function GestionInsumoEspecifico({
     setFiltrosAvanzados({
       usuarioEspecifico: "",
       tipoMovimiento: [],
-      // Removed from here:
-      // fechaDesde: undefined,
-      // fechaHasta: undefined,
-      // tipoInsumo: "",
-      // subtipoInsumo: "",
-      // insumoEspecifico: "",
+      tipoInsumo: "",
+      subtipoInsumo: "",
     })
     setInsumoSeleccionado(undefined)
     setBusqueda("")
     setPaginaActual(1)
     setFechaDesdeGlobal(undefined)
     setFechaHastaGlobal(undefined)
-    // setPeriodoGlobal("all") // This was removed in the changes, so it's no longer here.
   }
 
   const handleTipoMovimientoChange = (tipo: string, checked: boolean) => {

@@ -22,12 +22,32 @@ interface InsumoData {
   pd_nombre: string
   unidad_medida_nombre: string
   insumo_clase_id: number
+  insumo_clase_nombre: string
   insumo_tipo_id: number
+  insumo_tipo_nombre: string
   insumo_subtipo_id: number
+  insumo_subtipo_nombre: string
+  unidad_medida_producto_nombre: string
+  unidad_medida_uso_nombre: string
+  contenido: number
+  stock_total: number
+  stock_total_contenido: number
   establecimiento_id: number
   pd_detalles: {
     tipo_registro_principal: string
     movimientos_asociados: MovimientoInsumo[]
+  }
+}
+
+const parsePdDetalles = (pdDetalles: any) => {
+  try {
+    if (typeof pdDetalles === 'string') {
+      return JSON.parse(pdDetalles || '{"tipo_registro_principal":"","movimientos_asociados":[]}')
+    }
+    return pdDetalles || { tipo_registro_principal: "", movimientos_asociados: [] }
+  } catch (error) {
+    console.warn('[useInsumosData] Error parsing pd_detalles:', error)
+    return { tipo_registro_principal: "", movimientos_asociados: [] }
   }
 }
 
@@ -65,7 +85,13 @@ export function useInsumosData(claseInsumoId?: number, insumoId?: number) {
         }
 
         const result = await response.json()
-        setData(result)
+        
+        const parsedData = result.map((item: any) => ({
+          ...item,
+          pd_detalles: parsePdDetalles(item.pd_detalles)
+        }))
+        
+        setData(parsedData)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error desconocido")
       } finally {
@@ -92,7 +118,13 @@ export function useInsumosData(claseInsumoId?: number, insumoId?: number) {
         }
 
         const result = await response.json()
-        setAllData(result)
+        
+        const parsedData = result.map((item: any) => ({
+          ...item,
+          pd_detalles: parsePdDetalles(item.pd_detalles)
+        }))
+        
+        setAllData(parsedData)
       } catch (err) {
         console.error("Error fetching all data:", err)
       }
