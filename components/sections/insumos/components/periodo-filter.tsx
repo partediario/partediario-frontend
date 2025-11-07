@@ -178,7 +178,7 @@ export function PeriodoFilter({ onPeriodChange, className }: PeriodoFilterProps)
         >
           {/* Ocultamos chevron interno de shadcn y ponemos el nuestro */}
           <SelectTrigger
-            aria-invalid={showCustomWarning}
+            aria-invalid={showCustomWarning || undefined}
             className={
               "h-10 w-full pr-12 transition-colors hover:bg-[#F3F4F6] data-[state=open]:bg-[#F3F4F6] [&>svg:last-child]:hidden " +
               (showCustomWarning ? "border-red-400 focus:ring-red-400" : "")
@@ -270,11 +270,9 @@ export function PeriodoFilter({ onPeriodChange, className }: PeriodoFilterProps)
         {/* Popover personalizado (nuestro picker) */}
         {selectedPeriod === "custom" && isPickerOpen && (
           <div
-            className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] animate-in fade-in-0 slide-in-from-top-2 duration-150"
-            style={{ maxHeight: "calc(100vh - 200px)", overflowY: "auto" }}
+            className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] animate-in fade-in-0 slide-in-from-top-2 duration-150 overflow-hidden"
           >
-            <div className="p-4 flex flex-col gap-3 w-[280px]">
-              {/* No mostramos alerta aquí; solo al salir */}
+            <div className="p-4 flex flex-col gap-3 min-w-[320px]">
               {/* Desde */}
               <div className="space-y-2">
                 <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Desde</span>
@@ -341,14 +339,14 @@ export function PeriodoFilter({ onPeriodChange, className }: PeriodoFilterProps)
             </div>
 
             {activeField && (
-              <div className="border-t border-gray-200">
+              <div className="border-t border-gray-200 p-3">
                 <Calendar
                   mode="single"
                   selected={activeField === "start" ? customRange.start || undefined : customRange.end || undefined}
                   onSelect={handleCustomDateSelect}
                   locale={es}
                   initialFocus
-                  className="rounded-b-lg"
+                  className="w-full"
                 />
               </div>
             )}
