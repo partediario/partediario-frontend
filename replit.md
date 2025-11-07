@@ -4,6 +4,16 @@
 
 Parte Diario PRO is a comprehensive livestock management system built with Next.js 14, React, and TypeScript. The application enables ranchers and agricultural managers to track daily operations, manage multiple establishments, monitor livestock movements, weather data, supplies, and activities across cattle ranching operations. The system features a role-based permission system with multi-company and multi-establishment support.
 
+## Recent Changes
+
+**November 7, 2025 - Insumos Section Data Flow Fixes**
+- Fixed empty "Historial de Movimientos" table by parsing `pd_detalles` JSON field in `useInsumosData` hook
+- Updated `InsumoData` interface to include all 11+ missing properties from API response (clase, tipo, subtipo names, unidades, contenido, stock)
+- Added robust JSON parsing with error handling for malformed database data
+- Fixed `filtrosAvanzados` state to include `tipoInsumo` and `subtipoInsumo` properties
+- Resolved all TypeScript LSP errors (41 → 0) in Insumos section
+- Implemented helper function `parsePdDetalles` with try/catch for safe JSON parsing
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
