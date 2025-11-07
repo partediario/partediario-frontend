@@ -6,6 +6,12 @@ Parte Diario PRO is a comprehensive livestock management system built with Next.
 
 ## Recent Changes
 
+**November 7, 2025 - Branding & Deployment Updates**
+- Updated favicon to high-resolution "PDP" branded icon (PNG format at 32x32, 192x192, 512x512 sizes)
+- Configured multi-size favicon support for better display across devices and browsers
+- Fixed deployment configuration for Replit autoscale deployment (port 5000, binding to 0.0.0.0)
+- Verified all environment secrets for production deployment
+
 **November 7, 2025 - Insumos Section Data Flow Fixes**
 - Fixed empty "Historial de Movimientos" table by parsing `pd_detalles` JSON field in `useInsumosData` hook
 - Updated `InsumoData` interface to include all 11+ missing properties from API response (clase, tipo, subtipo names, unidades, contenido, stock)
