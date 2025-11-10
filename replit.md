@@ -6,9 +6,11 @@ Parte Diario PRO is a comprehensive livestock management system built with Next.
 
 ## Recent Changes
 
-**November 10, 2025 - UI Fixes & Authentication Improvements**
-- Restored original green cattle favicon (SVG + PNG variants) to login and register pages
-- Added logo-icon.png (Parte Diario Pro branding) to both authentication pages
+**November 10, 2025 - Authentication & Environment Variable Fixes**
+- Fixed login authentication to use correct environment variables (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
+- Added HTTPS Agent configuration to handle self-signed SSL certificates in development environment
+- Fixed server not reloading environment variables by requiring workflow restart after changes
+- Verified login flow uses https://supabase.partediario.com endpoint correctly
 - Fixed Next.js 15 async params error in /api/empresas/[id] route (params now properly awaited)
 - Improved login error handling with detailed logging (URL, status, headers, response text)
 - Fixed supabaseServer null check errors in app/login/actions.ts
