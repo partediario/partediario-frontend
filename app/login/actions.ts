@@ -67,6 +67,14 @@ export async function login(email: string, password: string) {
 
     console.log("✅ [LOGIN] Login exitoso, obteniendo datos del usuario...")
 
+    if (!supabaseServer) {
+      console.log("⚠️ [LOGIN] No se pudo inicializar supabaseServer")
+      return {
+        success: false,
+        message: "Error de configuración del servidor",
+      }
+    }
+
     // Obtener datos adicionales del usuario desde pd_usuarios
     const { data: userData, error: userError } = await supabaseServer
       .from("pd_usuarios")

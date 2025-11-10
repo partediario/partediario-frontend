@@ -4,13 +4,14 @@ import { createClient } from "@supabase/supabase-js"
 const supabaseUrl = process.env.SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    console.log("🏢 [API] Obteniendo datos de empresa ID:", params.id)
+    const { id } = await params
+    console.log("🏢 [API] Obteniendo datos de empresa ID:", id)
 
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    const { data, error } = await supabase.from("pd_empresas").select("*").eq("id", params.id).single()
+    const { data, error } = await supabase.from("pd_empresas").select("*").eq("id", id).single()
 
     if (error) {
       console.error("❌ [API] Error al obtener empresa:", error)
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     if (!data) {
-      console.log("⚠️ [API] Empresa no encontrada:", params.id)
+      console.log("⚠️ [API] Empresa no encontrada:", id)
       return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 })
     }
 
@@ -30,9 +31,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    console.log("🏢 [API] Actualizando empresa ID:", params.id)
+    const { id } = await params
+    console.log("🏢 [API] Actualizando empresa ID:", id)
 
     const body = await request.json()
     const { nombre, direccion, razon_social, ruc, contacto_nombre, email_contacto, nro_tel_contac } = body
@@ -68,11 +70,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const { data: existingEmpresa, error: checkError } = await supabase
       .from("pd_empresas")
       .select("id")
-      .eq("id", params.id)
+      .eq("id", id)
       .single()
 
     if (checkError || !existingEmpresa) {
-      console.log("⚠️ [API] Empresa no encontrada para actualizar:", params.id)
+      console.log("⚠️ [API] Empresa no encontrada para actualizar:", id)
       return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 })
     }
 
@@ -88,7 +90,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         email_contacto: email_contacto.trim(),
         nro_tel_contac: nro_tel_contac ? Number.parseInt(nro_tel_contac) : null,
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single()
 
