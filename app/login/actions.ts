@@ -15,6 +15,11 @@ export async function login(email: string, password: string) {
     console.log("🔗 [LOGIN] URL:", `${supabaseUrl}/auth/v1/token?grant_type=password`)
     console.log("🔑 [LOGIN] API Key presente:", !!supabaseAnonKey)
 
+    const https = await import("node:https")
+    const agent = new https.Agent({
+      rejectUnauthorized: false,
+    })
+
     // Usar la API REST directamente
     const authResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
       method: "POST",
@@ -26,6 +31,8 @@ export async function login(email: string, password: string) {
         email,
         password,
       }),
+      // @ts-ignore
+      agent,
     })
 
     console.log("📡 [LOGIN] Status de respuesta:", authResponse.status)
