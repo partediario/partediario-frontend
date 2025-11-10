@@ -12,6 +12,8 @@ export async function login(email: string, password: string) {
     }
 
     console.log("🔐 [LOGIN] Intentando login para:", email)
+    console.log("🔗 [LOGIN] URL:", `${supabaseUrl}/auth/v1/token?grant_type=password`)
+    console.log("🔑 [LOGIN] API Key presente:", !!supabaseAnonKey)
 
     // Usar la API REST directamente
     const authResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
@@ -26,9 +28,25 @@ export async function login(email: string, password: string) {
       }),
     })
 
+    console.log("📡 [LOGIN] Status de respuesta:", authResponse.status)
+    console.log("📋 [LOGIN] Headers de respuesta:", Object.fromEntries(authResponse.headers.entries()))
+
     if (!authResponse.ok) {
-      const errorData = await authResponse.json()
-      console.log("❌ [LOGIN] Error de autenticación:", errorData)
+      const responseText = await authResponse.text()
+      console.log("❌ [LOGIN] Respuesta de error (texto):", responseText)
+      
+      let errorData
+      try {
+        errorData = JSON.parse(responseText)
+        console.log("❌ [LOGIN] Error de autenticación (JSON):", errorData)
+      } catch (parseError) {
+        console.log("⚠️ [LOGIN] La respuesta de error no es JSON válido")
+        return {
+          success: false,
+          message: `Error de autenticación (${authResponse.status}): ${responseText.substring(0, 100)}`,
+        }
+      }
+
       return {
         success: false,
         message:
