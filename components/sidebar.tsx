@@ -27,14 +27,17 @@ import { usePermissions } from "@/hooks/use-permissions"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import UsuarioViewDrawer from "@/components/sections/configuracion/components/usuario-view-drawer"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
 
 interface SidebarProps {
   activeSection?: string
   onEstablishmentChange?: (establishment: string) => void
   onCompanyChange?: (company: string) => void
+  isOpen?: boolean
+  onClose?: () => void
 }
 
-export default function Sidebar({ activeSection, onEstablishmentChange, onCompanyChange }: SidebarProps) {
+export default function Sidebar({ activeSection, onEstablishmentChange, onCompanyChange, isOpen = false, onClose }: SidebarProps) {
   const router = useRouter()
   const {
     empresas,
@@ -276,9 +279,14 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
     .join("")
     .toUpperCase()
 
-  return (
-    <div className="w-64 h-screen fixed left-0 top-0 z-10 overflow-y-auto" style={{ backgroundColor: "#1F2427" }}>
-      <div className="p-4 min-h-full flex flex-col">
+  const handleMenuClick = (path: string, label: string) => {
+    handleMenuItemClick(path, label)
+    onClose?.() // Close mobile sidebar when clicking a menu item
+  }
+
+  // Sidebar content component - reusable for both mobile and desktop
+  const SidebarContent = () => (
+    <div className="p-4 min-h-full flex flex-col" style={{ backgroundColor: "#1F2427" }}>
         <div className="pt-3 pb-2 flex flex-col items-center cursor-pointer group" onClick={handleLogoClick}>
           <Image
             src="/images/design-mode/Parte_Diario_blanco_tsoirc.svg"
@@ -398,7 +406,7 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
                 return (
                   <li key={item.key}>
                     <button
-                      onClick={() => handleMenuItemClick(item.path, item.label)}
+                      onClick={() => handleMenuClick(item.path, item.label)}
                       className={`w-full flex items-center gap-3 text-sm py-3 px-4 rounded-md transition-colors duration-200 ${
                         isActive ? "bg-gray-700 text-white font-medium" : "text-gray-200 hover:bg-gray-600"
                       }`}
@@ -416,7 +424,7 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
         {permissions.canViewConfiguration() && isAuthenticated && (
           <div className="pb-4 border-b border-gray-600">
             <button
-              onClick={() => handleMenuItemClick("/configuracion", "Configuración")}
+              onClick={() => handleMenuClick("/configuracion", "Configuración")}
               className={`w-full flex items-center gap-3 text-sm py-3 px-4 rounded-md transition-colors duration-200 ${
                 activeSection === "Configuración"
                   ? "bg-gray-700 text-white font-medium"
@@ -464,6 +472,27 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
           </button>
         </div>
       </div>
+  )
+
+  return (
+    <>
+      {/* Mobile Sidebar - Sheet */}
+      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose?.()}>
+        <SheetContent 
+          side="left" 
+          className="p-0 w-64 border-0 md:hidden" 
+          style={{ backgroundColor: "#1F2427" }}
+        >
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop Sidebar - Fixed */}
+      <div className="hidden md:block w-64 h-screen fixed left-0 top-0 z-10 overflow-y-auto" style={{ backgroundColor: "#1F2427" }}>
+        <SidebarContent />
+      </div>
+
+      {/* User View Drawer - Outside both sidebars */}
       {usuario && (
         <UsuarioViewDrawer
           open={isUserViewDrawerOpen}
@@ -478,6 +507,6 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
           }}
         />
       )}
-    </div>
+    </>
   )
 }
