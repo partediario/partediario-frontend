@@ -439,7 +439,7 @@ export default function EditParteDrawer({ isOpen, onClose, parte, onSuccess }: E
         cantidad: nuevoDetalle.cantidad,
         peso: nuevoDetalle.peso,
         tipo_peso: nuevoDetalle.tipo_peso,
-        deleteable: nuevoDetalle.deleteable || false,
+        deleteable: true,
       }
       setDetalles([...detalles, detalle])
     }
