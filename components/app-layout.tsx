@@ -29,8 +29,8 @@ export default function AppLayout({ children, activeSection }: AppLayoutProps) {
 
       <Sidebar activeSection={activeSection} isOpen={isOpen} onClose={close} />
       
-      {/* Main content with responsive margin */}
-      <main className="flex-1 w-full md:ml-64 pt-16 md:pt-0">{children}</main>
+      {/* Main content with responsive margin and mobile top offset */}
+      <main className="flex-1 w-full pt-16 md:pt-0 md:ml-64">{children}</main>
     </div>
   )
 }
