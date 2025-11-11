@@ -6,6 +6,30 @@ Parte Diario PRO is a comprehensive livestock management system built with Next.
 
 ## Recent Changes
 
+**November 11, 2025 - Registros Mobile Layout Improvements**
+- Enhanced mobile UX in Registros section with strategic component reorganization
+- **Floating "Agregar Parte Diario" Button:**
+  - Moved AddParteDiarioDrawer state management to InformesView for centralized control
+  - Created mobile-only floating action button (fixed top-4 right-4, md:hidden) aligned with hamburger menu
+  - Desktop button remains in DashboardHeader (hidden md:flex) to avoid duplication
+  - Both buttons trigger same drawer via shared state
+- **KPIs Mobile Grid (2x2 Layout):**
+  - Changed from grid-cols-1 to grid-cols-2 on mobile (<md breakpoint)
+  - Reduced padding from p-6 to p-3 on mobile (md:p-6 on larger screens)
+  - Decreased text size from text-2xl to text-lg on mobile (md:text-2xl)
+  - Reduced gap from gap-4 to gap-3 on mobile (md:gap-4)
+  - Layout: Nacimientos + Compra (top row), Venta + Lluvia Total (bottom row)
+- **Refresh Button Repositioning:**
+  - Moved refresh button from SearchAndFilters to DashboardHeader
+  - Now positioned next to date selector for better mobile accessibility
+  - Updated SearchAndFiltersProps interface to remove onRefresh and isLoading
+  - Refresh dispatches reloadPartesDiarios event from InformesView
+- **TypeScript & Architecture:**
+  - Cleaned up DashboardHeader: removed unused user context, drawer state, and isConsultor logic
+  - Extended DashboardHeaderProps with onRefresh prop
+  - Updated imports to remove unused AddParteDiarioDrawer and useUser
+  - 0 LSP errors after refactor
+
 **November 11, 2025 - Mobile-Responsive Design Implementation**
 - Implemented comprehensive mobile-first responsive design across the application
 - **Mobile Sidebar Navigation:**
