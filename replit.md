@@ -6,6 +6,15 @@ Parte Diario PRO is a comprehensive livestock management system built with Next.
 
 ## Recent Changes
 
+**November 11, 2025 - Add Parte Drawer Width Optimization**
+- Reverted add-parte-drawer to narrow width (384px) to eliminate excessive whitespace
+- Implemented DrawerContent size variants system in drawer.tsx component
+- Added `size` prop to DrawerContent with two variants: "default" (850px) and "narrow" (384px)
+- Updated add-parte-drawer.tsx to use `size="narrow"` for better UX
+- All other 64 drawers maintain default 850px width
+- Mobile responsive behavior preserved (full-screen from bottom)
+- 0 LSP errors, clean TypeScript implementation
+
 **November 11, 2025 - Add Parte Drawer Hook Fix**
 - Fixed TypeScript error in add-parte-drawer.tsx component
 - Corrected usage of useCurrentEstablishment hook to properly access empresa ID

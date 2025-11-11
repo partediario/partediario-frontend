@@ -492,7 +492,7 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   return (
     <>
       <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-        <DrawerContent className="h-full w-96 ml-auto">
+        <DrawerContent size="narrow" className="ml-auto">
           <DrawerHeader className="flex items-center justify-between border-b pb-4">
             <DrawerTitle className="text-xl font-bold text-gray-900">Nuevo Parte Diario</DrawerTitle>
             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
