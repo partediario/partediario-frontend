@@ -6,6 +6,35 @@ Parte Diario PRO is a comprehensive livestock management system built with Next.
 
 ## Recent Changes
 
+**November 11, 2025 - Registros Section Design Reorganization**
+- Reorganized Registros section with clean, harmonious design inspired by modern inventory management UIs
+- **New Statistics Cards Component** (components/sections/informes/components/stats-cards.tsx):
+  - Created minimalist stats cards with large numbers (text-4xl) and small labels
+  - Displays key metrics: Entradas (green), Salidas (red), Actividades (purple), Clima (blue)
+  - Responsive grid: 1 column mobile → 2 columns tablet → 4 columns desktop
+  - Auto-updates on reloadPartesDiarios event
+  - Icon-based design with colored backgrounds (TrendingUp, TrendingDown, Activity, Cloud)
+- **RegistrosList Redesign:**
+  - Integrated StatsCards at top of Registros section
+  - Clear visual hierarchy: Stats → "Partes Diarios" section → Filters → List
+  - Improved spacing with space-y-6 for consistent vertical rhythm
+- **SearchAndFilters Simplification:**
+  - Search bar separated in its own row for better UX
+  - Filters stack vertically on mobile, horizontally on desktop
+  - Consistent h-11 height for all controls
+  - Subtle gray-50 backgrounds with gray-200 borders for cohesive look
+- **ParteDiarioCard Optimization:**
+  - More compact design with reduced padding (p-4 vs p-3 sm:p-4)
+  - Smaller badges (py-0.5) and action buttons (p-1.5)
+  - Date/time combined with " · " separator for cleaner look
+  - line-clamp-2 for long notes to prevent card expansion
+  - Improved hover effects (hover:shadow-md)
+- **Bug Fixes:**
+  - Fixed UserContext reference in dashboard-header.tsx (user → usuario)
+  - Removed prop establecimientoId from InformesView in app/registros/page.tsx
+  - Eliminated redundant consultor verification code (now uses permissions.canAddParteDiario())
+  - Resolved all LSP errors (6 → 0)
+
 **November 11, 2025 - Mobile-Responsive Design Implementation**
 - Implemented comprehensive mobile-first responsive design across the application
 - **Mobile Sidebar Navigation:**
