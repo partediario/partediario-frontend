@@ -512,28 +512,28 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
   }
 
   return (
-    <Card className="mb-3 sm:mb-4 hover:shadow-sm transition-shadow border border-gray-200">
-      <CardContent className="p-3 sm:p-4">
+    <Card className="mb-2 sm:mb-3 hover:shadow-md transition-all border border-gray-200 bg-white">
+      <CardContent className="p-4">
         {/* Header with badge, date/time and action buttons */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-3">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <Badge variant="outline" className={`${getBadgeColor(parte.pd_tipo || "")} font-medium text-xs px-2 py-1 shrink-0`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Badge variant="outline" className={`${getBadgeColor(parte.pd_tipo || "")} font-medium text-xs px-2 py-0.5 shrink-0 border`}>
               {formatTipoDisplay(parte.pd_tipo || "")}
             </Badge>
-            <span className="text-xs sm:text-sm text-gray-600 font-medium">
-              {formatDate(parte.pd_fecha)} {formatTime(parte.pd_hora)}
+            <span className="text-xs text-gray-500 truncate">
+              {formatDate(parte.pd_fecha)} · {formatTime(parte.pd_hora)}
             </span>
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-1 ml-2">
             {/* Botón Ver - siempre visible */}
             <button
               onClick={() => handleView(parte)}
-              className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
               title="Ver detalle"
             >
-              <Eye className="h-4 w-4 text-gray-600" />
+              <Eye className="h-4 w-4 text-gray-500" />
             </button>
 
             {/* Botón Editar - solo para usuarios que pueden editar */}
@@ -547,10 +547,10 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
                 !(parte.pd_tipo === "ACTIVIDAD" && parte.pd_detalles?.detalle_tipo_id === 10) && (
                   <button
                     onClick={() => handleEdit(parte)}
-                    className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
                     title="Editar"
                   >
-                    <Edit className="h-4 w-4 text-gray-600" />
+                    <Edit className="h-4 w-4 text-gray-500" />
                   </button>
                 )}
             </PermissionWrapper>
@@ -558,19 +558,17 @@ export default function ParteDiarioCard({ parte }: ParteDiarioCardProps) {
         </div>
 
         {/* Main description */}
-        <div className="mb-2 sm:mb-3">
-          <h3 className="text-gray-900 font-medium text-sm sm:text-base leading-relaxed mb-1">
+        <div className="mb-2">
+          <h3 className="text-gray-900 font-medium text-sm leading-snug mb-1">
             {parte.pd_descripcion || "Sin descripción"}
           </h3>
-          {parte.pd_nota && <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">{parte.pd_nota}</p>}
+          {parte.pd_nota && <p className="text-gray-600 text-xs leading-relaxed line-clamp-2">{parte.pd_nota}</p>}
         </div>
 
         {/* User info only - SIN ESTABLECIMIENTO */}
-        <div className="flex items-center text-xs sm:text-sm text-gray-500">
-          <div className="flex items-center gap-1.5">
-            <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="truncate">{getUserDisplayName()}</span>
-          </div>
+        <div className="flex items-center text-xs text-gray-500">
+          <User className="h-3.5 w-3.5 mr-1.5" />
+          <span className="truncate">{getUserDisplayName()}</span>
         </div>
       </CardContent>
 
