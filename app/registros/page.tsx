@@ -30,7 +30,7 @@ export default function RegistrosPage() {
 
   return (
     <AppLayout activeSection="Registros">
-      <InformesView establecimientoId={establecimientoSeleccionado} />
+      <InformesView />
     </AppLayout>
   )
 }

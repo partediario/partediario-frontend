@@ -2,52 +2,22 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Plus, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, X, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
-import AddParteDiarioDrawer from "./add-parte-drawer"
-import { useUser } from "@/contexts/user-context"
 import { Button } from "@/components/ui/button"
 import { usePermissions } from "@/hooks/use-permissions"
 
 interface DashboardHeaderProps {
   onAddClick?: () => void
   onDateChange?: (date: Date | undefined) => void
+  onRefresh?: () => void
 }
 
-export default function DashboardHeader({ onAddClick, onDateChange }: DashboardHeaderProps) {
+export default function DashboardHeader({ onAddClick, onDateChange, onRefresh }: DashboardHeaderProps) {
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
-  const [isAddParteDiarioOpen, setIsAddParteDiarioOpen] = useState(false)
-
-  const { user } = useUser()
   const permissions = usePermissions()
-
-  // Debug: Agregar logs para verificar el usuario
-  console.log("Dashboard Header - Usuario:", user)
-  console.log("Dashboard Header - Rol:", user?.role)
-  console.log("Dashboard Header - ID:", user?.id)
-
-  // Verificación más robusta
-  const isConsultor =
-    user &&
-    (user.role === "CONSULTOR" ||
-      user.role === "Consultor" ||
-      user.role === "consultor" ||
-      user.id === 3 ||
-      user.id === "3")
-
-  console.log("Dashboard Header - Es Consultor:", isConsultor)
-
-  const handleAddClick = () => {
-    setIsDrawerOpen(true)
-  }
-
-  const handleDrawerSuccess = () => {
-    // Disparar evento personalizado para recargar los partes diarios
-    window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
-  }
 
   const handleDateSelect = (selectedDate: Date) => {
     setDate(selectedDate)
@@ -139,7 +109,7 @@ export default function DashboardHeader({ onAddClick, onDateChange }: DashboardH
   return (
     <div className="w-full bg-white p-4 shadow-sm border-b border-gray-200">
       <div className="flex items-center justify-between">
-        {/* Selector de fecha a la izquierda */}
+        {/* Selector de fecha y botón refresh a la izquierda */}
         <div className="flex items-center gap-2 relative">
           {/* Botón del selector de fecha */}
 
@@ -204,24 +174,32 @@ export default function DashboardHeader({ onAddClick, onDateChange }: DashboardH
               <X className="h-4 w-4" />
             </button>
           )}
+
+          {/* Botón de refresh */}
+          {onRefresh && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onRefresh}
+              className="h-8 w-8 bg-transparent"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
-        {/* Botón de agregar a la derecha - Solo mostrar si NO es consultor */}
-        {permissions.canAddParteDiario() && (
+        {/* Botón de agregar a la derecha - Oculto en móviles (ya hay botón flotante) */}
+        {permissions.canAddParteDiario() && onAddClick && (
          <Button
-          onClick={() => setIsAddParteDiarioOpen(true)}
+          onClick={onAddClick}
           style={{ backgroundColor: "#8C9C78" }}
-          className="hover:brightness-90 text-white px-4 py-2 rounded flex items-center"
+          className="hidden md:flex hover:brightness-90 text-white px-4 py-2 rounded items-center"
          >
          <Plus className="mr-2 h-4 w-4" />
          Agregar Parte Diario
          </Button>
         )}
       </div>
-      
-      {!isConsultor && (
-        <AddParteDiarioDrawer isOpen={isAddParteDiarioOpen} onClose={() => setIsAddParteDiarioOpen(false)} />
-      )}
     </div>
   )
 }

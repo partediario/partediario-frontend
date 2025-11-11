@@ -96,12 +96,12 @@ export default function KpisDinamicos({ establecimientoId }: KpisDinamicosProps)
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="bg-gray-50">
-            <CardContent className="p-6 text-center">
-              <Skeleton className="h-8 w-16 mx-auto mb-2" />
-              <Skeleton className="h-4 w-20 mx-auto" />
+            <CardContent className="p-3 md:p-6 text-center">
+              <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto mb-1 md:mb-2" />
+              <Skeleton className="h-3 md:h-4 w-16 md:w-20 mx-auto" />
             </CardContent>
           </Card>
         ))}
@@ -110,36 +110,36 @@ export default function KpisDinamicos({ establecimientoId }: KpisDinamicosProps)
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
       {/* Nacimientos */}
       <Card className="bg-gray-50">
-        <CardContent className="p-6 text-center">
-          <div className="text-2xl font-bold text-green-600 mb-1">{formatearNumero(kpis.nacimientos)}</div>
-          <div className="text-sm text-gray-600 font-medium">Nacimientos</div>
+        <CardContent className="p-3 md:p-6 text-center">
+          <div className="text-lg md:text-2xl font-bold text-green-600 mb-0.5 md:mb-1">{formatearNumero(kpis.nacimientos)}</div>
+          <div className="text-xs md:text-sm text-gray-600 font-medium">Nacimientos</div>
         </CardContent>
       </Card>
 
       {/* Compras */}
       <Card className="bg-gray-50">
-        <CardContent className="p-6 text-center">
-          <div className="text-2xl font-bold text-green-600 mb-1">{formatearNumero(kpis.compras)}</div>
-          <div className="text-sm text-gray-600 font-medium">Compra</div>
+        <CardContent className="p-3 md:p-6 text-center">
+          <div className="text-lg md:text-2xl font-bold text-green-600 mb-0.5 md:mb-1">{formatearNumero(kpis.compras)}</div>
+          <div className="text-xs md:text-sm text-gray-600 font-medium">Compra</div>
         </CardContent>
       </Card>
 
       {/* Ventas */}
       <Card className="bg-gray-50">
-        <CardContent className="p-6 text-center">
-          <div className="text-2xl font-bold text-green-600 mb-1">{formatearNumero(kpis.ventas)}</div>
-          <div className="text-sm text-gray-600 font-medium">Venta</div>
+        <CardContent className="p-3 md:p-6 text-center">
+          <div className="text-lg md:text-2xl font-bold text-green-600 mb-0.5 md:mb-1">{formatearNumero(kpis.ventas)}</div>
+          <div className="text-xs md:text-sm text-gray-600 font-medium">Venta</div>
         </CardContent>
       </Card>
 
       {/* Lluvia Total */}
       <Card className="bg-gray-50">
-        <CardContent className="p-6 text-center">
-          <div className="text-2xl font-bold text-green-600 mb-1">{formatearNumero(kpis.lluviaTotal)} mm</div>
-          <div className="text-sm text-gray-600 font-medium">Lluvia Total {kpis.anhoLluvia}</div>
+        <CardContent className="p-3 md:p-6 text-center">
+          <div className="text-lg md:text-2xl font-bold text-green-600 mb-0.5 md:mb-1">{formatearNumero(kpis.lluviaTotal)} mm</div>
+          <div className="text-xs md:text-sm text-gray-600 font-medium">Lluvia Total {kpis.anhoLluvia}</div>
         </CardContent>
       </Card>
     </div>
