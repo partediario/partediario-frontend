@@ -121,9 +121,9 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
   if (!establecimientoId) {
     return (
       <div className="bg-white rounded-lg border border-gray-200">
-        <div className="p-6 border-b bg-white">
+        <div className="px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-4 border-b bg-white">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold">Partes Diarios</h2>
+            <h2 className="text-xl sm:text-2xl font-bold">Partes Diarios</h2>
             <button
               onClick={() => setShowPartesTooltip(true)}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -133,9 +133,9 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
             </button>
           </div>
         </div>
-        <div className="p-6">
+        <div className="p-3 sm:p-4 md:p-6">
           <Alert>
-            <AlertDescription>Selecciona un establecimiento para ver los partes diarios.</AlertDescription>
+            <AlertDescription className="text-sm">Selecciona un establecimiento para ver los partes diarios.</AlertDescription>
           </Alert>
         </div>
         {showPartesTooltip && (
@@ -185,9 +185,9 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
 
   return (
     <div className="bg-white rounded-lg border border-gray-200">
-      <div className="px-6 py-4 border-b border-gray-200 bg-white">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-2xl font-bold">Partes Diarios</h2>
+      <div className="px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold">Partes Diarios</h2>
           <button
             onClick={() => setShowPartesTooltip(true)}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -257,9 +257,9 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
         )}
       </div>
 
-      <div className="px-6 py-4">
+      <div className="px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-4">
         {loading ? (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -287,7 +287,7 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
             </AlertDescription>
           </Alert>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {filteredPartesDiarios.map((parte) => (
               <ParteDiarioCard key={`parte-${parte.pd_id}-${parte.pd_fecha}-${parte.pd_hora}`} parte={parte} />
             ))}
