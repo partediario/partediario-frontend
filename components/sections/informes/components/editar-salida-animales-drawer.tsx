@@ -1117,9 +1117,9 @@ export default function EditarSalidaAnimalesDrawer({
   if (loadingData) {
     return (
       <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-        <DrawerContent className="h-full w-[850px] ml-auto">
+        <DrawerContent className="h-full">
           <DrawerHeader className="flex items-center justify-between border-b pb-4">
-            <DrawerTitle className="text-xl font-bold text-gray-900">Editar Salida de Animales</DrawerTitle>
+            <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900">Editar Salida de Animales</DrawerTitle>
             <button onClick={cancelar} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
               <X className="h-5 w-5 text-gray-500" />
             </button>
@@ -1137,9 +1137,9 @@ export default function EditarSalidaAnimalesDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900">Editar Salida de Animales</DrawerTitle>
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900">Editar Salida de Animales</DrawerTitle>
           <button onClick={cancelar} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <X className="h-5 w-5 text-gray-500" />
           </button>
@@ -1179,9 +1179,9 @@ export default function EditarSalidaAnimalesDrawer({
 
           {/* Datos Generales */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Datos Generales</h3>
+            <h3 className="text-base md:text-lg font-semibold text-gray-900">Datos Generales</h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="lote" className="text-sm font-medium text-gray-700">
                   Lote *
@@ -1226,7 +1226,7 @@ export default function EditarSalidaAnimalesDrawer({
           {/* Detalles */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Detalles *</h3>
+              <h3 className="text-base md:text-lg font-semibold text-gray-900">Detalles *</h3>
               <Button
                 onClick={() => setMostrarFormDetalle(true)}
                 size="sm"
@@ -1267,7 +1267,7 @@ export default function EditarSalidaAnimalesDrawer({
                   </Alert>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Tipo de movimiento *</Label>
                     <div className="mt-1">
@@ -1314,7 +1314,7 @@ export default function EditarSalidaAnimalesDrawer({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Cantidad *</Label>
                     <Input
@@ -1392,7 +1392,7 @@ export default function EditarSalidaAnimalesDrawer({
             )}
 
             {/*Tabla de detalles */}
-            <div className="border rounded-lg">
+            <div className="border rounded-lg overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1492,7 +1492,7 @@ export default function EditarSalidaAnimalesDrawer({
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+              <h3 className="text-base md:text-lg font-semibold mb-4">Confirmar Eliminación</h3>
               <p className="text-gray-600 mb-6">¿Seguro que quiere eliminar el Parte Diario?</p>
               <div className="flex gap-3 justify-end">
                 <Button onClick={() => setShowDeleteConfirm(false)} variant="outline">

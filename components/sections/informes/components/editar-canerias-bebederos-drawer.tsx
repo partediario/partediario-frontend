@@ -663,9 +663,9 @@ export default function EditarCaneriasBebederosDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <div className="flex items-center gap-1">
               <Wrench className="w-6 h-6 text-orange-600" />
               <Package className="w-6 h-6 text-blue-600" />
@@ -704,7 +704,7 @@ export default function EditarCaneriasBebederosDrawer({
 
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Detalles *</h3>
+                <h3 className="text-base md:text-lg font-semibold">Detalles *</h3>
               </div>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -754,7 +754,7 @@ export default function EditarCaneriasBebederosDrawer({
                       </h4>
 
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <Label>Potrero *</Label>
                             <CustomCombobox
@@ -812,7 +812,7 @@ export default function EditarCaneriasBebederosDrawer({
                   )}
 
                   {/* Tabla de detalles potreros */}
-                  <div className="border rounded-lg overflow-hidden">
+                  <div className="border rounded-lg overflow-hidden overflow-x-auto">
                     <div className="bg-gray-50 border-b">
                       <div className="grid grid-cols-12 gap-2 p-3 text-sm font-medium text-gray-700">
                         <div className="col-span-3">Potrero</div>
@@ -904,7 +904,7 @@ export default function EditarCaneriasBebederosDrawer({
                       </h4>
 
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <Label>Insumo *</Label>
                             <CustomCombobox
@@ -977,7 +977,7 @@ export default function EditarCaneriasBebederosDrawer({
                   )}
 
                   {/*Tabla de detalles insumos */}
-                  <div className="border rounded-lg overflow-hidden">
+                  <div className="border rounded-lg overflow-hidden overflow-x-auto">
                     <div className="bg-gray-50 border-b">
                       <div className="grid grid-cols-10 gap-4 p-4 text-sm font-medium text-gray-700">
                         <div className="col-span-4">Insumo</div>
@@ -1046,7 +1046,7 @@ export default function EditarCaneriasBebederosDrawer({
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+              <h3 className="text-base md:text-lg font-semibold mb-4">Confirmar Eliminación</h3>
               <p className="text-gray-600 mb-6">
                 ¿Está seguro que desea eliminar esta cañerías y bebederos? Esta acción no se puede deshacer.
               </p>

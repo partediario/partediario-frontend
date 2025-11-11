@@ -130,9 +130,9 @@ export default function VerActividadInsumosDrawer({ isOpen, onClose, parte }: Ve
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto" aria-describedby="ver-actividad-insumos-description">
+      <DrawerContent className="h-full" aria-describedby="ver-actividad-insumos-description">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Package className="w-6 h-6 text-blue-600" />
             Ver Actividad con Insumos
           </DrawerTitle>
@@ -153,9 +153,9 @@ export default function VerActividadInsumosDrawer({ isOpen, onClose, parte }: Ve
             <div className="space-y-6">
               {/* Datos Generales */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Datos Generales</h3>
+                <h3 className="text-base md:text-lg font-semibold mb-4">Datos Generales</h3>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm font-medium text-gray-700">Tipo</Label>
                       <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">
@@ -176,7 +176,7 @@ export default function VerActividadInsumosDrawer({ isOpen, onClose, parte }: Ve
                     <Input value={actividad.pd_tipo_actividades?.nombre || ""} readOnly className="cursor-default" />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label>Fecha *</Label>
                       <Input value={formatDate(actividad.fecha)} readOnly className="cursor-default" />
@@ -192,11 +192,11 @@ export default function VerActividadInsumosDrawer({ isOpen, onClose, parte }: Ve
               {/* Detalles */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Detalles *</h3>
+                  <h3 className="text-base md:text-lg font-semibold">Detalles *</h3>
                 </div>
 
                 {/* Tabla de detalles */}
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg overflow-hidden overflow-x-auto">
                   {/* Headers de la tabla */}
                   <div className="bg-gray-50 border-b">
                     <div className="grid grid-cols-9 gap-4 p-4 text-sm font-medium text-gray-700">

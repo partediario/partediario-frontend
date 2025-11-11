@@ -123,9 +123,9 @@ export default function VerEntradaInsumosDrawer({ isOpen, onClose, parte }: VerE
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto" aria-describedby="ver-entrada-insumos-description">
+      <DrawerContent className="h-full" aria-describedby="ver-entrada-insumos-description">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Package className="w-6 h-6 text-green-600" />
             Ver Entrada de Insumos
           </DrawerTitle>
@@ -156,9 +156,9 @@ export default function VerEntradaInsumosDrawer({ isOpen, onClose, parte }: VerE
 
               {/* Datos del Movimiento */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Datos del Movimiento</h3>
+                <h3 className="text-base md:text-lg font-semibold mb-4">Datos del Movimiento</h3>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label>Insumo *</Label>
                       <Input value={movimiento.pd_insumos.nombre} readOnly className="cursor-default" />

@@ -452,9 +452,9 @@ export default function EditarUsoCombustiblesLubricantesDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Fuel className="w-6 h-6 text-orange-600" />
             Editar Uso de Combustibles y Lubricantes
           </DrawerTitle>
@@ -488,7 +488,7 @@ export default function EditarUsoCombustiblesLubricantesDrawer({
             {/* Selector de Maquinarias */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Maquinarias</h3>
+                <h3 className="text-base md:text-lg font-semibold">Maquinarias</h3>
                 <Button
                   onClick={() => setMostrarSelectorMaquinarias(!mostrarSelectorMaquinarias)}
                   variant="outline"
@@ -594,7 +594,7 @@ export default function EditarUsoCombustiblesLubricantesDrawer({
             {/* Detalles Insumos */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Detalles Insumos</h3>
+                <h3 className="text-base md:text-lg font-semibold">Detalles Insumos</h3>
                 <Button onClick={() => setMostrarFormDetalle(true)} className="bg-orange-600 hover:bg-orange-700">
                   <Plus className="w-4 h-4 mr-2" />
                   Agregar línea
@@ -622,7 +622,7 @@ export default function EditarUsoCombustiblesLubricantesDrawer({
                   <h4 className="font-medium mb-4">{editandoDetalle !== null ? "Editar Detalle" : "Nuevo Detalle"}</h4>
 
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label>Insumo *</Label>
                         <CustomCombobox
@@ -672,7 +672,7 @@ export default function EditarUsoCombustiblesLubricantesDrawer({
               )}
 
               {/* Tabla de detalles */}
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg overflow-hidden overflow-x-auto">
                 {/* Headers de la tabla */}
                 <div className="bg-gray-50 border-b">
                   <div className="grid grid-cols-10 gap-4 p-4 text-sm font-medium text-gray-700">

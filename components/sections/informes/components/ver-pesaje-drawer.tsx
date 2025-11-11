@@ -114,9 +114,9 @@ export default function VerPesajeDrawer({ isOpen, onClose, parte }: VerPesajeDra
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Scale className="w-6 h-6 text-purple-600" />
             Ver Pesaje
           </DrawerTitle>
@@ -141,7 +141,7 @@ export default function VerPesajeDrawer({ isOpen, onClose, parte }: VerPesajeDra
 
             {/* Animales Pesados */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Animales Pesados</h3>
+              <h3 className="text-base md:text-lg font-semibold mb-4">Animales Pesados</h3>
 
               {detallesAnimales.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">

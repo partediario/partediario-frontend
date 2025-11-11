@@ -171,9 +171,9 @@ export default function VerReloteoDrawer({ isOpen, onClose, parte, onSuccess }: 
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <RefreshCw className="w-6 h-6 text-blue-600" />
             Ver Reloteo
           </DrawerTitle>
@@ -194,7 +194,7 @@ export default function VerReloteoDrawer({ isOpen, onClose, parte, onSuccess }: 
 
             {/* Animales Reloteados */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Animales Reloteados</h3>
+              <h3 className="text-base md:text-lg font-semibold mb-4">Animales Reloteados</h3>
 
               {detallesAnimales.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
@@ -312,7 +312,7 @@ export default function VerReloteoDrawer({ isOpen, onClose, parte, onSuccess }: 
         {showUndoConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold mb-4">Confirmar Deshacer Reloteo</h3>
+              <h3 className="text-base md:text-lg font-semibold mb-4">Confirmar Deshacer Reloteo</h3>
               <p className="text-gray-600 mb-6">
                 ¿Está seguro que desea deshacer este reloteo? Los animales volverán a sus lotes originales.
               </p>

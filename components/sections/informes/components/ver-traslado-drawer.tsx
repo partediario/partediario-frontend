@@ -162,9 +162,9 @@ export default function VerTrasladoDrawer({ isOpen, onClose, parte, onSuccess }:
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <ArrowRightLeft className="w-6 h-6 text-orange-600" />
             Ver Traslado de Potrero
           </DrawerTitle>
@@ -185,7 +185,7 @@ export default function VerTrasladoDrawer({ isOpen, onClose, parte, onSuccess }:
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Potrero Origen</Label>
                     <div className="mt-1 px-3 py-2 bg-gray-50 border rounded-md text-sm text-gray-900">
@@ -208,14 +208,14 @@ export default function VerTrasladoDrawer({ isOpen, onClose, parte, onSuccess }:
 
             {/* Animales Trasladados */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Animales Trasladados</h3>
+              <h3 className="text-base md:text-lg font-semibold mb-4">Animales Trasladados</h3>
 
               {detallesAnimales.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <p>No hay detalles de traslado disponibles</p>
                 </div>
               ) : (
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg overflow-hidden overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -247,7 +247,7 @@ export default function VerTrasladoDrawer({ isOpen, onClose, parte, onSuccess }:
             {detallesAnimales.length > 0 && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h4 className="font-medium text-gray-900 mb-2">📋 Resumen del Traslado</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Categorías trasladadas:</span>
                     <div className="font-medium text-lg text-gray-900">{detallesAnimales.length}</div>
@@ -306,7 +306,7 @@ export default function VerTrasladoDrawer({ isOpen, onClose, parte, onSuccess }:
         {showUndoConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold mb-4">Confirmar Deshacer Traslado</h3>
+              <h3 className="text-base md:text-lg font-semibold mb-4">Confirmar Deshacer Traslado</h3>
               <p className="text-gray-600 mb-6">
                 ¿Está seguro que desea deshacer este traslado? Los animales volverán al lote origen.
               </p>

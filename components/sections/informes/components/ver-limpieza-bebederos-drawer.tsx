@@ -120,9 +120,9 @@ export default function VerLimpiezaBebederosDrawer({ isOpen, onClose, parte }: V
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Droplets className="w-6 h-6 text-blue-600" />
             Ver Limpieza de Bebederos
           </DrawerTitle>
@@ -158,12 +158,12 @@ export default function VerLimpiezaBebederosDrawer({ isOpen, onClose, parte }: V
 
               {/* Detalles de Potreros */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Detalles</h3>
+                <h3 className="text-base md:text-lg font-semibold text-gray-900">Detalles</h3>
 
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg overflow-hidden overflow-x-auto">
                   {/* Headers de la tabla */}
                   <div className="bg-gray-50 border-b">
-                    <div className="grid grid-cols-2 gap-4 p-4 text-sm font-medium text-gray-700">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 text-sm font-medium text-gray-700">
                       <div>Potrero</div>
                       <div>Acciones</div>
                     </div>
@@ -178,7 +178,7 @@ export default function VerLimpiezaBebederosDrawer({ isOpen, onClose, parte }: V
                         {limpiezaData?.detalles?.map((detalle, index) => (
                           <div
                             key={detalle.id || index}
-                            className="grid grid-cols-2 gap-4 p-4 text-sm hover:bg-gray-50"
+                            className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 text-sm hover:bg-gray-50"
                           >
                             <div className="font-medium">
                               {detalle.potrero_nombre || `Potrero ${detalle.potrero_id}`}

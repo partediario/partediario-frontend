@@ -647,9 +647,9 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900">Salida de Animales</DrawerTitle>
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900">Salida de Animales</DrawerTitle>
           <button onClick={cancelar} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <X className="h-5 w-5 text-gray-500" />
           </button>
@@ -689,9 +689,9 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
 
           {/* Datos Generales */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Datos Generales</h3>
+            <h3 className="text-base md:text-lg font-semibold text-gray-900">Datos Generales</h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="lote" className="text-sm font-medium text-gray-700">
                   Lote *
@@ -736,7 +736,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
           {/* Detalles */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Detalles *</h3>
+              <h3 className="text-base md:text-lg font-semibold text-gray-900">Detalles *</h3>
               <Button
                 onClick={() => setMostrarFormDetalle(true)}
                 size="sm"
@@ -777,7 +777,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
                   </Alert>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Tipo de movimiento *</Label>
                     <div className="mt-1">
@@ -827,7 +827,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Cantidad *</Label>
                     <Input
@@ -905,7 +905,7 @@ export default function SalidaAnimalesDrawer({ isOpen, onClose, onSuccess }: Sal
             )}
 
             {/* Tabla de detalles */}
-            <div className="border rounded-lg">
+            <div className="border rounded-lg overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>

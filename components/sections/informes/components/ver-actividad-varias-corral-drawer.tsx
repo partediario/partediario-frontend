@@ -143,9 +143,9 @@ export default function VerActividadVariasCorralDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Home className="w-6 h-6 text-orange-600" />
             Ver Actividad Varias de Corral
           </DrawerTitle>
@@ -182,7 +182,7 @@ export default function VerActividadVariasCorralDrawer({
               {/* Lotes */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Lotes</h3>
+                  <h3 className="text-base md:text-lg font-semibold">Lotes</h3>
                 </div>
 
                 {/* Lotes seleccionados */}
@@ -212,11 +212,11 @@ export default function VerActividadVariasCorralDrawer({
               {/* Detalles Insumos */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Detalles Insumos</h3>
+                  <h3 className="text-base md:text-lg font-semibold">Detalles Insumos</h3>
                 </div>
 
                 {/* Tabla de detalles */}
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg overflow-hidden overflow-x-auto">
                   {/* Headers de la tabla */}
                   <div className="bg-gray-50 border-b">
                     <div className="grid grid-cols-10 gap-4 p-4 text-sm font-medium text-gray-700">

@@ -344,9 +344,9 @@ export default function EditarSalidaInsumosDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto" aria-describedby="editar-salida-insumos-description">
+      <DrawerContent className="h-full" aria-describedby="editar-salida-insumos-description">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Package className="w-6 h-6 text-red-600" />
             Editar Salida de Insumos
           </DrawerTitle>
@@ -388,9 +388,9 @@ export default function EditarSalidaInsumosDrawer({
 
               {/* Datos del Movimiento */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Datos del Movimiento</h3>
+                <h3 className="text-base md:text-lg font-semibold mb-4">Datos del Movimiento</h3>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label>Insumo *</Label>
                       <CustomCombobox
@@ -493,7 +493,7 @@ export default function EditarSalidaInsumosDrawer({
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+              <h3 className="text-base md:text-lg font-semibold mb-4">Confirmar Eliminación</h3>
               <p className="text-gray-600 mb-6">¿Seguro que quiere eliminar este movimiento de salida?</p>
               <div className="flex gap-3 justify-end">
                 <Button onClick={() => setShowDeleteConfirm(false)} variant="outline">

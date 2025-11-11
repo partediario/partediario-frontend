@@ -70,9 +70,9 @@ export default function VerLluviaDrawer({ isOpen, onClose, parte }: VerLluviaDra
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900">Ver Registro de Lluvia</DrawerTitle>
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900">Ver Registro de Lluvia</DrawerTitle>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <X className="h-5 w-5 text-gray-500" />
           </button>
@@ -89,7 +89,7 @@ export default function VerLluviaDrawer({ isOpen, onClose, parte }: VerLluviaDra
 
           {/* Medición */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Medición</h3>
+            <h3 className="text-base md:text-lg font-semibold text-gray-900">Medición</h3>
 
             <div>
               <Label className="text-sm font-medium text-gray-700">Cantidad de lluvia (mm)</Label>
