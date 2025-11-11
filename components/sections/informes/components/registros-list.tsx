@@ -5,7 +5,6 @@ import { fetchPartesDiarios } from "@/lib/api"
 import type { ParteDiario } from "@/lib/types"
 import SearchAndFilters from "./search-and-filters"
 import ParteDiarioCard from "./parte-diario-card"
-import StatsCards from "./stats-cards"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useEstablishment } from "@/contexts/establishment-context"
@@ -185,23 +184,18 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
   }
 
   return (
-    <div className="space-y-6">
-      {/* Tarjetas de estadísticas */}
-      <StatsCards establecimientoId={establecimientoId} />
-
-      {/* Contenedor principal de partes diarios */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-4 border-b border-gray-200 bg-white">
-          <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Partes Diarios</h2>
-            <button
-              onClick={() => setShowPartesTooltip(true)}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Información sobre Partes Diarios"
-            >
-              <HelpCircle className="h-4 w-4" />
-            </button>
-          </div>
+    <div className="bg-white rounded-lg border border-gray-200">
+      <div className="px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold">Partes Diarios</h2>
+          <button
+            onClick={() => setShowPartesTooltip(true)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Información sobre Partes Diarios"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </button>
+        </div>
 
         {showPartesTooltip && (
           <>
@@ -299,7 +293,6 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
             ))}
           </div>
         )}
-      </div>
       </div>
     </div>
   )

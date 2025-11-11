@@ -21,8 +21,24 @@ export default function DashboardHeader({ onAddClick, onDateChange }: DashboardH
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [isAddParteDiarioOpen, setIsAddParteDiarioOpen] = useState(false)
 
-  const { usuario } = useUser()
+  const { user } = useUser()
   const permissions = usePermissions()
+
+  // Debug: Agregar logs para verificar el usuario
+  console.log("Dashboard Header - Usuario:", user)
+  console.log("Dashboard Header - Rol:", user?.role)
+  console.log("Dashboard Header - ID:", user?.id)
+
+  // Verificación más robusta
+  const isConsultor =
+    user &&
+    (user.role === "CONSULTOR" ||
+      user.role === "Consultor" ||
+      user.role === "consultor" ||
+      user.id === 3 ||
+      user.id === "3")
+
+  console.log("Dashboard Header - Es Consultor:", isConsultor)
 
   const handleAddClick = () => {
     setIsDrawerOpen(true)
@@ -203,7 +219,9 @@ export default function DashboardHeader({ onAddClick, onDateChange }: DashboardH
         )}
       </div>
       
-      <AddParteDiarioDrawer isOpen={isAddParteDiarioOpen} onClose={() => setIsAddParteDiarioOpen(false)} />
+      {!isConsultor && (
+        <AddParteDiarioDrawer isOpen={isAddParteDiarioOpen} onClose={() => setIsAddParteDiarioOpen(false)} />
+      )}
     </div>
   )
 }
