@@ -6,6 +6,26 @@ Parte Diario PRO is a comprehensive livestock management system built with Next.
 
 ## Recent Changes
 
+**November 11, 2025 - Responsive Drawers Implementation (All 46 Drawers)**
+- Implemented comprehensive responsive design for all drawers in Registros section
+- **Drawer Component Base:**
+  - Modified DrawerContent to be responsive: full-screen (96vh) from bottom on mobile, lateral panel (max-w-[850px]) from right on desktop
+  - Removed drag handle on desktop (md:hidden)
+- **Batch Updates (46 drawers):**
+  - Removed fixed width `w-[850px]` from all DrawerContent components
+  - Made all grids responsive: `grid-cols-1 md:grid-cols-2`
+  - Responsive titles: `text-lg md:text-xl` for main titles, `text-base md:text-lg` for subtitles
+  - Added `overflow-x-auto` to all table containers for horizontal scroll on mobile
+- **Affected Drawers:**
+  - Animal drawers: entrada-animales, salida-animales, editar-entrada-animales, editar-salida-animales
+  - Supply drawers: entrada-insumos, salida-insumos, editar-entrada-insumos, editar-salida-insumos
+  - Activity drawers: All 30+ activity drawers (faena, señalada, sanitación, castración, etc.) including view and edit variants
+  - Other: lluvia, add-parte-drawer, view-parte-drawer
+- **Implementation Method:**
+  - Used sed batch replacements for consistency across 46 files
+  - 0 LSP errors after implementation
+  - Server restarted successfully with no compilation errors
+
 **November 11, 2025 - Registros Mobile Layout Improvements**
 - Enhanced mobile UX in Registros section with strategic component reorganization
 - **Floating "Agregar Parte Diario" Button:**
