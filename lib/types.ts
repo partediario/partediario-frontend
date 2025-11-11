@@ -13,6 +13,11 @@ export interface ParteDiario {
   pd_establecimiento_nombre: string | null
   pd_empresa_id: string
   pd_empresa_nombre: string | null
+  pd_detalles?: {
+    detalle_tipo_id?: number
+    detalle_direccion?: string
+    [key: string]: any
+  }
   created_at?: string
   updated_at?: string
 }

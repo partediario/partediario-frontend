@@ -1,6 +1,12 @@
 export interface SearchAndFiltersProps {
   searchTerm: string
   onSearchChange: (value: string) => void
+  selectedDate: Date | undefined
+  onDateChange: (date: Date | undefined) => void
+  selectedType: string
+  onTypeChange: (type: string) => void
+  onRefresh: () => void
+  isLoading?: boolean
   filters?: {
     [key: string]: any
   }
