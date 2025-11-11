@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Plus, X, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
+import { Plus, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -10,10 +10,9 @@ import { usePermissions } from "@/hooks/use-permissions"
 interface DashboardHeaderProps {
   onAddClick?: () => void
   onDateChange?: (date: Date | undefined) => void
-  onRefresh?: () => void
 }
 
-export default function DashboardHeader({ onAddClick, onDateChange, onRefresh }: DashboardHeaderProps) {
+export default function DashboardHeader({ onAddClick, onDateChange }: DashboardHeaderProps) {
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -173,18 +172,6 @@ export default function DashboardHeader({ onAddClick, onDateChange, onRefresh }:
             >
               <X className="h-4 w-4" />
             </button>
-          )}
-
-          {/* Botón de refresh */}
-          {onRefresh && (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onRefresh}
-              className="h-8 w-8 bg-transparent"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </Button>
           )}
         </div>
 

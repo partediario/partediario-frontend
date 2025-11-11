@@ -1,8 +1,9 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search } from "lucide-react"
+import { RotateCcw, Search } from "lucide-react"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
 import type { SearchAndFiltersProps as Props } from "@/types"
 
@@ -13,6 +14,8 @@ export default function SearchAndFilters({
   onDateChange,
   selectedType,
   onTypeChange,
+  onRefresh,
+  isLoading = false,
 }: Props) {
   /* Opciones de tipo con texto formateado en Título */
   const tiposOptions = [
@@ -61,6 +64,17 @@ export default function SearchAndFilters({
         placeholder="Seleccionar fecha"
         className="w-full sm:w-[250px]"
       />
+
+      {/* Botón de recarga */}
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={onRefresh}
+        disabled={isLoading}
+        className="h-10 w-10 bg-transparent"
+      >
+        <RotateCcw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+      </Button>
     </div>
   )
 }

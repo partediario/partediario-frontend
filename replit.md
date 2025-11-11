@@ -19,15 +19,9 @@ Parte Diario PRO is a comprehensive livestock management system built with Next.
   - Decreased text size from text-2xl to text-lg on mobile (md:text-2xl)
   - Reduced gap from gap-4 to gap-3 on mobile (md:gap-4)
   - Layout: Nacimientos + Compra (top row), Venta + Lluvia Total (bottom row)
-- **Refresh Button Repositioning:**
-  - Moved refresh button from SearchAndFilters to DashboardHeader
-  - Now positioned next to date selector for better mobile accessibility
-  - Updated SearchAndFiltersProps interface to remove onRefresh and isLoading
-  - Refresh dispatches reloadPartesDiarios event from InformesView
 - **TypeScript & Architecture:**
-  - Cleaned up DashboardHeader: removed unused user context, drawer state, and isConsultor logic
-  - Extended DashboardHeaderProps with onRefresh prop
-  - Updated imports to remove unused AddParteDiarioDrawer and useUser
+  - Cleaned up DashboardHeader: removed unused user context and drawer state
+  - Refresh button kept in original position (SearchAndFilters, next to date selector)
   - 0 LSP errors after refactor
 
 **November 11, 2025 - Mobile-Responsive Design Implementation**

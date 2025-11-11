@@ -29,11 +29,6 @@ export default function InformesView() {
     }
   }, [])
 
-  const handleRefresh = () => {
-    console.log("🔄 Refrescando partes diarios desde header")
-    window.dispatchEvent(new CustomEvent("reloadPartesDiarios"))
-  }
-
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
       {/* Botón flotante "Agregar Parte Diario" - Solo en móviles, alineado con hamburguesa */}
@@ -52,7 +47,6 @@ export default function InformesView() {
       <div className="bg-white border-b border-gray-200">
         <DashboardHeader 
           onAddClick={() => setIsAddParteDiarioOpen(true)}
-          onRefresh={handleRefresh}
         />
       </div>
 
