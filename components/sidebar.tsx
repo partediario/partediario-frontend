@@ -323,11 +323,11 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
         </button>
 
         <Dialog open={isContextDialogOpen} onOpenChange={setIsContextDialogOpen}>
-          <DialogContent className="sm:max-w-md bg-white">
+          <DialogContent className="w-[95vw] max-w-[400px] sm:max-w-md bg-white max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-lg font-semibold">Cambiar contexto</DialogTitle>
+              <DialogTitle className="text-base sm:text-lg font-semibold">Cambiar contexto</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
               {/* Selector de Empresa */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Empresa</label>
@@ -384,11 +384,18 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
             </div>
 
             {/* Botones de acción */}
-            <div className="flex justify-end gap-3 mt-4">
-              <Button variant="outline" onClick={() => setIsContextDialogOpen(false)}>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-3 sm:mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsContextDialogOpen(false)}
+                className="w-full sm:w-auto order-2 sm:order-1"
+              >
                 Cancelar
               </Button>
-              <Button onClick={handleApplyContext} className="bg-black text-white hover:bg-gray-800">
+              <Button 
+                onClick={handleApplyContext} 
+                className="w-full sm:w-auto bg-black text-white hover:bg-gray-800 order-1 sm:order-2"
+              >
                 Aplicar
               </Button>
             </div>
