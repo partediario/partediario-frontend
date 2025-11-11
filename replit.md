@@ -6,6 +6,27 @@ Parte Diario PRO is a comprehensive livestock management system built with Next.
 
 ## Recent Changes
 
+**November 11, 2025 - Mobile-Responsive Design Implementation**
+- Implemented comprehensive mobile-first responsive design across the application
+- **Mobile Sidebar Navigation:**
+  - Created `useMobileSidebar` hook for controlling sidebar state in mobile devices
+  - Added hamburger menu button (visible only on <768px screens)
+  - Sidebar renders as Sheet drawer on mobile, fixed panel on desktop (≥768px)
+  - Main content area uses responsive margin (`md:ml-64`) and padding (`pt-16 md:pt-0`)
+  - Company/establishment selector dialog made responsive with stacked buttons on mobile
+- **Registros Section Responsive:**
+  - ParteDiarioCard: flex-wrap layout, responsive padding (p-3 sm:p-4), responsive text sizes (text-xs sm:text-sm)
+  - RegistrosList: responsive padding throughout (px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-4)
+  - SearchAndFilters: already had responsive grid layout, corrected TypeScript interfaces
+- **TypeScript Improvements:**
+  - Fixed SearchAndFiltersProps interface in types.tsx (added selectedDate, onDateChange, selectedType, onTypeChange, onRefresh, isLoading)
+  - Enhanced ParteDiario interface in lib/types.ts (added pd_detalles with flexible structure)
+  - Resolved all LSP errors (38 → 0)
+- **Responsive Component Infrastructure:**
+  - Created ResponsiveDrawer wrapper component for consistent mobile drawer behavior
+  - Breakpoint strategy: base (<640px), sm (≥640px), md (≥768px), lg (≥1024px)
+  - Mobile-first approach with progressive enhancement for larger screens
+
 **November 10, 2025 - Authentication & Environment Variable Fixes**
 - Fixed login authentication to use correct environment variables (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
 - Added HTTPS Agent configuration to handle self-signed SSL certificates in development environment
