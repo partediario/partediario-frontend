@@ -487,7 +487,7 @@ export default function Sidebar({ activeSection, onEstablishmentChange, onCompan
       <Sheet open={isOpen} onOpenChange={(open) => !open && onClose?.()}>
         <SheetContent 
           side="left" 
-          className="p-0 w-64 border-0 md:hidden overflow-y-auto [&_button>svg]:!text-white" 
+          className="p-0 w-64 border-0 md:hidden overflow-y-auto [&_button.absolute.right-4.top-4_svg]:!text-white" 
           style={{ backgroundColor: "#1F2427" }}
         >
           <SidebarContent />
