@@ -660,7 +660,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
       <DrawerContent className="h-full w-[900px] ml-auto">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <RefreshCw className="w-6 h-6 text-blue-600" />
             Reloteo
           </DrawerTitle>
@@ -680,7 +680,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
             {/* Filtros */}
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-2">Filtros</h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="filtro-lote">Filtrar por Lote</Label>
                   <div className="relative" ref={filtroLoteRef}>
@@ -781,7 +781,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
 
             {/* Animales a Relotear - Tabla Unificada con Agrupación */}
             <div>
-              <h3 className="text-lg font-semibold mb-3">Animales a Relotear *</h3>
+              <h3 className="text-base md:text-lg font-semibold mb-3">Animales a Relotear *</h3>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin" />
@@ -792,7 +792,7 @@ export default function ReloteoDrawer({ isOpen, onClose, onSuccess, tipoActivida
                   <p>No se encontraron lotes con animales</p>
                 </div>
               ) : (
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg overflow-hidden overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50">

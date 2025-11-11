@@ -339,9 +339,9 @@ export default function RecorridaDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <MapPin className="w-6 h-6 text-green-600" />
             Recorrida
           </DrawerTitle>
@@ -376,7 +376,7 @@ export default function RecorridaDrawer({
             {/* Detalles */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Detalles *</h3>
+                <h3 className="text-base md:text-lg font-semibold">Detalles *</h3>
                 <Button
                   onClick={() => setMostrarFormDetalle(true)}
                   disabled={!actividadSeleccionada || potrerosDisponibles.length === 0}
@@ -526,7 +526,7 @@ export default function RecorridaDrawer({
               )}
 
               {/* Tabla de detalles */}
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg overflow-hidden overflow-x-auto">
                 {/* Headers de la tabla */}
                 <div className="bg-gray-50 border-b">
                   <div className="grid grid-cols-12 gap-4 p-3 text-sm font-medium text-gray-700">

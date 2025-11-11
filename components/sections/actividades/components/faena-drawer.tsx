@@ -426,9 +426,9 @@ export default function FaenaDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Users className="w-6 h-6 text-green-600" />
             Faena
           </DrawerTitle>
@@ -442,7 +442,7 @@ export default function FaenaDrawer({
           <div className="space-y-6">
             <div>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
                     <div className="mt-1">
@@ -469,7 +469,7 @@ export default function FaenaDrawer({
             {/* Detalles */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Detalles *</h3>
+                <h3 className="text-base md:text-lg font-semibold">Detalles *</h3>
                 <Button
                   onClick={() => setMostrarFormDetalle(true)}
                   disabled={!actividadSeleccionada}
@@ -486,7 +486,7 @@ export default function FaenaDrawer({
                   <h4 className="font-medium mb-4">{editandoDetalle !== null ? "Editar Detalle" : "Nuevo Detalle"}</h4>
 
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-sm font-medium text-gray-700">Lote *</Label>
                         <div className="mt-1">
@@ -536,7 +536,7 @@ export default function FaenaDrawer({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-sm font-medium text-gray-700">Cantidad *</Label>
                         <div className="mt-1">
@@ -599,7 +599,7 @@ export default function FaenaDrawer({
               )}
 
               {/* Tabla de detalles mejorada */}
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg overflow-hidden overflow-x-auto">
                 {/* Headers de la tabla */}
                 <div className="bg-gray-50 border-b">
                   <div className="grid grid-cols-12 gap-2 p-3 text-sm font-medium text-gray-700">
@@ -687,7 +687,7 @@ export default function FaenaDrawer({
                   <AlertCircle className="h-6 w-6 text-red-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-red-600 mb-3">Se encontraron {errores.length} errores:</h3>
+                  <h3 className="text-base md:text-lg font-semibold text-red-600 mb-3">Se encontraron {errores.length} errores:</h3>
                   <ul className="list-disc list-inside space-y-2 text-gray-700">
                     {errores.map((error, index) => (
                       <li key={index} className="text-sm">
@@ -714,7 +714,7 @@ export default function FaenaDrawer({
                   <AlertCircle className="h-6 w-6 text-red-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-red-600 mb-3">
+                  <h3 className="text-base md:text-lg font-semibold text-red-600 mb-3">
                     Se encontraron {erroresDetalle.length} errores:
                   </h3>
                   <ul className="list-disc list-inside space-y-2 text-gray-700">

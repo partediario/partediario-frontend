@@ -378,9 +378,9 @@ export default function SanitacionDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Syringe className="w-6 h-6 text-green-600" />
             Sanitación
           </DrawerTitle>
@@ -416,7 +416,7 @@ export default function SanitacionDrawer({
 
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Lotes</h3>
+                <h3 className="text-base md:text-lg font-semibold">Lotes</h3>
                 <Button
                   onClick={() => setMostrarSelectorLotes(!mostrarSelectorLotes)}
                   variant="outline"
@@ -511,7 +511,7 @@ export default function SanitacionDrawer({
 
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Detalle Insumos</h3>
+                <h3 className="text-base md:text-lg font-semibold">Detalle Insumos</h3>
                 <Button
                   onClick={() => setMostrarFormDetalleInsumos(true)}
                   disabled={!actividadSeleccionada}
@@ -545,7 +545,7 @@ export default function SanitacionDrawer({
                   </h4>
 
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label>Vacuna *</Label>
                         <CustomCombobox
@@ -596,7 +596,7 @@ export default function SanitacionDrawer({
               )}
 
               {/*Tabla de detalles vacunas */}
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg overflow-hidden overflow-x-auto">
                 <div className="bg-gray-50 border-b">
                   <div className="grid grid-cols-10 gap-3 px-4 py-3 text-sm font-medium text-gray-700">
                     <div className="col-span-4">Vacuna</div>

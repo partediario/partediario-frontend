@@ -614,9 +614,9 @@ export default function TrasladoPotreroDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <ArrowRightLeft className="w-6 h-6 text-orange-600" />
             Traslado de Potrero
           </DrawerTitle>
@@ -635,7 +635,7 @@ export default function TrasladoPotreroDrawer({
                   <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label>Potrero Origen *</Label>
                     <CustomCombobox
@@ -668,7 +668,7 @@ export default function TrasladoPotreroDrawer({
 
             {/* Animales a Trasladar */}
             <div>
-              <h3 className="text-lg font-semibold mb-3">Animales a Trasladar *</h3>
+              <h3 className="text-base md:text-lg font-semibold mb-3">Animales a Trasladar *</h3>
               {!potreroOrigen ? (
                 <div className="text-center py-8 text-gray-500">
                   <p>Selecciona un potrero origen para ver los animales disponibles</p>
@@ -695,7 +695,7 @@ export default function TrasladoPotreroDrawer({
                     </Label>
                   </div>
 
-                  <div className="border rounded-lg overflow-hidden">
+                  <div className="border rounded-lg overflow-hidden overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
