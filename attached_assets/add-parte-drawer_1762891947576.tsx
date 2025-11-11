@@ -114,22 +114,20 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
   const [actividadUsoCombustiblesSeleccionada, setActividadUsoCombustiblesSeleccionada] =
     useState<TipoActividad | null>(null) // Agregar estados para el drawer de Uso de Combustibles y Lubricantes
 
-  const { empresa, establecimiento, loading: hookLoading } = useCurrentEstablishment()
+  const { currentEstablishment } = useCurrentEstablishment()
 
   useEffect(() => {
-    if (!isOpen || hookLoading || !empresa) {
-      return
+    if (isOpen) {
+      console.log("🔍 Drawer abierto, currentEstablishment:", currentEstablishment)
+      console.log("🏢 Establecimiento ID:", currentEstablishment?.id)
+      console.log("🏭 Empresa ID:", currentEstablishment?.empresa_id)
+
+      const empresaId = currentEstablishment?.empresa_id || 1
+      console.log("🎯 Empresa ID a usar:", empresaId)
+
+      fetchTiposActividades(empresaId)
     }
-
-    console.log("🔍 Drawer abierto")
-    console.log("🏢 Establecimiento ID:", establecimiento)
-    console.log("🏭 Empresa ID:", empresa)
-
-    const empresaId = Number(empresa)
-    console.log("🎯 Empresa ID a usar:", empresaId)
-
-    fetchTiposActividades(empresaId)
-  }, [isOpen, empresa, hookLoading])
+  }, [isOpen, currentEstablishment])
 
   const fetchTiposActividades = async (empresaId: number) => {
     setLoading(true)
@@ -798,7 +796,7 @@ export default function AddParteDrawer({ isOpen, onClose, onRefresh }: AddParteD
                   ) : actividadesOtrasUbicaciones.length === 0 ? (
                     <div className="text-center py-4 text-gray-500">
                       <p>No se encontraron actividades</p>
-                      <p className="text-xs mt-1">Empresa ID: {empresa || "No seleccionada"}</p>
+                      <p className="text-xs mt-1">Empresa ID: {currentEstablishment?.empresa_id || 1}</p>
                     </div>
                   ) : (
                     actividadesOtrasUbicaciones.map(([ubicacion, actividades]) => {

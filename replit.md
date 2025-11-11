@@ -6,6 +6,13 @@ Parte Diario PRO is a comprehensive livestock management system built with Next.
 
 ## Recent Changes
 
+**November 11, 2025 - Add Parte Drawer Hook Fix**
+- Fixed TypeScript error in add-parte-drawer.tsx component
+- Corrected usage of useCurrentEstablishment hook to properly access empresa ID
+- Changed from accessing `currentEstablishment.empresa_id` to using `empresa` directly
+- Added proper loading guards to prevent fetch when hook is loading or empresa is not available
+- 0 LSP errors after fix
+
 **November 11, 2025 - Responsive Drawers Implementation (All Sections Complete)**
 - Implemented comprehensive responsive design for ALL drawers in the system
 - **Section Registros (46 drawers):**
