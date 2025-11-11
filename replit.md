@@ -6,6 +6,18 @@ Parte Diario PRO is a comprehensive livestock management system built with Next.
 
 ## Recent Changes
 
+**November 11, 2025 - Mobile UX Improvements: Sidebar and Drawer Optimizations**
+- Enhanced mobile sidebar usability:
+  - Added white close button (X) specifically for dark sidebar background using Tailwind arbitrary variants
+  - Implemented vertical scroll (`overflow-y-auto`) for mobile sidebar when menu items exceed screen height
+  - Solution scoped to sidebar only, preserving default behavior for other sheets
+- Optimized drawer mobile experience:
+  - Changed drawer height from `h-[96vh]` to `h-full` to eliminate top spacing on mobile devices
+  - All 65 drawers now occupy 100% screen height on mobile for better immersion
+  - Desktop behavior unchanged (maintains lateral panel with max-width constraints)
+- 2 pre-existing LSP errors in sidebar.tsx (User type missing telefono/created_at properties - not related to changes)
+- Server compiling successfully with all responsive improvements
+
 **November 11, 2025 - Add Parte Drawer Width Optimization**
 - Reverted add-parte-drawer to narrow width (384px) to eliminate excessive whitespace
 - Implemented DrawerContent size variants system in drawer.tsx component
