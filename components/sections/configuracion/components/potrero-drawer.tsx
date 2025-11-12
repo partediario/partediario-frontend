@@ -256,9 +256,9 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
   return (
     <TooltipProvider>
       <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-        <DrawerContent className="h-full w-[850px] ml-auto">
+        <DrawerContent className="ml-auto">
           <DrawerHeader className="flex items-center justify-between border-b pb-4">
-            <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-green-600" />
               {mode === "create" ? "Nuevo Potrero" : "Editar Potrero"}
             </DrawerTitle>
@@ -267,7 +267,7 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
             </button>
           </DrawerHeader>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
             {/* Mostrar mensaje de éxito */}
             {mostrarExito && (
               <Alert className="border-green-200 bg-green-50">
@@ -302,7 +302,7 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
 
             {/* Datos del Potrero */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Datos del Potrero</h3>
+              <h3 className="text-base md:text-lg font-semibold text-gray-900">Datos del Potrero</h3>
 
               <div>
                 <Label htmlFor="nombre" className="text-sm font-medium text-gray-700">
@@ -455,7 +455,7 @@ export function PotreroDrawer({ potrero, isOpen, onClose, onSuccess, mode, estab
           </div>
 
           {/* Footer */}
-          <div className="border-t p-6 flex gap-3 justify-end">
+          <div className="border-t p-4 md:p-6 flex gap-3 justify-end">
             <Button onClick={cancelar} variant="outline">
               Cancelar
             </Button>

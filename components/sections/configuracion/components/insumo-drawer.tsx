@@ -431,9 +431,9 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="ml-auto">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Package className="w-5 h-5 text-green-600" />
             {mode === "create" ? "Nuevo Insumo" : "Editar Insumo"}
           </DrawerTitle>
@@ -442,7 +442,7 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
           </button>
         </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
           {mostrarExito && (
             <Alert className="border-green-200 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
@@ -462,7 +462,7 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
           {/* Datos del Insumo */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-gray-900">Datos del Insumo</h3>
+              <h3 className="text-base md:text-lg font-semibold text-gray-900">Datos del Insumo</h3>
               <Edit className="w-4 h-4 text-gray-500" />
             </div>
 
@@ -592,7 +592,7 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
           {/* Stock del Insumo */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-gray-900">Stock del Insumo</h3>
+              <h3 className="text-base md:text-lg font-semibold text-gray-900">Stock del Insumo</h3>
               <Edit className="w-4 h-4 text-gray-500" />
             </div>
 
@@ -651,7 +651,7 @@ export function InsumoDrawer({ insumo, isOpen, onClose, onSuccess, mode, estable
         </div>
 
         {/* Footer */}
-        <div className="border-t p-6 flex gap-3 justify-end">
+        <div className="border-t p-4 md:p-6 flex gap-3 justify-end">
           <Button onClick={cancelar} variant="outline">
             Cancelar
           </Button>
