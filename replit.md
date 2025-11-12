@@ -37,6 +37,20 @@ The design prioritizes a mobile-first, responsive approach, ensuring optimal dis
 - **Carga por Potrero**: Height increased to 450px, bottom margin 90px, interval=0 to show all potrero labels, fontSize 11px
 - **Distribución de Lluvias**: Height increased to 500px, month labels abbreviated to 3 letters (Ene, Feb, etc.), extra 30px spacing for rotated labels
 
+**Configuración Section - Mobile Sub-Sidebars** (November 2025):
+- **ConfigNavigationContext** extended with mobile state: `isSubSidebarOpen`, `toggleSubSidebar()`, `setSubSidebarOpen()`
+- **ConfigSubSidebarLayout** component: Reusable wrapper for all 3 configuration sub-sidebars (Empresas, Empresa Config, Establecimiento Config)
+  - Mobile (<md): Renders as Sheet overlay with side="left", controlled by context state
+  - Desktop (≥md): Renders as fixed sidebar with w-64
+- **NuevaConfiguracionView**: Hamburger menu button (Menu icon) visible on mobile when sub-sidebar active, margin-left (ml-64) only applies on desktop (md:ml-64)
+- Sub-sidebars remain closed by default on mobile, users tap hamburger to open Sheet overlay
+
+**Insumos Section - Mobile Filter Optimization** (November 2025):
+- **GestionInsumoEspecifico** header/filter section: Stacks vertically on mobile (`flex-col`), horizontal on desktop (`md:flex-row`)
+- Filter widths: `w-full` on mobile, `md:min-w-[Npx]` on desktop for Clase selector (220px), Insumo selector (280px), Period filter (280px)
+- Responsive gaps: `gap-2` on mobile, `md:gap-4` on desktop
+- Stock summary and movement history tables already had proper responsive patterns (grid-cols-1/2/5, overflow-x-auto)
+
 Key UI elements like cards and data grids adapt fluidly using Tailwind breakpoints. Branding includes a high-resolution "PDP" favicon.
 
 ## External Dependencies
