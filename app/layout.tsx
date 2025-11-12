@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const viewport = {
   width: "device-width",
-  initialScale: 0.92,
+  initialScale: 0.90,
   maximumScale: 2,
   userScalable: true,
 }

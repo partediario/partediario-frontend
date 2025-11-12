@@ -673,15 +673,16 @@ export default function CargaPotrero({ data: propData, isLoading: propLoading = 
                     </div>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <ResponsiveContainer width="100%" height={400}>
-                      <ComposedChart data={chartData} margin={{ top: 20, right: 60, bottom: 60, left: 20 }}>
+                    <ResponsiveContainer width="100%" height={450}>
+                      <ComposedChart data={chartData} margin={{ top: 20, right: 60, bottom: 90, left: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis
                           dataKey="name"
                           angle={-45}
                           textAnchor="end"
                           height={80}
-                          tick={{ fill: "#6b7280", fontSize: 12 }}
+                          tick={{ fill: "#6b7280", fontSize: 11 }}
+                          interval={0}
                         />
                         <YAxis
                           yAxisId="left"

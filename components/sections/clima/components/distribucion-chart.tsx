@@ -122,7 +122,7 @@ export function DistribucionChart({ year }: DistribucionChartProps) {
           <CardDescription className="text-base">Análisis detallado de precipitaciones durante el año</CardDescription>
         </CardHeader>
         <CardContent className="p-6">
-          <div ref={chartRef} className="w-full relative bg-gray-50 rounded-lg p-4" style={{ height: "450px" }}>
+          <div ref={chartRef} className="w-full relative bg-gray-50 rounded-lg p-4" style={{ height: "500px" }}>
             {/* Eje Y */}
             <div
               className="absolute left-2 top-4 flex flex-col justify-between text-xs text-gray-600"
@@ -184,14 +184,15 @@ export function DistribucionChart({ year }: DistribucionChartProps) {
             {/* Etiquetas de meses */}
             <div
               className="absolute left-12 right-4 flex justify-between gap-1"
-              style={{ top: `${CHART_HEIGHT + 20}px` }}
+              style={{ top: `${CHART_HEIGHT + 30}px` }}
             >
               {chartData.map((item, index) => {
                 const barWidth = `${Math.max(100 / chartData.length - 2, 4)}%`
+                const mesAbreviado = item.mes.substring(0, 3)
                 return (
                   <div key={index} className="flex justify-center items-center" style={{ width: barWidth }}>
-                    <span className="text-xs text-gray-600 transform -rotate-45 origin-center whitespace-nowrap">
-                      {item.mes}
+                    <span className="text-xs text-gray-600 transform -rotate-45 origin-left whitespace-nowrap mt-4">
+                      {mesAbreviado}
                     </span>
                   </div>
                 )
