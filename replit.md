@@ -26,12 +26,16 @@ The application uses a Supabase PostgreSQL database, integrated with Neon Databa
 
 The design prioritizes a mobile-first, responsive approach, ensuring optimal display across various devices. All 74 drawers are fully responsive, appearing as full-screen sheets on mobile and lateral panels on desktop (default: 850px, narrow: 384px). Configuration drawers use responsive padding (p-4 md:p-6), titles (text-lg md:text-xl), and spacing (space-y-4 md:space-y-6). The sidebar features white close button for dark background and vertical scrolling.
 
-**Mobile Viewport Optimization**: The viewport uses `initialScale: 0.92` to provide a slightly zoomed-out view (~8% reduction) on mobile devices, allowing users to see more data at once while maintaining WCAG-compliant text sizes. Users can zoom up to 2x manually. This approach maximizes data visibility without sacrificing legibility in field conditions.
+**Mobile Viewport Optimization**: The viewport uses `initialScale: 0.90` to provide a slightly zoomed-out view (~10% reduction) on mobile devices, allowing users to see more data at once while maintaining WCAG-compliant text sizes. Users can zoom up to 2x manually. This approach maximizes data visibility without sacrificing legibility in field conditions.
 
 **Responsive Tables - Densified Mobile View**: Data-heavy tables in Movimientos and Clima sections are optimized for mobile with:
 - **Pluviometría calendar** (31-day grid): min-w reduced from 1200px to 1000px, sticky MES/TOTAL columns, text-xs (12px) for badges (~11px effective with viewport scale), mobile-only summary grid, compact row heights (h-9)
 - **Stock Actual tables**: min-w reduced from 600px to 480px, text-xs sm:text-sm responsive typography, abbreviated headers ("Peso Prom" vs "Peso Promedio"), compact paddings (px-2 sm:px-4), responsive toggle buttons showing icons-only on mobile
 - **Column optimization**: Reduced min-widths across all data tables (e.g., 140px→100px, 100px→70px) to fit more columns in viewport while maintaining ~11px minimum effective text size
+
+**Chart Optimizations**: Charts are optimized to prevent label clipping on mobile:
+- **Carga por Potrero**: Height increased to 450px, bottom margin 90px, interval=0 to show all potrero labels, fontSize 11px
+- **Distribución de Lluvias**: Height increased to 500px, month labels abbreviated to 3 letters (Ene, Feb, etc.), extra 30px spacing for rotated labels
 
 Key UI elements like cards and data grids adapt fluidly using Tailwind breakpoints. Branding includes a high-resolution "PDP" favicon.
 
