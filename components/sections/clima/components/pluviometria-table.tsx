@@ -2,15 +2,13 @@
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePluviometriaData } from "@/hooks/use-pluviometria-data"
-import { useCurrentEstablishment } from "@/hooks/use-current-establishment"
 
 interface PluviometriaTableProps {
   year: number
 }
 
 export function PluviometriaTable({ year }: PluviometriaTableProps) {
-  const { currentEstablishment } = useCurrentEstablishment()
-  const { datosAnuales, loading, error } = usePluviometriaData(year, currentEstablishment?.id)
+  const { datosAnuales, loading, error } = usePluviometriaData(year)
 
   if (loading) {
     return (
