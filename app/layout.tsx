@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { UserProvider } from "@/contexts/user-context"
 import { EstablishmentProvider } from "@/contexts/establishment-context"
 import { ConfigNavigationProvider } from "@/contexts/config-navigation-context"
+import { QueryProvider } from "@/providers/query-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -61,16 +62,18 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        <UserProvider>
-          <EstablishmentProvider>
-            <ConfigNavigationProvider>
-              <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-                {children}
-                <Toaster />
-              </ThemeProvider>
-            </ConfigNavigationProvider>
-          </EstablishmentProvider>
-        </UserProvider>
+        <QueryProvider>
+          <UserProvider>
+            <EstablishmentProvider>
+              <ConfigNavigationProvider>
+                <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+                  {children}
+                  <Toaster />
+                </ThemeProvider>
+              </ConfigNavigationProvider>
+            </EstablishmentProvider>
+          </UserProvider>
+        </QueryProvider>
       </body>
     </html>
   )
