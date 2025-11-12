@@ -24,7 +24,11 @@ The application uses a Supabase PostgreSQL database, integrated with Neon Databa
 
 ### UI/UX Decisions
 
-The design prioritizes a mobile-first, responsive approach, ensuring optimal display across various devices. All 74 drawers are fully responsive, appearing as full-screen sheets on mobile and lateral panels on desktop (default: 850px, narrow: 384px). Configuration drawers use responsive padding (p-4 md:p-6), titles (text-lg md:text-xl), and spacing (space-y-4 md:space-y-6). The sidebar features white close button for dark background and vertical scrolling. Key UI elements like cards and data grids adapt fluidly using Tailwind breakpoints. Branding includes a high-resolution "PDP" favicon.
+The design prioritizes a mobile-first, responsive approach, ensuring optimal display across various devices. All 74 drawers are fully responsive, appearing as full-screen sheets on mobile and lateral panels on desktop (default: 850px, narrow: 384px). Configuration drawers use responsive padding (p-4 md:p-6), titles (text-lg md:text-xl), and spacing (space-y-4 md:space-y-6). The sidebar features white close button for dark background and vertical scrolling.
+
+**Responsive Tables**: Data-heavy tables in Movimientos and Clima sections use overflow-x-auto with horizontal scroll on mobile. Pluviometría calendar (31-day grid) features sticky MES and TOTAL columns for easier navigation, plus a mobile-only summary grid. Stock Actual tables have responsive headers, toggle buttons, and mobile tips. All tables maintain min-w constraints (600px-1200px) with column min-widths (40px-140px) for optimal legibility.
+
+Key UI elements like cards and data grids adapt fluidly using Tailwind breakpoints. Branding includes a high-resolution "PDP" favicon.
 
 ## External Dependencies
 
