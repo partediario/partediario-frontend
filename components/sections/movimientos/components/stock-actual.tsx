@@ -467,10 +467,10 @@ export default function StockActual({ onRowClick }: StockActualProps) {
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Weight className="w-5 h-5 text-[#4285F4]" />
-            <CardTitle className="text-lg">Stock Actual del Establecimiento</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Stock Actual del Establecimiento</CardTitle>
             <div className="relative">
               <Button
                 variant="ghost"
@@ -511,30 +511,30 @@ export default function StockActual({ onRowClick }: StockActualProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {/* Toggle vista */}
-            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 rounded-lg p-1">
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-8 px-3 text-xs ${
+                className={`h-8 px-2 sm:px-3 text-xs ${
                   viewMode === "total" ? "bg-gray-200 text-gray-900" : "hover:bg-gray-100 text-gray-600"
                 }`}
                 onClick={() => setViewMode("total")}
               >
-                <Weight className="w-3 h-3 mr-1" />
-                Total
+                <Weight className="w-3 h-3 sm:mr-1" />
+                <span className="hidden sm:inline">Total</span>
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-8 px-3 text-xs ${
+                className={`h-8 px-2 sm:px-3 text-xs ${
                   viewMode === "potrero" ? "bg-gray-200 text-gray-900" : "hover:bg-gray-100 text-gray-600"
                 }`}
                 onClick={() => setViewMode("potrero")}
               >
-                <MapPin className="w-3 h-3 mr-1" />
-                Por Potrero - Lote
+                <MapPin className="w-3 h-3 sm:mr-1" />
+                <span className="hidden sm:inline">Por Potrero - Lote</span>
               </Button>
             </div>
 
@@ -578,17 +578,24 @@ export default function StockActual({ onRowClick }: StockActualProps) {
         {/* Overlay para cerrar menú */}
         {showExportMenu && <div className="fixed inset-0 z-40" onClick={() => setShowExportMenu(false)} />}
 
+        {/* Tip para mobile */}
+        <div className="block sm:hidden bg-blue-50 p-2 rounded-lg border border-blue-200 mb-3">
+          <p className="text-xs text-blue-800">
+            💡 <strong>Tip:</strong> Desliza horizontalmente para ver todos los datos.
+          </p>
+        </div>
+
         <div className="overflow-x-auto">
           {viewMode === "total" ? (
             // Vista Total
-            <Table className="text-sm">
+            <Table className="text-sm min-w-[600px]">
               <TableHeader>
                 <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold">Categoría</TableHead>
-                  <TableHead className="font-semibold">Cantidad</TableHead>
-                  <TableHead className="font-semibold">Peso Promedio (kg)</TableHead>
-                  <TableHead className="font-semibold">Peso Total (kg)</TableHead>
-                  <TableHead className="font-semibold">UG Total</TableHead>
+                  <TableHead className="font-semibold min-w-[140px]">Categoría</TableHead>
+                  <TableHead className="font-semibold min-w-[100px]">Cantidad</TableHead>
+                  <TableHead className="font-semibold min-w-[140px]">Peso Promedio (kg)</TableHead>
+                  <TableHead className="font-semibold min-w-[130px]">Peso Total (kg)</TableHead>
+                  <TableHead className="font-semibold min-w-[100px]">UG Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -679,21 +686,22 @@ export default function StockActual({ onRowClick }: StockActualProps) {
                       <div className="bg-[#4285F4]/10 px-4 py-3 border-b border-gray-200">
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-[#4285F4]" />
-                          <h3 className="font-semibold text-gray-900">{potreroDisplayName}</h3>
+                          <h3 className="text-sm sm:text-base font-semibold text-gray-900">{potreroDisplayName}</h3>
                         </div>
                       </div>
 
                       {/* Tabla de categorías del potrero */}
-                      <Table className="text-sm">
-                        <TableHeader>
-                          <TableRow className="bg-gray-50">
-                            <TableHead className="font-semibold">Categoría</TableHead>
-                            <TableHead className="font-semibold">Cantidad</TableHead>
-                            <TableHead className="font-semibold">Peso Promedio (kg)</TableHead>
-                            <TableHead className="font-semibold">Peso Total (kg)</TableHead>
-                            <TableHead className="font-semibold">UG Total</TableHead>
-                          </TableRow>
-                        </TableHeader>
+                      <div className="overflow-x-auto">
+                        <Table className="text-sm min-w-[600px]">
+                          <TableHeader>
+                            <TableRow className="bg-gray-50">
+                              <TableHead className="font-semibold min-w-[140px]">Categoría</TableHead>
+                              <TableHead className="font-semibold min-w-[100px]">Cantidad</TableHead>
+                              <TableHead className="font-semibold min-w-[140px]">Peso Promedio (kg)</TableHead>
+                              <TableHead className="font-semibold min-w-[130px]">Peso Total (kg)</TableHead>
+                              <TableHead className="font-semibold min-w-[100px]">UG Total</TableHead>
+                            </TableRow>
+                          </TableHeader>
                         <TableBody>
                           {potrero.categorias.map((categoria) => {
                             const promedio =
@@ -718,25 +726,26 @@ export default function StockActual({ onRowClick }: StockActualProps) {
                             )
                           })}
                         </TableBody>
-                        <TableFooter>
-                          <TableRow className="bg-gray-50">
-                            <TableCell className="font-bold">TOTAL</TableCell>
-                            <TableCell className="font-bold">
-                              {potrero.totales.cantidad_total.toLocaleString()}
-                            </TableCell>
-                            <TableCell className="font-bold">
-                              {calcPromedio(potrero.totales.peso_total, potrero.totales.cantidad_total).toLocaleString(
-                                undefined,
-                                { maximumFractionDigits: 2 },
-                              )}
-                            </TableCell>
-                            <TableCell className="font-bold">{potrero.totales.peso_total.toLocaleString()}</TableCell>
-                            <TableCell className="font-bold">
-                              {potrero.totales.ug_total.toFixed(2).replace(".", ",")}
-                            </TableCell>
-                          </TableRow>
-                        </TableFooter>
-                      </Table>
+                          <TableFooter>
+                            <TableRow className="bg-gray-50">
+                              <TableCell className="font-bold">TOTAL</TableCell>
+                              <TableCell className="font-bold">
+                                {potrero.totales.cantidad_total.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="font-bold">
+                                {calcPromedio(potrero.totales.peso_total, potrero.totales.cantidad_total).toLocaleString(
+                                  undefined,
+                                  { maximumFractionDigits: 2 },
+                                )}
+                              </TableCell>
+                              <TableCell className="font-bold">{potrero.totales.peso_total.toLocaleString()}</TableCell>
+                              <TableCell className="font-bold">
+                                {potrero.totales.ug_total.toFixed(2).replace(".", ",")}
+                              </TableCell>
+                            </TableRow>
+                          </TableFooter>
+                        </Table>
+                      </div>
                     </div>
                   )
                 })

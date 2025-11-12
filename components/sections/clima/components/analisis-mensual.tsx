@@ -17,10 +17,10 @@ export function AnalisisMensual({ year }: AnalisisMensualProps) {
   return (
     <div className="bg-white rounded-lg border">
       {/* Header con título y botones */}
-      <div className="flex items-start justify-between p-6 pb-0">
-        <div className="flex-1">
+      <div className="flex flex-col sm:flex-row items-start justify-between p-4 sm:p-6 pb-0 gap-3">
+        <div className="flex-1 w-full sm:w-auto">
           <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-xl font-bold text-gray-900">Análisis Mensual - Año {year}</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Análisis Mensual - Año {year}</h2>
             <div className="relative">
               <button
                 onClick={() => setActiveTooltip(activeTooltip === "analisis-mensual" ? null : "analisis-mensual")}
@@ -70,34 +70,34 @@ export function AnalisisMensual({ year }: AnalisisMensualProps) {
               )}
             </div>
           </div>
-          <p className="text-sm text-gray-600">Vista de calendario de distribución de lluvias</p>
+          <p className="text-xs sm:text-sm text-gray-600">Vista de calendario de distribución de lluvias</p>
         </div>
 
         {/* Botones de navegación */}
-        <div className="flex bg-gray-100 rounded-lg p-1">
+        <div className="flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
           <Button
             variant={activeTab === "tabla" ? "default" : "ghost"}
             size="sm"
             onClick={() => setActiveTab("tabla")}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 flex-1 sm:flex-initial"
           >
             <Table className="h-4 w-4" />
-            Tabla
+            <span className="text-xs sm:text-sm">Tabla</span>
           </Button>
           <Button
             variant={activeTab === "grafico" ? "default" : "ghost"}
             size="sm"
             onClick={() => setActiveTab("grafico")}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 flex-1 sm:flex-initial"
           >
             <BarChart3 className="h-4 w-4" />
-            Gráfico
+            <span className="text-xs sm:text-sm">Gráfico</span>
           </Button>
         </div>
       </div>
 
       {/* Contenido */}
-      <div className="p-6 pt-4">
+      <div className="p-4 sm:p-6 pt-4">
         {activeTab === "tabla" ? <PluviometriaTable year={year} /> : <DistribucionChart year={year} />}
       </div>
     </div>
