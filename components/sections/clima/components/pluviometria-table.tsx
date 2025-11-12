@@ -118,74 +118,100 @@ export function PluviometriaTable({ year }: PluviometriaTableProps) {
         </div>
       </div>
 
-      {/* Tabla simplificada */}
-      <div className="w-full border rounded-lg overflow-hidden bg-white">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50 h-12">
-              <th className="px-4 text-left font-semibold text-gray-900 border-r">MES</th>
-              {dias.map((dia) => (
-                <th key={dia} className="w-10 text-center text-xs font-medium text-gray-700 border-r">
-                  {dia}
+      {/* Tabla simplificada con scroll horizontal */}
+      <div className="relative w-full border rounded-lg overflow-hidden bg-white">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1200px]">
+            <thead>
+              <tr className="bg-gray-50 h-12">
+                <th className="sticky left-0 z-10 bg-gray-50 px-4 text-left font-semibold text-gray-900 border-r min-w-[120px]">
+                  MES
                 </th>
+                {dias.map((dia) => (
+                  <th key={dia} className="min-w-[40px] text-center text-xs font-medium text-gray-700 border-r">
+                    {dia}
+                  </th>
+                ))}
+                <th className="sticky right-0 z-10 bg-green-50 min-w-[80px] text-center text-xs font-semibold text-gray-900">
+                  TOTAL
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {meses.map((mes, mesIndex) => (
+                <tr key={mes} className="border-b hover:bg-gray-50 h-10">
+                  <td className="sticky left-0 z-10 bg-gray-50 px-4 font-medium text-gray-900 text-sm border-r">
+                    {mes}
+                  </td>
+                  {dias.map((dia) => {
+                    const valor = datosPorMes[mesIndex]?.[dia]
+                    return (
+                      <td key={dia} className="text-center border-r">
+                        {valor ? (
+                          <Badge
+                            variant="secondary"
+                            className={`${getRainColorClass(valor)} font-medium text-xs px-1 py-0.5`}
+                          >
+                            {valor}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </td>
+                    )
+                  })}
+                  <td className="sticky right-0 z-10 bg-green-50 text-center">
+                    <span className="text-xs font-medium">
+                      {totalesPorMes[mesIndex] > 0 ? `${totalesPorMes[mesIndex]} mm` : "0 mm"}
+                    </span>
+                  </td>
+                </tr>
               ))}
-              <th className="w-24 text-center text-xs font-semibold text-gray-900 bg-green-50">TOTAL</th>
-            </tr>
-          </thead>
-          <tbody>
-            {meses.map((mes, mesIndex) => (
-              <tr key={mes} className="border-b hover:bg-gray-50 h-10">
-                <td className="px-4 font-medium text-gray-900 text-sm border-r bg-gray-50">{mes}</td>
-                {dias.map((dia) => {
-                  const valor = datosPorMes[mesIndex]?.[dia]
-                  return (
-                    <td key={dia} className="w-10 text-center border-r">
-                      {valor ? (
-                        <Badge
-                          variant="secondary"
-                          className={`${getRainColorClass(valor)} font-medium text-xs px-1 py-0.5`}
-                        >
-                          {valor}
-                        </Badge>
-                      ) : (
-                        <span className="text-gray-400 text-xs">-</span>
-                      )}
-                    </td>
-                  )
-                })}
-                <td className="w-24 text-center bg-green-50">
-                  <span className="text-xs font-medium">
-                    {totalesPorMes[mesIndex] > 0 ? `${totalesPorMes[mesIndex]} mm` : "0 mm"}
+              <tr className="bg-gray-800 text-white h-10">
+                <td className="sticky left-0 z-10 bg-gray-800 px-4 font-bold text-sm">TOTAL</td>
+                {dias.map((dia) => (
+                  <td key={dia} className="text-center border-r border-gray-600">
+                    {totalesPorDia[dia - 1] > 0 ? (
+                      <span className="text-xs font-medium">{totalesPorDia[dia - 1]}</span>
+                    ) : (
+                      <span className="text-xs opacity-50">-</span>
+                    )}
+                  </td>
+                ))}
+                <td className="sticky right-0 z-10 bg-green-600 text-center">
+                  <span className="text-xs font-medium text-white">
+                    {totalGeneral > 0 ? `${totalGeneral} mm` : "0 mm"}
                   </span>
                 </td>
               </tr>
-            ))}
-            <tr className="bg-gray-800 text-white h-10">
-              <td className="px-4 font-bold text-sm">TOTAL</td>
-              {dias.map((dia) => (
-                <td key={dia} className="w-10 text-center border-r border-gray-600">
-                  {totalesPorDia[dia - 1] > 0 ? (
-                    <span className="text-xs font-medium">{totalesPorDia[dia - 1]}</span>
-                  ) : (
-                    <span className="text-xs opacity-50">-</span>
-                  )}
-                </td>
-              ))}
-              <td className="w-24 text-center bg-green-600">
-                <span className="text-xs font-medium text-white">
-                  {totalGeneral > 0 ? `${totalGeneral} mm` : "0 mm"}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Información adicional para pantallas pequeñas */}
-      <div className="block lg:hidden bg-blue-50 p-4 rounded-lg">
-        <p className="text-sm text-blue-800">
+      <div className="block md:hidden bg-blue-50 p-3 rounded-lg border border-blue-200">
+        <p className="text-xs sm:text-sm text-blue-800">
           💡 <strong>Tip:</strong> Desliza horizontalmente para ver todos los días del mes.
         </p>
+      </div>
+
+      {/* Vista resumida para móviles (opcional - totales por mes) */}
+      <div className="block sm:hidden space-y-2 mt-4">
+        <h3 className="text-sm font-semibold text-gray-900 mb-2">Resumen Mensual</h3>
+        <div className="grid grid-cols-2 gap-2">
+          {meses.map((mes, mesIndex) => (
+            <div key={mes} className="bg-gray-50 p-2 rounded border">
+              <div className="text-xs text-gray-600">{mes}</div>
+              <div className="text-sm font-semibold text-gray-900">
+                {totalesPorMes[mesIndex] > 0 ? `${totalesPorMes[mesIndex]} mm` : "0 mm"}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="bg-green-600 text-white p-3 rounded font-semibold text-center">
+          Total Anual: {totalGeneral > 0 ? `${totalGeneral} mm` : "0 mm"}
+        </div>
       </div>
     </div>
   )
