@@ -5,7 +5,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { Filter, CloudRain, Users, Package, BarChart3, Loader2 } from "lucide-react"
+import { Filter, CloudRain, Users, Package, BarChart3, Loader2, X } from "lucide-react"
 import { useUser } from "@/contexts/user-context"
 import type { ReportTemplate } from "@/lib/reportes/types"
 import { useToast } from "@/hooks/use-toast"
@@ -165,6 +165,15 @@ export function ReportDrawer({ isOpen, onClose, template }: ReportDrawerProps) {
             {getReportIcon(template.module)}
             {template.name}
           </DrawerTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Cerrar</span>
+          </Button>
         </DrawerHeader>
 
         <div className="p-4 md:p-6 space-y-4 md:space-y-6">
