@@ -120,9 +120,9 @@ export function AgregarEmpresaDrawer({ isOpen, onClose, onSuccess }: AgregarEmpr
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[850px] ml-auto">
+      <DrawerContent className="h-full w-full md:w-[850px] md:ml-auto">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Building2 className="w-5 h-5 text-green-600" />
             Nueva Empresa
           </DrawerTitle>
@@ -131,7 +131,7 @@ export function AgregarEmpresaDrawer({ isOpen, onClose, onSuccess }: AgregarEmpr
           </button>
         </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
           {mostrarExito && (
             <Alert className="border-green-200 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
@@ -164,7 +164,7 @@ export function AgregarEmpresaDrawer({ isOpen, onClose, onSuccess }: AgregarEmpr
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Datos Fiscales</h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="nombre" className="text-sm font-medium text-gray-700">
                   Nombre *
@@ -194,7 +194,7 @@ export function AgregarEmpresaDrawer({ isOpen, onClose, onSuccess }: AgregarEmpr
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="razon_social" className="text-sm font-medium text-gray-700">
                   Razón Social
@@ -228,7 +228,7 @@ export function AgregarEmpresaDrawer({ isOpen, onClose, onSuccess }: AgregarEmpr
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Contacto</h3>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="contacto_nombre" className="text-sm font-medium text-gray-700">
                   Nombre de contacto
@@ -275,7 +275,7 @@ export function AgregarEmpresaDrawer({ isOpen, onClose, onSuccess }: AgregarEmpr
           </div>
         </div>
 
-        <div className="border-t p-6 flex gap-3 justify-end">
+        <div className="border-t p-4 md:p-6 flex gap-3 justify-end">
           <Button onClick={cancelar} variant="outline">
             Cancelar
           </Button>
