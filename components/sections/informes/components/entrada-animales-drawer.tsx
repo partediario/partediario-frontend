@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { X, Plus, Trash2, AlertCircle, CheckCircle, Edit } from "lucide-react"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "@/hooks/use-toast"
 import { useUser } from "@/contexts/user-context"
 import { useEstablishment } from "@/contexts/establishment-context"
+import { useLotesQuery } from "@/hooks/queries/use-lotes-query"
+import { useKeyboardAwareDrawer } from "@/hooks/drawer-optimization/use-keyboard-aware-drawer-v2"
+import { useDebounceInput } from "@/hooks/drawer-optimization/use-debounce-input"
 
 interface EntradaAnimalesDrawerProps {
   isOpen: boolean
@@ -52,96 +55,65 @@ interface TipoMovimiento {
 }
 
 export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: EntradaAnimalesDrawerProps) {
+  const { usuario, loading: loadingUsuario } = useUser()
+  const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
+
   const [loading, setLoading] = useState(false)
-  const [loadingLotes, setLoadingLotes] = useState(false)
   const [loadingCategorias, setLoadingCategorias] = useState(false)
   const [loadingTipos, setLoadingTipos] = useState(false)
-  const [lotes, setLotes] = useState<Lote[]>([])
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [categoriasFiltradas, setCategoriasFiltradas] = useState<Categoria[]>([])
   const [tiposMovimiento, setTiposMovimiento] = useState<TipoMovimiento[]>([])
 
-  const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
-
   const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
-  // Estados para mostrar errores de validación
   const [erroresValidacion, setErroresValidacion] = useState<string[]>([])
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
   const [mostrarExito, setMostrarExito] = useState(false)
 
-  // Formulario principal
   const [loteSeleccionado, setLoteSeleccionado] = useState("")
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | undefined>(new Date())
   const [horaSeleccionada, setHoraSeleccionada] = useState<string | undefined>(new Date().toTimeString().slice(0, 5))
   const [nota, setNota] = useState("")
 
-  // Detalles
   const [detalles, setDetalles] = useState<DetalleItem[]>([])
   const [mostrarFormDetalle, setMostrarFormDetalle] = useState(false)
-
-  // Estados para edición de detalle
   const [editandoDetalle, setEditandoDetalle] = useState<string | null>(null)
 
-  // Formulario de detalle
   const [nuevoDetalle, setNuevoDetalle] = useState({
     tipo_movimiento_id: "",
     categoria_id: "",
-    cantidad: 0,
-    peso: 0,
     tipo_peso: "PROMEDIO" as "TOTAL" | "PROMEDIO",
   })
 
-  // Usar el contexto de usuario
-  const { usuario, loading: loadingUsuario } = useUser()
+  const { data: lotes = [] } = useLotesQuery(establecimientoSeleccionado ? Number(establecimientoSeleccionado) : null)
 
-  // Obtener establecimiento_id y empresa_id actual del localStorage
-  useEffect(() => {
-    // const establecimientoGuardado = localStorage.getItem("establecimiento_seleccionado")
-    // if (establecimientoGuardado) {
-    //   setEstablecimientoId(establecimientoGuardado)
-    // } else {
-    //   setEstablecimientoId("2")
-    // }
-    // const empresaGuardada = localStorage.getItem("empresa_seleccionada")
-    // if (empresaGuardada) {
-    //   setEmpresaId(empresaGuardada)
-    // } else {
-    //   setEmpresaId("1")
-    // }
-    // const handleEstablishmentChange = (event: CustomEvent) => {
-    //   const nuevoEstablecimientoId = event.detail?.establecimientoId
-    //   if (nuevoEstablecimientoId) {
-    //     setEstablecimientoId(nuevoEstablecimientoId)
-    //   }
-    // }
-    // const handleCompanyChange = (event: CustomEvent) => {
-    //   const nuevaEmpresaId = event.detail?.empresaId
-    //   if (nuevaEmpresaId) {
-    //     setEmpresaId(nuevaEmpresaId)
-    //   }
-    // }
-    // window.addEventListener("establishmentChange", handleEstablishmentChange as EventListener)
-    // window.addEventListener("companyChange", handleCompanyChange as EventListener)
-    // return () => {
-    //   window.removeEventListener("establishmentChange", handleEstablishmentChange as EventListener)
-    //   window.removeEventListener("companyChange", handleCompanyChange as EventListener)
-    // }
-  }, [])
+  const {
+    value: cantidad,
+    debouncedValue: cantidadDebounced,
+    handleChange: setCantidad,
+    reset: resetCantidad,
+  } = useDebounceInput("")
 
-  // Cargar datos iniciales cuando se abre el drawer
+  const {
+    value: peso,
+    debouncedValue: pesoDebounced,
+    handleChange: setPeso,
+    reset: resetPeso,
+  } = useDebounceInput("")
+
+  const { handleInteractOutside, handlePointerDownOutside } = useKeyboardAwareDrawer({ isOpen })
+
   useEffect(() => {
     if (isOpen && establecimientoSeleccionado && empresaSeleccionada) {
       const ahora = new Date()
       setFechaSeleccionada(ahora)
       setHoraSeleccionada(ahora.toTimeString().slice(0, 5))
 
-      cargarLotes()
       cargarCategorias()
       cargarTiposMovimiento()
     }
   }, [isOpen, establecimientoSeleccionado, empresaSeleccionada])
 
-  // Limpiar formulario cuando se cierra el drawer
   useEffect(() => {
     if (!isOpen) {
       setLoteSeleccionado("")
@@ -155,12 +127,12 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
       setNuevoDetalle({
         tipo_movimiento_id: "",
         categoria_id: "",
-        cantidad: 0,
-        peso: 0,
         tipo_peso: "PROMEDIO",
       })
+      resetCantidad()
+      resetPeso()
     }
-  }, [isOpen])
+  }, [isOpen, resetCantidad, resetPeso])
 
   // Filtrar categorías cuando cambia el tipo de movimiento
   useEffect(() => {
@@ -201,23 +173,6 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
     }
   }, [nuevoDetalle.tipo_movimiento_id, categorias, tiposMovimiento])
 
-  const cargarLotes = async () => {
-    if (!establecimientoSeleccionado) return
-
-    setLoadingLotes(true)
-    try {
-      const response = await fetch(`/api/lotes?establecimiento_id=${establecimientoSeleccionado}`)
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      const data = await response.json()
-      setLotes(data.lotes || [])
-    } catch (error) {
-      console.error("Error cargando lotes:", error)
-      setLotes([])
-    } finally {
-      setLoadingLotes(false)
-    }
-  }
-
   const cargarCategorias = async () => {
     if (!empresaSeleccionada) return
 
@@ -254,30 +209,44 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
     }
   }
 
-  const editarDetalle = (detalle: DetalleItem) => {
+  const limpiarFormularioDetalle = useCallback(() => {
+    setNuevoDetalle({
+      tipo_movimiento_id: "",
+      categoria_id: "",
+      tipo_peso: "PROMEDIO",
+    })
+    resetCantidad()
+    resetPeso()
+    setMostrarFormDetalle(false)
+    setEditandoDetalle(null)
+    setErroresDetalle([])
+  }, [resetCantidad, resetPeso])
+
+  const editarDetalle = useCallback((detalle: DetalleItem) => {
     console.log("🖊️ Editando detalle:", detalle)
     setEditandoDetalle(detalle.id)
     setNuevoDetalle({
       tipo_movimiento_id: detalle.tipo_movimiento_id,
       categoria_id: detalle.categoria_id,
-      cantidad: detalle.cantidad,
-      peso: detalle.peso,
       tipo_peso: detalle.tipo_peso,
     })
+    setCantidad(detalle.cantidad.toString())
+    setPeso(detalle.peso.toString())
     setMostrarFormDetalle(true)
-  }
+    setErroresDetalle([])
+  }, [setCantidad, setPeso])
 
-  const agregarDetalle = () => {
+  const agregarDetalle = useCallback(() => {
     const errores: string[] = []
 
     if (!nuevoDetalle.tipo_movimiento_id) errores.push("Debe seleccionar un tipo de movimiento")
     if (!nuevoDetalle.categoria_id) errores.push("Debe seleccionar una categoría animal")
-    if (!nuevoDetalle.cantidad || nuevoDetalle.cantidad <= 0) errores.push("La cantidad debe ser mayor a 0")
+    if (!cantidadDebounced || Number.parseInt(cantidadDebounced) <= 0) errores.push("La cantidad debe ser mayor a 0")
 
     const tipoMovimientoId = Number.parseInt(nuevoDetalle.tipo_movimiento_id)
     const esNacimiento = tipoMovimientoId === 2
 
-    if (!esNacimiento && (!nuevoDetalle.peso || nuevoDetalle.peso <= 0)) {
+    if (!esNacimiento && (!pesoDebounced || Number.parseInt(pesoDebounced) <= 0)) {
       errores.push("El peso debe ser mayor a 0")
     }
 
@@ -292,7 +261,6 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
     const categoria = categoriasFiltradas.find((c) => c.id === nuevoDetalle.categoria_id)
 
     if (editandoDetalle) {
-      // Actualizar detalle existente
       const detallesActualizados = detalles.map((d) =>
         d.id === editandoDetalle
           ? {
@@ -301,8 +269,8 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
               tipo_movimiento_nombre: tipoMov?.nombre || "",
               categoria_id: nuevoDetalle.categoria_id,
               categoria_nombre: categoria?.nombre || "",
-              cantidad: nuevoDetalle.cantidad,
-              peso: nuevoDetalle.peso,
+              cantidad: Number.parseInt(cantidadDebounced),
+              peso: Number.parseInt(pesoDebounced),
               tipo_peso: nuevoDetalle.tipo_peso,
             }
           : d,
@@ -310,51 +278,32 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
       setDetalles(detallesActualizados)
       console.log("✅ Detalle actualizado")
     } else {
-      // Agregar nuevo detalle
       const detalle: DetalleItem = {
         id: Date.now().toString(),
         tipo_movimiento_id: nuevoDetalle.tipo_movimiento_id,
         tipo_movimiento_nombre: tipoMov?.nombre || "",
         categoria_id: nuevoDetalle.categoria_id,
         categoria_nombre: categoria?.nombre || "",
-        cantidad: nuevoDetalle.cantidad,
-        peso: nuevoDetalle.peso,
+        cantidad: Number.parseInt(cantidadDebounced),
+        peso: Number.parseInt(pesoDebounced),
         tipo_peso: nuevoDetalle.tipo_peso,
       }
       setDetalles([...detalles, detalle])
       console.log("✅ Detalle agregado")
     }
 
-    // Limpiar formulario
-    setNuevoDetalle({
-      tipo_movimiento_id: "",
-      categoria_id: "",
-      cantidad: 0,
-      peso: 0,
-      tipo_peso: "PROMEDIO",
-    })
-    setMostrarFormDetalle(false)
-    setEditandoDetalle(null)
-  }
+    limpiarFormularioDetalle()
+  }, [nuevoDetalle, cantidadDebounced, pesoDebounced, tiposMovimiento, categoriasFiltradas, editandoDetalle, detalles, limpiarFormularioDetalle])
 
-  const cancelarEdicion = () => {
-    setMostrarFormDetalle(false)
-    setEditandoDetalle(null)
-    setErroresDetalle([])
-    setNuevoDetalle({
-      tipo_movimiento_id: "",
-      categoria_id: "",
-      cantidad: 0,
-      peso: 0,
-      tipo_peso: "PROMEDIO",
-    })
-  }
+  const cancelarEdicion = useCallback(() => {
+    limpiarFormularioDetalle()
+  }, [limpiarFormularioDetalle])
 
-  const eliminarDetalle = (id: string) => {
-    setDetalles(detalles.filter((d) => d.id !== id))
-  }
+  const eliminarDetalle = useCallback((id: string) => {
+    setDetalles((prev) => prev.filter((d) => d.id !== id))
+  }, [])
 
-  const validarFormulario = () => {
+  const validarFormulario = useCallback(() => {
     const errores: string[] = []
 
     if (!loteSeleccionado) errores.push("Debe seleccionar un lote")
@@ -368,9 +317,9 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
     if (!establecimientoSeleccionado) errores.push("Error del sistema: No se pudo obtener el ID del establecimiento")
 
     return errores
-  }
+  }, [loteSeleccionado, fechaSeleccionada, detalles.length, usuario?.id, establecimientoSeleccionado])
 
-  const guardar = async () => {
+  const guardar = useCallback(async () => {
     const errores = validarFormulario()
     if (errores.length > 0) {
       setErroresValidacion(errores)
@@ -436,17 +385,32 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
     } finally {
       setLoading(false)
     }
-  }
+  }, [validarFormulario, establecimientoSeleccionado, nota, fechaSeleccionada, horaSeleccionada, loteSeleccionado, usuario, detalles, onSuccess, onClose])
 
-  const opcionesLotes = lotes.map((lote) => ({ value: lote.id, label: lote.nombre }))
-  const opcionesTiposMovimiento = tiposMovimiento.map((tipo) => ({ value: tipo.id, label: tipo.nombre }))
-  const opcionesCategorias = categoriasFiltradas.map((categoria) => ({ value: categoria.id, label: categoria.nombre }))
+  const opcionesLotes = useMemo(
+    () => lotes.map((lote) => ({ value: lote.id.toString(), label: lote.nombre })),
+    [lotes]
+  )
+
+  const opcionesTiposMovimiento = useMemo(
+    () => tiposMovimiento.map((tipo) => ({ value: tipo.id, label: tipo.nombre })),
+    [tiposMovimiento]
+  )
+
+  const opcionesCategorias = useMemo(
+    () => categoriasFiltradas.map((categoria) => ({ value: categoria.id, label: categoria.nombre })),
+    [categoriasFiltradas]
+  )
 
   const nombreCompleto = usuario ? `${usuario.nombres} ${usuario.apellidos}`.trim() : "Cargando..."
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full">
+      <DrawerContent
+        className="h-full"
+        onInteractOutside={handleInteractOutside}
+        onPointerDownOutside={handlePointerDownOutside}
+      >
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
           <DrawerTitle className="text-lg md:text-lg md:text-xl font-bold text-gray-900">Entrada de Animales</DrawerTitle>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -485,8 +449,6 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
                     placeholder="Selecciona un lote..."
                     searchPlaceholder="Buscar lote..."
                     emptyMessage="No se encontraron lotes."
-                    loading={loadingLotes}
-                    disabled={loadingLotes}
                   />
                 </div>
               </div>
@@ -575,10 +537,8 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
                     <Input
                       type="number"
                       min="1"
-                      value={nuevoDetalle.cantidad || ""}
-                      onChange={(e) =>
-                        setNuevoDetalle({ ...nuevoDetalle, cantidad: Number.parseInt(e.target.value) || 0 })
-                      }
+                      value={cantidad}
+                      onChange={(e) => setCantidad(e.target.value)}
                       className="mt-1"
                       placeholder="Ej: 10"
                       required
@@ -594,8 +554,8 @@ export default function EntradaAnimalesDrawer({ isOpen, onClose, onSuccess }: En
                       type="number"
                       min="0"
                       step="1"
-                      value={nuevoDetalle.peso || ""}
-                      onChange={(e) => setNuevoDetalle({ ...nuevoDetalle, peso: Number.parseInt(e.target.value) || 0 })}
+                      value={peso}
+                      onChange={(e) => setPeso(e.target.value)}
                       className="mt-1"
                       placeholder={
                         nuevoDetalle.tipo_movimiento_id && Number.parseInt(nuevoDetalle.tipo_movimiento_id) === 2

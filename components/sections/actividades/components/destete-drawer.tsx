@@ -2,7 +2,7 @@
 
 import type React from "react"
 import type { JSX } from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { X, Calendar, Save, Loader2, Search, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,11 +12,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import { CustomCombobox } from "@/components/ui/custom-combobox" // Import CustomCombobox
+import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { useUser } from "@/contexts/user-context"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { useKeyboardAwareDrawer } from "@/hooks/drawer-optimization/use-keyboard-aware-drawer-v2"
 
 interface LoteStock {
   lote_id: number
@@ -66,6 +67,9 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
   // Usar el contexto de establecimiento
   const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
   const { usuario } = useUser()
+
+  // Keyboard-aware drawer
+  const { handleInteractOutside, handlePointerDownOutside } = useKeyboardAwareDrawer({ isOpen })
 
   // Obtener nombre completo del usuario
   const nombreCompleto = usuario ? `${usuario.nombres} ${usuario.apellidos}`.trim() : "Cargando..."
@@ -186,7 +190,7 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
     }
   }
 
-  const handleLoteSelectionChange = (loteId: number, checked: boolean) => {
+  const handleLoteSelectionChange = useCallback((loteId: number, checked: boolean) => {
     setLotes((prevLotes) =>
       prevLotes.map((lote) => {
         if (lote.lote_id === loteId) {
@@ -202,9 +206,9 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
         return lote
       }),
     )
-  }
+  }, [])
 
-  const handleCategoriaSeleccionada = (loteId: number, categoriaId: number, seleccionada: boolean) => {
+  const handleCategoriaSeleccionada = useCallback((loteId: number, categoriaId: number, seleccionada: boolean) => {
     setLotes((prevLotes) =>
       prevLotes.map((lote) => {
         if (lote.lote_id === loteId) {
@@ -225,9 +229,9 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
         return lote
       }),
     )
-  }
+  }, [])
 
-  const handleCantidadChange = (loteId: number, categoriaId: number, value: string) => {
+  const handleCantidadChange = useCallback((loteId: number, categoriaId: number, value: string) => {
     setLotes((prevLotes) =>
       prevLotes.map((lote) => {
         if (lote.lote_id === loteId) {
@@ -260,9 +264,9 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
         return lote
       }),
     )
-  }
+  }, [])
 
-  const handleMesesDesteteChange = (loteId: number, categoriaId: number, meses: number) => {
+  const handleMesesDesteteChange = useCallback((loteId: number, categoriaId: number, meses: number) => {
     setLotes((prevLotes) =>
       prevLotes.map((lote) => {
         if (lote.lote_id === loteId) {
@@ -282,9 +286,9 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
         return lote
       }),
     )
-  }
+  }, [])
 
-  const handlePesoPromedioChange = (loteId: number, categoriaId: number, value: string) => {
+  const handlePesoPromedioChange = useCallback((loteId: number, categoriaId: number, value: string) => {
     setLotes((prevLotes) =>
       prevLotes.map((lote) => {
         if (lote.lote_id === loteId) {
@@ -308,9 +312,9 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
         return lote
       }),
     )
-  }
+  }, [])
 
-  const handleCategoriaDestinoChange = (loteId: number, categoriaId: number, destinoId: string) => {
+  const handleCategoriaDestinoChange = useCallback((loteId: number, categoriaId: number, destinoId: string) => {
     setLotes((prevLotes) =>
       prevLotes.map((lote) => {
         if (lote.lote_id === loteId) {
@@ -327,23 +331,26 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
         return lote
       }),
     )
-  }
+  }, [])
 
-  const getOpcionesMesesDestete = () => {
+  const opcionesMesesDestete = useMemo(() => {
     return Array.from({ length: 10 }, (_, i) => ({
       value: (i + 1).toString(),
       label: `${i + 1} ${i + 1 === 1 ? "mes" : "meses"}`,
     }))
-  }
+  }, [])
 
-  const opcionesLote = lotes
-    .sort((a, b) => a.lote_id - b.lote_id)
-    .map((lote) => ({
-      value: lote.lote_id.toString(),
-      label: lote.lote_nombre,
-    }))
+  const opcionesLote = useMemo(() => 
+    lotes
+      .sort((a, b) => a.lote_id - b.lote_id)
+      .map((lote) => ({
+        value: lote.lote_id.toString(),
+        label: lote.lote_nombre,
+      })),
+    [lotes]
+  )
 
-  const handleLoteFilterChange = (loteId: string) => {
+  const handleLoteFilterChange = useCallback((loteId: string) => {
     setLotesSeleccionados((prev) => {
       if (prev.includes(loteId)) {
         return prev.filter((id) => id !== loteId)
@@ -351,9 +358,9 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
         return [...prev, loteId]
       }
     })
-  }
+  }, [])
 
-  const getResumenDestete = () => {
+  const getResumenDestete = useCallback(() => {
     const destetes: Array<{
       lote: string
       categoria: string
@@ -380,26 +387,29 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
     })
 
     return destetes
-  }
+  }, [lotes, categoriasDestino])
 
-  const filteredLotes = lotes
-    .filter((lote) => {
-      if (lotesSeleccionados.length > 0) {
-        return lotesSeleccionados.includes(lote.lote_id.toString())
-      }
-      return true
-    })
-    .map((lote) => ({
-      ...lote,
-      pd_detalles: lote.pd_detalles
-        .filter(
-          (detalle) =>
-            searchCategoria === "" ||
-            detalle.categoria_animal_nombre.toLowerCase().includes(searchCategoria.toLowerCase()),
-        )
-        .sort((a, b) => a.categoria_animal_id - b.categoria_animal_id),
-    }))
-    .filter((lote) => lote.pd_detalles.length > 0)
+  const filteredLotes = useMemo(() => 
+    lotes
+      .filter((lote) => {
+        if (lotesSeleccionados.length > 0) {
+          return lotesSeleccionados.includes(lote.lote_id.toString())
+        }
+        return true
+      })
+      .map((lote) => ({
+        ...lote,
+        pd_detalles: lote.pd_detalles
+          .filter(
+            (detalle) =>
+              searchCategoria === "" ||
+              detalle.categoria_animal_nombre.toLowerCase().includes(searchCategoria.toLowerCase()),
+          )
+          .sort((a, b) => a.categoria_animal_id - b.categoria_animal_id),
+      }))
+      .filter((lote) => lote.pd_detalles.length > 0),
+    [lotes, lotesSeleccionados, searchCategoria]
+  )
 
   // Crear filas para la tabla unificada
   const createTableRows = () => {
@@ -477,7 +487,7 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
             <TableCell className="py-2">
               <div className="flex items-center space-x-2">
                 <CustomCombobox
-                  options={getOpcionesMesesDestete()}
+                  options={opcionesMesesDestete}
                   value={detalle.meses_destete.toString()}
                   onValueChange={(value) =>
                     handleMesesDesteteChange(lote.lote_id, detalle.categoria_animal_id, Number.parseInt(value))
@@ -710,7 +720,7 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
     }
   }
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onClose()
     // Reset form
     setFecha(new Date())
@@ -722,9 +732,9 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
     setLotesSeleccionados([])
     setFiltroLoteAbierto(false)
     setSearchLote("")
-  }
+  }, [onClose])
 
-  const getLotesSeleccionadosText = () => {
+  const getLotesSeleccionadosText = useCallback(() => {
     if (lotesSeleccionados.length === 0) {
       return "Todos los lotes"
     }
@@ -733,9 +743,9 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
       return lote?.lote_nombre || "Lote seleccionado"
     }
     return `${lotesSeleccionados.length} lotes seleccionados`
-  }
+  }, [lotesSeleccionados, lotes])
 
-  const getCategoriasDestinoFiltradas = (categoriaOrigenId: number) => {
+  const getCategoriasDestinoFiltradas = useCallback((categoriaOrigenId: number) => {
     const targetId = categoriaOrigenId === 21 ? 19 : categoriaOrigenId === 22 ? 20 : null
 
     if (!targetId) return []
@@ -749,11 +759,15 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
       }))
 
     return filtered
-  }
+  }, [categoriasDestino])
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[1000px] ml-auto">
+      <DrawerContent 
+        className="h-full w-[1000px] ml-auto"
+        onInteractOutside={handleInteractOutside}
+        onPointerDownOutside={handlePointerDownOutside}
+      >
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
           <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Calendar className="w-6 h-6 text-green-600" />
@@ -769,7 +783,7 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
           <div className="space-y-4">
             <div>
               <Label>Fecha *</Label>
-              <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
+              <CustomDatePicker date={fecha} onDateChange={(date) => date && setFecha(date)} placeholder="Seleccionar fecha" />
             </div>
 
             {/* Filtros */}
@@ -815,7 +829,7 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
                               setLotesSeleccionados([])
                             }}
                           >
-                            <Checkbox checked={lotesSeleccionados.length === 0} className="mr-2" readOnly />
+                            <Checkbox checked={lotesSeleccionados.length === 0} className="mr-2" />
                             <span
                               className={cn("truncate", lotesSeleccionados.length === 0 && "text-blue-600 font-medium")}
                             >
@@ -836,7 +850,7 @@ export default function DesteteDrawer({ isOpen, onClose, onSuccess, tipoActivida
                                 )}
                                 onClick={() => handleLoteFilterChange(lote.value)}
                               >
-                                <Checkbox checked={lotesSeleccionados.includes(lote.value)} className="mr-2" readOnly />
+                                <Checkbox checked={lotesSeleccionados.includes(lote.value)} className="mr-2" />
                                 <span
                                   className={cn(
                                     "truncate",
