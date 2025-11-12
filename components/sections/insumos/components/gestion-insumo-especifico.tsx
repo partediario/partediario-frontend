@@ -866,11 +866,11 @@ export function GestionInsumoEspecifico({
     <div className="space-y-4">
       <Card className="shadow-sm rounded-xl border border-[#E57EB]" style={{ minHeight: "68px" }}>
         <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4">
             {/* Left side: Class selector and Insumo search */}
-            <div className="flex items-center gap-4 flex-1">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 flex-1">
               {/* Class Selector */}
-              <div className="min-w-[220px]">
+              <div className="w-full md:min-w-[220px]">
                 <label className="text-sm font-medium text-gray-700 mb-1.5 block">Clase de Insumo</label>
                 <Select value={categoria} onValueChange={handleCategoriaChange}>
                   <SelectTrigger className="h-10">
@@ -895,7 +895,7 @@ export function GestionInsumoEspecifico({
               </div>
 
               {/* Insumo Search/Selector - Always visible */}
-              <div className="min-w-[280px]">
+              <div className="w-full md:min-w-[280px]">
                 <label className="text-sm font-medium text-gray-700 mb-1.5 block">Insumo</label>
                 <FiltroSelectorInsumos
                   insumos={opcionesInsumos}
@@ -908,7 +908,7 @@ export function GestionInsumoEspecifico({
             </div>
 
             {/* Right side: Period filter */}
-            <div className="min-w-[280px]">
+            <div className="w-full md:min-w-[280px]">
               <PeriodoFilter
                 onPeriodChange={(period, range) => {
                   setFechaDesdeGlobal(range.start || undefined)

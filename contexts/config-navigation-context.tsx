@@ -15,6 +15,7 @@ interface ConfigNavigationState {
   empresaConfigTab: string
   establecimientoConfigTab: string
   empresasTab: string
+  isSubSidebarOpen: boolean
 }
 
 interface ConfigNavigationContextType {
@@ -27,6 +28,8 @@ interface ConfigNavigationContextType {
   setEstablecimientoConfigTab: (tab: string) => void
   setEmpresasTab: (tab: string) => void
   resetNavigation: () => void
+  toggleSubSidebar: () => void
+  setSubSidebarOpen: (open: boolean) => void
 }
 
 const ConfigNavigationContext = createContext<ConfigNavigationContextType | undefined>(undefined)
@@ -43,6 +46,7 @@ export function ConfigNavigationProvider({ children }: { children: React.ReactNo
     empresaConfigTab: "datos-empresa",
     establecimientoConfigTab: "datos-establecimiento",
     empresasTab: "empresas",
+    isSubSidebarOpen: false,
   })
 
   const navigateToEmpresas = useCallback(() => {
@@ -116,7 +120,16 @@ export function ConfigNavigationProvider({ children }: { children: React.ReactNo
       empresaConfigTab: "datos-empresa",
       establecimientoConfigTab: "datos-establecimiento",
       empresasTab: "empresas",
+      isSubSidebarOpen: false,
     })
+  }, [])
+
+  const toggleSubSidebar = useCallback(() => {
+    setState((prev) => ({ ...prev, isSubSidebarOpen: !prev.isSubSidebarOpen }))
+  }, [])
+
+  const setSubSidebarOpen = useCallback((open: boolean) => {
+    setState((prev) => ({ ...prev, isSubSidebarOpen: open }))
   }, [])
 
   return (
@@ -131,6 +144,8 @@ export function ConfigNavigationProvider({ children }: { children: React.ReactNo
         setEstablecimientoConfigTab,
         setEmpresasTab,
         resetNavigation,
+        toggleSubSidebar,
+        setSubSidebarOpen,
       }}
     >
       {children}

@@ -3,6 +3,7 @@
 import { ArrowLeft, MapPin, Map, PackageIcon, Beef } from "lucide-react"
 import { useConfigNavigation } from "@/contexts/config-navigation-context"
 import { cn } from "@/lib/utils"
+import { ConfigSubSidebarLayout } from "./config-sub-sidebar-layout"
 
 const configOptions = [
   { id: "datos-establecimiento", label: "Datos Establecimiento", icon: MapPin },
@@ -15,7 +16,7 @@ export function EstablecimientoConfigSidebar() {
   const { state, navigateBack, setEstablecimientoConfigTab } = useConfigNavigation()
 
   return (
-    <div className="w-64 h-screen fixed left-0 top-0 z-10 overflow-y-auto bg-[#1F2427]">
+    <ConfigSubSidebarLayout>
       <div className="p-4 min-h-full flex flex-col">
         {/* Botón Volver Atrás */}
         <button
@@ -56,6 +57,6 @@ export function EstablecimientoConfigSidebar() {
           </ul>
         </nav>
       </div>
-    </div>
+    </ConfigSubSidebarLayout>
   )
 }

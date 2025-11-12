@@ -14,9 +14,11 @@ import { Maquinarias } from "./tabs/maquinarias"
 import { Potreros } from "./tabs/potreros"
 import { Lotes } from "./tabs/lotes"
 import { Insumos } from "./tabs/insumos"
+import { Button } from "@/components/ui/button"
+import { Menu } from "lucide-react"
 
 export function NuevaConfiguracionView() {
-  const { state } = useConfigNavigation()
+  const { state, toggleSubSidebar } = useConfigNavigation()
 
   // Renderizar sidebar según el nivel de navegación
   const renderSidebar = () => {
@@ -80,7 +82,21 @@ export function NuevaConfiguracionView() {
       {renderSidebar()}
 
       {/* Contenido principal */}
-      <div className={`flex-1 overflow-auto ${state.level !== "main" ? "ml-64" : ""}`}>
+      <div className={`flex-1 overflow-auto ${state.level !== "main" ? "md:ml-64" : ""}`}>
+        {/* Botón hamburguesa mobile - Solo visible si hay un sub-sidebar activo */}
+        {state.level !== "main" && (
+          <div className="md:hidden sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSubSidebar}
+              className="hover:bg-gray-100"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
+        
         <div className="p-6">{renderContent()}</div>
       </div>
     </div>
