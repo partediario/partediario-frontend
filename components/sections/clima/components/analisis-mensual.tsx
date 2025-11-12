@@ -17,10 +17,10 @@ export function AnalisisMensual({ year }: AnalisisMensualProps) {
   return (
     <div className="bg-white rounded-lg border">
       {/* Header con título y botones */}
-      <div className="flex flex-col sm:flex-row items-start justify-between p-4 sm:p-6 pb-0 gap-3">
+      <div className="flex flex-col sm:flex-row items-start justify-between p-2 sm:p-6 pb-0 gap-2 sm:gap-3">
         <div className="flex-1 w-full sm:w-auto">
-          <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Análisis Mensual - Año {year}</h2>
+          <div className="flex items-center gap-2 mb-1 sm:mb-2">
+            <h2 className="text-base sm:text-xl font-bold text-gray-900">Análisis Mensual - Año {year}</h2>
             <div className="relative">
               <button
                 onClick={() => setActiveTooltip(activeTooltip === "analisis-mensual" ? null : "analisis-mensual")}
@@ -97,7 +97,7 @@ export function AnalisisMensual({ year }: AnalisisMensualProps) {
       </div>
 
       {/* Contenido */}
-      <div className="p-4 sm:p-6 pt-4">
+      <div className="p-2 sm:p-6 pt-2 sm:pt-4">
         {activeTab === "tabla" ? <PluviometriaTable year={year} /> : <DistribucionChart year={year} />}
       </div>
     </div>

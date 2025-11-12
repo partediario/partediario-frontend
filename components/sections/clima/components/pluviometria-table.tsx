@@ -92,28 +92,28 @@ export function PluviometriaTable({ year }: PluviometriaTableProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 sm:space-y-4">
       {/* Leyenda */}
-      <div className="flex flex-wrap items-center gap-4 text-sm">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
         <span className="font-medium">Leyenda:</span>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gray-100 border rounded"></div>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gray-100 border rounded"></div>
           <span>0 mm</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-100 rounded"></div>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-100 rounded"></div>
           <span>1-9 mm</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-200 rounded"></div>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-200 rounded"></div>
           <span>10-24 mm</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-400 rounded"></div>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-400 rounded"></div>
           <span>25-49 mm</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-600 rounded"></div>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-600 rounded"></div>
           <span>50+ mm</span>
         </div>
       </div>
@@ -121,26 +121,26 @@ export function PluviometriaTable({ year }: PluviometriaTableProps) {
       {/* Tabla simplificada con scroll horizontal */}
       <div className="relative w-full border rounded-lg overflow-hidden bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1200px]">
+          <table className="w-full min-w-[1000px]">
             <thead>
-              <tr className="bg-gray-50 h-12">
-                <th className="sticky left-0 z-10 bg-gray-50 px-4 text-left font-semibold text-gray-900 border-r min-w-[120px]">
+              <tr className="bg-gray-50 h-9 sm:h-12">
+                <th className="sticky left-0 z-10 bg-gray-50 px-2 sm:px-4 text-left text-xs sm:text-sm font-semibold text-gray-900 border-r min-w-[85px] sm:min-w-[120px]">
                   MES
                 </th>
                 {dias.map((dia) => (
-                  <th key={dia} className="min-w-[40px] text-center text-xs font-medium text-gray-700 border-r">
+                  <th key={dia} className="min-w-[34px] sm:min-w-[40px] text-center text-xs font-medium text-gray-700 border-r">
                     {dia}
                   </th>
                 ))}
-                <th className="sticky right-0 z-10 bg-green-50 min-w-[80px] text-center text-xs font-semibold text-gray-900">
+                <th className="sticky right-0 z-10 bg-green-50 min-w-[65px] sm:min-w-[80px] text-center text-xs font-semibold text-gray-900">
                   TOTAL
                 </th>
               </tr>
             </thead>
             <tbody>
               {meses.map((mes, mesIndex) => (
-                <tr key={mes} className="border-b hover:bg-gray-50 h-10">
-                  <td className="sticky left-0 z-10 bg-gray-50 px-4 font-medium text-gray-900 text-sm border-r">
+                <tr key={mes} className="border-b hover:bg-gray-50 h-9 sm:h-10">
+                  <td className="sticky left-0 z-10 bg-gray-50 px-2 sm:px-4 font-medium text-gray-900 text-xs sm:text-sm border-r">
                     {mes}
                   </td>
                   {dias.map((dia) => {
@@ -150,7 +150,7 @@ export function PluviometriaTable({ year }: PluviometriaTableProps) {
                         {valor ? (
                           <Badge
                             variant="secondary"
-                            className={`${getRainColorClass(valor)} font-medium text-xs px-1 py-0.5`}
+                            className={`${getRainColorClass(valor)} font-medium text-xs px-0.5 sm:px-1 py-0.5`}
                           >
                             {valor}
                           </Badge>
@@ -162,7 +162,7 @@ export function PluviometriaTable({ year }: PluviometriaTableProps) {
                   })}
                   <td className="sticky right-0 z-10 bg-green-50 text-center">
                     <span className="text-xs font-medium">
-                      {totalesPorMes[mesIndex] > 0 ? `${totalesPorMes[mesIndex]} mm` : "0 mm"}
+                      {totalesPorMes[mesIndex] > 0 ? `${totalesPorMes[mesIndex]}` : "0"}
                     </span>
                   </td>
                 </tr>

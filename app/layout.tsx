@@ -10,6 +10,13 @@ import { ConfigNavigationProvider } from "@/contexts/config-navigation-context"
 
 const inter = Inter({ subsets: ["latin"] })
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 0.92,
+  maximumScale: 2,
+  userScalable: true,
+}
+
 export const metadata: Metadata = {
   title: "Parte Diario PRO",
   description: "Sistema de gestión ganadera",

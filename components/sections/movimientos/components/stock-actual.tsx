@@ -578,24 +578,17 @@ export default function StockActual({ onRowClick }: StockActualProps) {
         {/* Overlay para cerrar menú */}
         {showExportMenu && <div className="fixed inset-0 z-40" onClick={() => setShowExportMenu(false)} />}
 
-        {/* Tip para mobile */}
-        <div className="block sm:hidden bg-blue-50 p-2 rounded-lg border border-blue-200 mb-3">
-          <p className="text-xs text-blue-800">
-            💡 <strong>Tip:</strong> Desliza horizontalmente para ver todos los datos.
-          </p>
-        </div>
-
         <div className="overflow-x-auto">
           {viewMode === "total" ? (
             // Vista Total
-            <Table className="text-sm min-w-[600px]">
+            <Table className="text-xs sm:text-sm min-w-[480px]">
               <TableHeader>
                 <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold min-w-[140px]">Categoría</TableHead>
-                  <TableHead className="font-semibold min-w-[100px]">Cantidad</TableHead>
-                  <TableHead className="font-semibold min-w-[140px]">Peso Promedio (kg)</TableHead>
-                  <TableHead className="font-semibold min-w-[130px]">Peso Total (kg)</TableHead>
-                  <TableHead className="font-semibold min-w-[100px]">UG Total</TableHead>
+                  <TableHead className="font-semibold min-w-[100px]">Categoría</TableHead>
+                  <TableHead className="font-semibold min-w-[70px]">Cantidad</TableHead>
+                  <TableHead className="font-semibold min-w-[100px]">Peso Prom (kg)</TableHead>
+                  <TableHead className="font-semibold min-w-[95px]">Peso Tot (kg)</TableHead>
+                  <TableHead className="font-semibold min-w-[70px]">UG Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -683,23 +676,23 @@ export default function StockActual({ onRowClick }: StockActualProps) {
                   return (
                     <div key={potrero.potrero_id} className="border border-gray-200 rounded-lg overflow-hidden">
                       {/* Header del potrero (sin totales a la derecha) */}
-                      <div className="bg-[#4285F4]/10 px-4 py-3 border-b border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-[#4285F4]" />
-                          <h3 className="text-sm sm:text-base font-semibold text-gray-900">{potreroDisplayName}</h3>
+                      <div className="bg-[#4285F4]/10 px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-200">
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-[#4285F4]" />
+                          <h3 className="text-xs sm:text-base font-semibold text-gray-900">{potreroDisplayName}</h3>
                         </div>
                       </div>
 
                       {/* Tabla de categorías del potrero */}
                       <div className="overflow-x-auto">
-                        <Table className="text-sm min-w-[600px]">
+                        <Table className="text-xs sm:text-sm min-w-[480px]">
                           <TableHeader>
                             <TableRow className="bg-gray-50">
-                              <TableHead className="font-semibold min-w-[140px]">Categoría</TableHead>
-                              <TableHead className="font-semibold min-w-[100px]">Cantidad</TableHead>
-                              <TableHead className="font-semibold min-w-[140px]">Peso Promedio (kg)</TableHead>
-                              <TableHead className="font-semibold min-w-[130px]">Peso Total (kg)</TableHead>
-                              <TableHead className="font-semibold min-w-[100px]">UG Total</TableHead>
+                              <TableHead className="font-semibold min-w-[100px]">Categoría</TableHead>
+                              <TableHead className="font-semibold min-w-[70px]">Cantidad</TableHead>
+                              <TableHead className="font-semibold min-w-[100px]">Peso Prom (kg)</TableHead>
+                              <TableHead className="font-semibold min-w-[95px]">Peso Tot (kg)</TableHead>
+                              <TableHead className="font-semibold min-w-[70px]">UG Total</TableHead>
                             </TableRow>
                           </TableHeader>
                         <TableBody>
@@ -803,13 +796,13 @@ export default function StockActual({ onRowClick }: StockActualProps) {
 
               {/* Totales generales para la lista renderizada */}
               {filteredPotreros.length > 0 && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-gray-900">TOTALES GENERALES</h3>
-                    <div className="flex items-center gap-6 text-sm">
-                      <span className="font-bold">Cantidad: {totalesGenerales.cantidad.toLocaleString()}</span>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 sm:p-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <h3 className="font-bold text-xs sm:text-base text-gray-900">TOTALES GENERALES</h3>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-6 text-xs sm:text-sm">
+                      <span className="font-bold">Cant: {totalesGenerales.cantidad.toLocaleString()}</span>
                       <span className="font-bold">Peso: {totalesGenerales.pesoTotal.toLocaleString()} kg</span>
-                      <span className="font-bold">UG Total: {totalesGenerales.ug.toFixed(2).replace(".", ",")}</span>
+                      <span className="font-bold">UG: {totalesGenerales.ug.toFixed(2).replace(".", ",")}</span>
                     </div>
                   </div>
                 </div>
