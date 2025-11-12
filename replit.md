@@ -2,134 +2,7 @@
 
 ## Overview
 
-Parte Diario PRO is a comprehensive livestock management system built with Next.js 14, React, and TypeScript. The application enables ranchers and agricultural managers to track daily operations, manage multiple establishments, monitor livestock movements, weather data, supplies, and activities across cattle ranching operations. The system features a role-based permission system with multi-company and multi-establishment support.
-
-## Recent Changes
-
-**November 11, 2025 - Mobile UX Improvements: Sidebar and Drawer Optimizations**
-- Enhanced mobile sidebar usability:
-  - Added white close button (X) specifically for dark sidebar background using Tailwind arbitrary variants
-  - Implemented vertical scroll (`overflow-y-auto`) for mobile sidebar when menu items exceed screen height
-  - Solution scoped to sidebar only, preserving default behavior for other sheets
-- Optimized drawer mobile experience:
-  - Changed drawer height from `h-[96vh]` to `h-full` to eliminate top spacing on mobile devices
-  - All 65 drawers now occupy 100% screen height on mobile for better immersion
-  - Desktop behavior unchanged (maintains lateral panel with max-width constraints)
-- 2 pre-existing LSP errors in sidebar.tsx (User type missing telefono/created_at properties - not related to changes)
-- Server compiling successfully with all responsive improvements
-
-**November 11, 2025 - Add Parte Drawer Width Optimization**
-- Reverted add-parte-drawer to narrow width (384px) to eliminate excessive whitespace
-- Implemented DrawerContent size variants system in drawer.tsx component
-- Added `size` prop to DrawerContent with two variants: "default" (850px) and "narrow" (384px)
-- Updated add-parte-drawer.tsx to use `size="narrow"` for better UX
-- All other 64 drawers maintain default 850px width
-- Mobile responsive behavior preserved (full-screen from bottom)
-- 0 LSP errors, clean TypeScript implementation
-
-**November 11, 2025 - Add Parte Drawer Hook Fix**
-- Fixed TypeScript error in add-parte-drawer.tsx component
-- Corrected usage of useCurrentEstablishment hook to properly access empresa ID
-- Changed from accessing `currentEstablishment.empresa_id` to using `empresa` directly
-- Added proper loading guards to prevent fetch when hook is loading or empresa is not available
-- 0 LSP errors after fix
-
-**November 11, 2025 - Responsive Drawers Implementation (All Sections Complete)**
-- Implemented comprehensive responsive design for ALL drawers in the system
-- **Section Registros (46 drawers):**
-  - All animal, supply, activity, and climate drawers fully responsive
-  - Includes entrada/salida animales, insumos, 30+ activity types
-- **Section Actividades (19 drawers):**
-  - All activity creation drawers fully responsive
-  - Includes faena, señalada, sanitación, castración, destete, pesaje, reclasificación, reloteo, traslado, recorrida, and more
-- **Total: 65 drawers updated** with consistent responsive patterns
-- **Implementation Method:**
-  - Used sed batch replacements for consistency across all files
-  - 0 LSP errors after implementation
-  - Server compiling successfully with no errors
-
-**November 11, 2025 - Responsive Drawers Implementation (Registros Section - 46 Drawers)**
-- Implemented comprehensive responsive design for all drawers in Registros section
-- **Drawer Component Base:**
-  - Modified DrawerContent to be responsive: full-screen (96vh) from bottom on mobile, lateral panel (max-w-[850px]) from right on desktop
-  - Removed drag handle on desktop (md:hidden)
-- **Batch Updates (46 drawers):**
-  - Removed fixed width `w-[850px]` from all DrawerContent components
-  - Made all grids responsive: `grid-cols-1 md:grid-cols-2`
-  - Responsive titles: `text-lg md:text-xl` for main titles, `text-base md:text-lg` for subtitles
-  - Added `overflow-x-auto` to all table containers for horizontal scroll on mobile
-- **Affected Drawers:**
-  - Animal drawers: entrada-animales, salida-animales, editar-entrada-animales, editar-salida-animales
-  - Supply drawers: entrada-insumos, salida-insumos, editar-entrada-insumos, editar-salida-insumos
-  - Activity drawers: All 30+ activity drawers (faena, señalada, sanitación, castración, etc.) including view and edit variants
-  - Other: lluvia, add-parte-drawer, view-parte-drawer
-- **Implementation Method:**
-  - Used sed batch replacements for consistency across 46 files
-  - 0 LSP errors after implementation
-  - Server restarted successfully with no compilation errors
-
-**November 11, 2025 - Registros Mobile Layout Improvements**
-- Enhanced mobile UX in Registros section with strategic component reorganization
-- **Floating "Agregar Parte Diario" Button:**
-  - Moved AddParteDiarioDrawer state management to InformesView for centralized control
-  - Created mobile-only floating action button (fixed top-4 right-4, md:hidden) aligned with hamburger menu
-  - Desktop button remains in DashboardHeader (hidden md:flex) to avoid duplication
-  - Both buttons trigger same drawer via shared state
-- **KPIs Mobile Grid (2x2 Layout):**
-  - Changed from grid-cols-1 to grid-cols-2 on mobile (<md breakpoint)
-  - Reduced padding from p-6 to p-3 on mobile (md:p-6 on larger screens)
-  - Decreased text size from text-2xl to text-lg on mobile (md:text-2xl)
-  - Reduced gap from gap-4 to gap-3 on mobile (md:gap-4)
-  - Layout: Nacimientos + Compra (top row), Venta + Lluvia Total (bottom row)
-- **TypeScript & Architecture:**
-  - Cleaned up DashboardHeader: removed unused user context and drawer state
-  - Refresh button kept in original position (SearchAndFilters, next to date selector)
-  - 0 LSP errors after refactor
-
-**November 11, 2025 - Mobile-Responsive Design Implementation**
-- Implemented comprehensive mobile-first responsive design across the application
-- **Mobile Sidebar Navigation:**
-  - Created `useMobileSidebar` hook for controlling sidebar state in mobile devices
-  - Added hamburger menu button (visible only on <768px screens)
-  - Sidebar renders as Sheet drawer on mobile, fixed panel on desktop (≥768px)
-  - Main content area uses responsive margin (`md:ml-64`) and padding (`pt-16 md:pt-0`)
-  - Company/establishment selector dialog made responsive with stacked buttons on mobile
-- **Registros Section Responsive:**
-  - ParteDiarioCard: flex-wrap layout, responsive padding (p-3 sm:p-4), responsive text sizes (text-xs sm:text-sm)
-  - RegistrosList: responsive padding throughout (px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-4)
-  - SearchAndFilters: already had responsive grid layout, corrected TypeScript interfaces
-- **TypeScript Improvements:**
-  - Fixed SearchAndFiltersProps interface in types.tsx (added selectedDate, onDateChange, selectedType, onTypeChange, onRefresh, isLoading)
-  - Enhanced ParteDiario interface in lib/types.ts (added pd_detalles with flexible structure)
-  - Resolved all LSP errors (38 → 0)
-- **Responsive Component Infrastructure:**
-  - Created ResponsiveDrawer wrapper component for consistent mobile drawer behavior
-  - Breakpoint strategy: base (<640px), sm (≥640px), md (≥768px), lg (≥1024px)
-  - Mobile-first approach with progressive enhancement for larger screens
-
-**November 10, 2025 - Authentication & Environment Variable Fixes**
-- Fixed login authentication to use correct environment variables (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
-- Added HTTPS Agent configuration to handle self-signed SSL certificates in development environment
-- Fixed server not reloading environment variables by requiring workflow restart after changes
-- Verified login flow uses https://supabase.partediario.com endpoint correctly
-- Fixed Next.js 15 async params error in /api/empresas/[id] route (params now properly awaited)
-- Improved login error handling with detailed logging (URL, status, headers, response text)
-- Fixed supabaseServer null check errors in app/login/actions.ts
-- Resolved all TypeScript LSP errors (0 errors)
-
-**November 7, 2025 - Branding & Deployment Updates**
-- Updated favicon to high-resolution "PDP" branded icon (PNG format at 32x32, 192x192, 512x512 sizes)
-- Configured multi-size favicon support for better display across devices and browsers
-- Fixed deployment configuration for Replit autoscale deployment (port 5000, binding to 0.0.0.0)
-- Verified all environment secrets for production deployment
-
-**November 7, 2025 - Insumos Section Data Flow Fixes**
-- Fixed empty "Historial de Movimientos" table by parsing `pd_detalles` JSON field in `useInsumosData` hook
-- Updated `InsumoData` interface to include all 11+ missing properties from API response (clase, tipo, subtipo names, unidades, contenido, stock)
-- Added robust JSON parsing with error handling for malformed database data
-- Fixed `filtrosAvanzados` state to include `tipoInsumo` and `subtipoInsumo` properties
-- Resolved all TypeScript LSP errors (41 → 0) in Insumos section
-- Implemented helper function `parsePdDetalles` with try/catch for safe JSON parsing
+Parte Diario PRO is a comprehensive livestock management system built with Next.js 14, React, and TypeScript. The application enables ranchers and agricultural managers to track daily operations, manage multiple establishments, monitor livestock movements, weather data, supplies, and activities across cattle ranching operations. The system features a role-based permission system with multi-company and multi-establishment support. Its purpose is to streamline agricultural management, enhance decision-making, and improve operational efficiency for ranching businesses.
 
 ## User Preferences
 
@@ -137,122 +10,30 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### Frontend
 
-**Framework & Core Technologies**
-- Next.js 14 with App Router and React Server Components
-- TypeScript for type safety
-- Tailwind CSS with shadcn/ui component library
-- Client-side rendering with authentication checks on protected routes
+The frontend is built with Next.js 14, leveraging App Router and React Server Components, and TypeScript for type safety. Tailwind CSS with the shadcn/ui component library is used for styling. State management relies on React Context API for global states (user, establishment selection, navigation) and local storage for session persistence. The component architecture utilizes shared shadcn/ui components, feature-specific components organized by section, and custom components for enhanced functionality. Routing includes public, protected, and root pages with middleware for security.
 
-**State Management Pattern**
-- React Context API for global state (user, establishment selection, navigation)
-- Three primary contexts:
-  - `UserContext`: Manages authenticated user data and profile
-  - `EstablishmentContext`: Handles company/establishment selection and switching
-  - `ConfigNavigationContext`: Controls multi-level navigation in configuration section
-- Local storage for session persistence (tokens and user data)
+### Backend
 
-**Component Architecture**
-- Shared UI components from shadcn/ui in `/components/ui`
-- Feature-specific components organized by section in `/components/sections`
-- Custom components for date/time pickers and comboboxes to override default behavior
-- Permission wrapper component for role-based UI rendering
-- Reusable layout components (AppLayout, Sidebar)
-
-**Routing Structure**
-- Public routes: `/login`, `/register`
-- Protected routes: `/registros`, `/movimientos`, `/actividades`, `/clima`, `/insumos`, `/reportes`, `/configuracion`
-- Root page (`/`) redirects based on authentication status
-- Middleware adds security headers and logging
-
-### Backend Architecture
-
-**API Layer**
-- Next.js API routes in `/app/api` directory
-- Server-side data fetching and mutations
-- RESTful endpoint pattern with query parameters for filtering
-
-**Authentication Flow**
-- Supabase Auth for user authentication
-- Token-based session management stored in localStorage
-- Server actions for login/register operations
-- Middleware protection on sensitive routes
-- User profile data fetched and cached in context after authentication
-
-**Data Fetching Strategy**
-- Custom hooks for data fetching (e.g., `useClimaData`, `useInsumosData`, `usePluviometriaData`)
-- Establishment-scoped queries (data filtered by selected establishment)
-- Client-side caching in React state
-- Automatic refetching on establishment change
+The backend utilizes Next.js API routes for server-side data fetching and mutations, following a RESTful endpoint pattern. Authentication is handled by Supabase Auth with token-based session management and server actions for login/register. Data fetching uses custom hooks with establishment-scoped queries and client-side caching.
 
 ### Data Storage
 
-**Database**
-- Supabase PostgreSQL database
-- Neon Database integration (@neondatabase/serverless)
-- Schema includes:
-  - Multi-tenant structure (empresas → establecimientos)
-  - User management with roles and privileges
-  - Parte diario (daily reports) system
-  - Livestock movements, activities, weather, supplies tracking
-  - Potreros (paddocks), lotes (lots), and insumos (supplies)
+The application uses a Supabase PostgreSQL database, integrated with Neon Database, featuring a multi-tenant structure (empresas → establecimientos). The schema supports user management with role-based privileges, a daily reports system, and tracking for livestock movements, activities, weather, and supplies. Key entities include Empresa, Establecimiento, Usuario, ParteDiario, Movimiento, Actividad, Clima, Insumo, Potrero, Lote, and Maquinaria. A robust role-based permission system with granular privileges is implemented using a custom hook (`usePermissions`).
 
-**Data Models**
-- Type definitions in `/lib/types.ts` and `/types.tsx`
-- Key entities:
-  - Empresa (Company) → Establecimiento (Establishment) hierarchy
-  - Usuario (User) with role-based permissions
-  - ParteDiario (Daily Report) as central record type
-  - Movimiento (Movement), Actividad (Activity), Clima (Weather), Insumo (Supply)
-  - Potrero (Paddock), Lote (Lot), Maquinaria (Machinery)
+### UI/UX Decisions
 
-**Permission System**
-- Role hierarchy: Operativo (1) → Gerente (2) → Consultor (3) → Administrador (4)
-- 20+ granular privileges for different features
-- Privilege-based access control defined in `/lib/permissions.ts`
-- User roles and privileges stored per establishment
-- Custom hook (`usePermissions`) for checking permissions throughout app
+The design prioritizes a mobile-first, responsive approach, ensuring optimal display across various devices. Drawers are consistently responsive, appearing as full-screen sheets on mobile and lateral panels on desktop. Key UI elements like the sidebar, cards, and data grids are designed to adapt fluidly to different screen sizes, using breakpoints for progressive enhancement. Branding includes a high-resolution "PDP" favicon.
 
-### External Dependencies
+## External Dependencies
 
-**Supabase Integration**
-- Authentication service (email/password)
-- PostgreSQL database backend
-- Environment variables required:
-  - `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL`
-  - `SUPABASE_SERVICE_ROLE_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- Two client patterns:
-  - Server client (`/lib/supabase-server.ts`) for API routes
-  - Browser client (`/lib/supabase-client.ts`) for client components
-
-**UI Component Libraries**
-- shadcn/ui built on Radix UI primitives
-- Radix UI for accessible components (dialogs, dropdowns, etc.)
-- Tailwind CSS for styling with custom design system
-- Lucide React for icons
-
-**Build & Deployment**
-- Vercel for hosting and deployment
-- Auto-sync with v0.dev for design iterations
-- Custom Next.js configuration for port 5000
-- Development and production build scripts
-
-**Excel Export**
-- ExcelJS library for generating reports and exports
-- Used in reportes section for data export functionality
-
-**Date Handling**
-- date-fns library for date manipulation and formatting
-- Custom date/time picker components for consistent UX
-
-**Development Tools**
-- TypeScript with strict mode enabled
-- ESLint for code quality
-- React Hook Form with Zod resolvers for form validation
-- Custom hooks pattern for reusable logic
-
-**Configuration Management**
-- Environment-based configuration in `/lib/env.ts`
-- Fallback handling for missing environment variables
-- Development vs production mode detection
+- **Supabase:** Authentication and PostgreSQL database services.
+- **Neon Database:** Serverless PostgreSQL integration.
+- **shadcn/ui & Radix UI:** UI component libraries for accessible and styled components.
+- **Tailwind CSS:** Utility-first CSS framework for styling.
+- **Lucide React:** Icon library.
+- **Vercel:** Hosting and deployment platform.
+- **ExcelJS:** Library for generating Excel reports.
+- **date-fns:** Library for date manipulation and formatting.
+- **React Hook Form & Zod:** For form validation.

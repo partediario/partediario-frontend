@@ -159,15 +159,15 @@ export function ReportDrawer({ isOpen, onClose, template }: ReportDrawerProps) {
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[500px] ml-auto">
+      <DrawerContent className="ml-auto">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
-          <DrawerTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             {getReportIcon(template.module)}
             {template.name}
           </DrawerTitle>
         </DrawerHeader>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 md:p-6 space-y-4 md:space-y-6">
           {/* Descripción del reporte */}
           <div>
             <p className="text-sm text-gray-600">{template.description}</p>
@@ -177,7 +177,7 @@ export function ReportDrawer({ isOpen, onClose, template }: ReportDrawerProps) {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-700" />
-              <h3 className="text-base font-semibold text-gray-900">Filtros</h3>
+              <h3 className="text-sm md:text-base font-semibold text-gray-900">Filtros</h3>
             </div>
 
             {/* Selector de Periodo */}
