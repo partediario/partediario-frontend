@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,6 +13,9 @@ import { useCurrentEstablishment } from "@/hooks/use-current-establishment"
 import { useUser } from "@/contexts/user-context"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { toast } from "@/hooks/use-toast"
+import { useLotesQuery } from "@/hooks/queries/use-lotes-query"
+import { useKeyboardAwareDrawer } from "@/hooks/drawer-optimization/use-keyboard-aware-drawer-v2"
+import { useDebounceInput } from "@/hooks/drawer-optimization/use-debounce-input"
 
 interface TipoActividad {
   id: number
@@ -61,13 +64,14 @@ export default function SanitacionDrawer({
   onSuccess,
   actividadSeleccionada = null,
 }: SanitacionDrawerProps) {
+  const { usuario, loading: loadingUsuario } = useUser()
+  const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
+
   const [loading, setLoading] = useState(false)
 
   const [lotesSeleccionados, setLotesSeleccionados] = useState<number[]>([])
   const [mostrarSelectorLotes, setMostrarSelectorLotes] = useState(false)
   const [busquedaLotes, setBusquedaLotes] = useState<string>("")
-
-  const [lotes, setLotes] = useState<Lote[]>([])
 
   // Datos para insumos (vacunas - clase_insumo_id = 2)
   const [insumosExistentes, setInsumosExistentes] = useState<InsumoExistente[]>([])
@@ -82,7 +86,6 @@ export default function SanitacionDrawer({
   const [mostrarFormDetalleInsumos, setMostrarFormDetalleInsumos] = useState(false)
   const [editandoDetalleInsumos, setEditandoDetalleInsumos] = useState<number | null>(null)
   const [insumoId, setInsumoId] = useState<string>("")
-  const [cantidadInsumos, setCantidadInsumos] = useState<string>("")
   const [unidadMedidaActual, setUnidadMedidaActual] = useState<string>("")
   const [stockDisponible, setStockDisponible] = useState<number>(0)
 
@@ -93,17 +96,22 @@ export default function SanitacionDrawer({
   const [errores, setErrores] = useState<string[]>([])
   const [erroresDetalleInsumos, setErroresDetalleInsumos] = useState<string[]>([])
 
-  const { currentEstablishment } = useCurrentEstablishment()
-  const { usuario, loading: loadingUsuario } = useUser()
-  const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
+  const { data: lotes = [] } = useLotesQuery(establecimientoSeleccionado ? Number(establecimientoSeleccionado) : null)
 
-  // Obtener nombre completo del usuario
+  const {
+    value: cantidadInsumos,
+    debouncedValue: cantidadInsumosDebounced,
+    handleChange: setCantidadInsumos,
+    reset: resetCantidadInsumos,
+  } = useDebounceInput("")
+
+  const { handleInteractOutside, handlePointerDownOutside } = useKeyboardAwareDrawer({ isOpen })
+
   const nombreCompleto = usuario ? `${usuario.nombres} ${usuario.apellidos}`.trim() : "Cargando..."
 
   // Cargar datos cuando se abre el drawer
   useEffect(() => {
     if (isOpen && establecimientoSeleccionado && empresaSeleccionada) {
-      fetchLotes()
       fetchInsumosExistentes()
     }
   }, [isOpen, establecimientoSeleccionado, empresaSeleccionada])
@@ -134,25 +142,6 @@ export default function SanitacionDrawer({
       setStockDisponible(0)
     }
   }, [insumoId, insumosExistentes])
-
-  const fetchLotes = async () => {
-    if (!establecimientoSeleccionado) return
-
-    try {
-      const response = await fetch(`/api/lotes?establecimiento_id=${establecimientoSeleccionado}`)
-      if (!response.ok) throw new Error("Error al cargar lotes")
-
-      const data = await response.json()
-      setLotes(data.lotes || [])
-    } catch (error) {
-      console.error("Error fetching lotes:", error)
-      toast({
-        title: "❌ Error",
-        description: "Error al cargar lotes",
-        variant: "destructive",
-      })
-    }
-  }
 
   const fetchInsumosExistentes = async () => {
     if (!establecimientoSeleccionado) return
@@ -267,15 +256,15 @@ export default function SanitacionDrawer({
     setDetallesInsumos(detallesInsumos.filter((_, i) => i !== index))
   }
 
-  const limpiarFormularioDetalleInsumos = () => {
+  const limpiarFormularioDetalleInsumos = useCallback(() => {
     setInsumoId("")
-    setCantidadInsumos("")
+    resetCantidadInsumos()
     setUnidadMedidaActual("")
     setStockDisponible(0)
     setMostrarFormDetalleInsumos(false)
     setEditandoDetalleInsumos(null)
     setErroresDetalleInsumos([])
-  }
+  }, [resetCantidadInsumos])
 
   const toggleLoteSeleccion = (loteId: number) => {
     setLotesSeleccionados((prev) => (prev.includes(loteId) ? prev.filter((id) => id !== loteId) : [...prev, loteId]))
@@ -358,10 +347,14 @@ export default function SanitacionDrawer({
     setErrores([])
   }
 
-  const opcionesInsumos = insumosExistentes.map((insumo) => ({
-    value: insumo.insumo_id,
-    label: insumo.nombre_insumo,
-  }))
+  const opcionesInsumos = useMemo(
+    () =>
+      insumosExistentes.map((insumo) => ({
+        value: insumo.insumo_id,
+        label: insumo.nombre_insumo,
+      })),
+    [insumosExistentes],
+  )
 
   // Calcular stock disponible real para mostrar en insumos
   const cantidadYaUsadaEnFormularioInsumos = detallesInsumos
@@ -370,15 +363,23 @@ export default function SanitacionDrawer({
 
   const stockDisponibleRealInsumos = stockDisponible - cantidadYaUsadaEnFormularioInsumos
 
-  const lotesSeleccionadosNombres = lotes
-    .filter((lote) => lotesSeleccionados.includes(lote.id))
-    .map((lote) => lote.nombre)
+  const lotesSeleccionadosNombres = useMemo(
+    () => lotes.filter((lote) => lotesSeleccionados.includes(lote.id)).map((lote) => lote.nombre),
+    [lotes, lotesSeleccionados],
+  )
 
-  const lotesFiltrados = lotes.filter((lote) => lote.nombre.toLowerCase().includes(busquedaLotes.toLowerCase()))
+  const lotesFiltrados = useMemo(
+    () => lotes.filter((lote) => lote.nombre.toLowerCase().includes(busquedaLotes.toLowerCase())),
+    [lotes, busquedaLotes],
+  )
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full">
+      <DrawerContent
+        className="h-full"
+        onInteractOutside={handleInteractOutside}
+        onPointerDownOutside={handlePointerDownOutside}
+      >
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
           <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Syringe className="w-6 h-6 text-green-600" />

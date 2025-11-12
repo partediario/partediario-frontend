@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { X, Scale, Save, Loader2, Info, Search, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,7 @@ import { useUser } from "@/contexts/user-context"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import type { JSX } from "react/jsx-runtime"
+import { useKeyboardAwareDrawer } from "@/hooks/drawer-optimization/use-keyboard-aware-drawer-v2"
 
 interface LoteStock {
   lote_id: number
@@ -42,6 +43,9 @@ interface PesajeDrawerProps {
 }
 
 export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividadId }: PesajeDrawerProps) {
+  const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
+  const { usuario } = useUser()
+
   const [loading, setLoading] = useState(false)
   const [lotes, setLotes] = useState<LoteStock[]>([])
   const [fecha, setFecha] = useState<Date>(new Date())
@@ -52,8 +56,7 @@ export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividad
   const filtroLoteRef = useRef<HTMLDivElement>(null)
   const [searchLote, setSearchLote] = useState("")
 
-  const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
-  const { usuario } = useUser()
+  const { handleInteractOutside, handlePointerDownOutside } = useKeyboardAwareDrawer({ isOpen })
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -307,7 +310,7 @@ export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividad
     }
   }
 
-  const handleLoteFilterChange = (loteId: string) => {
+  const handleLoteFilterChange = useCallback((loteId: string) => {
     setLotesSeleccionados((prev) => {
       if (prev.includes(loteId)) {
         return prev.filter((id) => id !== loteId)
@@ -315,16 +318,20 @@ export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividad
         return [...prev, loteId]
       }
     })
-  }
+  }, [])
 
-  const opcionesLote = lotes
-    .sort((a, b) => a.lote_id - b.lote_id)
-    .map((lote) => ({
-      value: lote.lote_id.toString(),
-      label: lote.lote_nombre,
-    }))
+  const opcionesLote = useMemo(
+    () =>
+      lotes
+        .sort((a, b) => a.lote_id - b.lote_id)
+        .map((lote) => ({
+          value: lote.lote_id.toString(),
+          label: lote.lote_nombre,
+        })),
+    [lotes],
+  )
 
-  const getLotesSeleccionadosText = () => {
+  const getLotesSeleccionadosText = useCallback(() => {
     if (lotesSeleccionados.length === 0) {
       return "Todos los lotes"
     }
@@ -333,26 +340,30 @@ export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividad
       return lote?.lote_nombre || "Lote seleccionado"
     }
     return `${lotesSeleccionados.length} lotes seleccionados`
-  }
+  }, [lotesSeleccionados, lotes])
 
-  const filteredLotes = lotes
-    .filter((lote) => {
-      if (lotesSeleccionados.length > 0) {
-        return lotesSeleccionados.includes(lote.lote_id.toString())
-      }
-      return true
-    })
-    .map((lote) => ({
-      ...lote,
-      pd_detalles: lote.pd_detalles
-        .filter(
-          (detalle) =>
-            searchCategoria === "" ||
-            detalle.categoria_animal_nombre.toLowerCase().includes(searchCategoria.toLowerCase()),
-        )
-        .sort((a, b) => a.categoria_animal_id - b.categoria_animal_id),
-    }))
-    .filter((lote) => lote.pd_detalles.length > 0)
+  const filteredLotes = useMemo(
+    () =>
+      lotes
+        .filter((lote) => {
+          if (lotesSeleccionados.length > 0) {
+            return lotesSeleccionados.includes(lote.lote_id.toString())
+          }
+          return true
+        })
+        .map((lote) => ({
+          ...lote,
+          pd_detalles: lote.pd_detalles
+            .filter(
+              (detalle) =>
+                searchCategoria === "" ||
+                detalle.categoria_animal_nombre.toLowerCase().includes(searchCategoria.toLowerCase()),
+            )
+            .sort((a, b) => a.categoria_animal_id - b.categoria_animal_id),
+        }))
+        .filter((lote) => lote.pd_detalles.length > 0),
+    [lotes, lotesSeleccionados, searchCategoria],
+  )
 
   const createTableRows = () => {
     const rows: JSX.Element[] = []
@@ -453,7 +464,11 @@ export default function PesajeDrawer({ isOpen, onClose, onSuccess, tipoActividad
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full w-[900px] ml-auto">
+      <DrawerContent
+        className="h-full w-[900px] ml-auto"
+        onInteractOutside={handleInteractOutside}
+        onPointerDownOutside={handlePointerDownOutside}
+      >
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
           <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Scale className="w-6 h-6 text-purple-600" />

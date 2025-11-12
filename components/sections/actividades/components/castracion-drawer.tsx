@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,6 +13,10 @@ import { useCurrentEstablishment } from "@/hooks/use-current-establishment"
 import { useUser } from "@/contexts/user-context"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { toast } from "@/hooks/use-toast"
+import { useLotesQuery } from "@/hooks/queries/use-lotes-query"
+import { useCategoriasQuery } from "@/hooks/queries/use-categorias-query"
+import { useKeyboardAwareDrawer } from "@/hooks/drawer-optimization/use-keyboard-aware-drawer-v2"
+import { useDebounceInput } from "@/hooks/drawer-optimization/use-debounce-input"
 
 interface TipoActividad {
   id: number
@@ -53,12 +57,10 @@ export default function CastracionDrawer({
   onSuccess,
   actividadSeleccionada = null,
 }: CastracionDrawerProps) {
-  const [loading, setLoading] = useState(false)
+  const { usuario, loading: loadingUsuario } = useUser()
+  const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
 
-  // Datos para animales
-  const [lotes, setLotes] = useState<Lote[]>([])
-  const [categoriasExistentes, setCategorias] = useState<CategoriaExistente[]>([])
-  const [loadingCategorias, setLoadingCategorias] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   // Formulario principal
   const [fecha, setFecha] = useState<Date>(new Date())
@@ -69,7 +71,6 @@ export default function CastracionDrawer({
   const [editandoDetalleAnimales, setEditandoDetalleAnimales] = useState<number | null>(null)
   const [loteId, setLoteId] = useState<string>("")
   const [categoriaId, setCategoriaId] = useState<string>("")
-  const [cantidadAnimales, setCantidadAnimales] = useState<string>("")
 
   // Detalles agregados
   const [detallesAnimales, setDetallesAnimales] = useState<DetalleActividad[]>([])
@@ -78,19 +79,22 @@ export default function CastracionDrawer({
   const [errores, setErrores] = useState<string[]>([])
   const [erroresDetalleAnimales, setErroresDetalleAnimales] = useState<string[]>([])
 
-  const { currentEstablishment } = useCurrentEstablishment()
-  const { usuario, loading: loadingUsuario } = useUser()
-  const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
+  const { data: lotes = [] } = useLotesQuery(establecimientoSeleccionado ? Number(establecimientoSeleccionado) : null)
+  const { data: categoriasExistentes = [], isLoading: loadingCategorias } = useCategoriasQuery(
+    loteId || null,
+    loteId ? { sexo: "MACHO", edad: "JOVEN" } : undefined,
+  )
 
-  // Obtener nombre completo del usuario
+  const {
+    value: cantidadAnimales,
+    debouncedValue: cantidadAnimalesDebounced,
+    handleChange: setCantidadAnimales,
+    reset: resetCantidadAnimales,
+  } = useDebounceInput("")
+
+  const { handleInteractOutside, handlePointerDownOutside } = useKeyboardAwareDrawer({ isOpen })
+
   const nombreCompleto = usuario ? `${usuario.nombres} ${usuario.apellidos}`.trim() : "Cargando..."
-
-  // Cargar datos cuando se abre el drawer
-  useEffect(() => {
-    if (isOpen && establecimientoSeleccionado && empresaSeleccionada) {
-      fetchLotes()
-    }
-  }, [isOpen, establecimientoSeleccionado, empresaSeleccionada])
 
   // Limpiar formulario al abrir
   useEffect(() => {
@@ -103,56 +107,11 @@ export default function CastracionDrawer({
     }
   }, [isOpen])
 
-  // Cargar categorías cuando se selecciona lote
   useEffect(() => {
-    if (loteId) {
-      fetchCategoriasExistentes()
-    } else {
-      setCategorias([])
+    if (!loteId) {
       setCategoriaId("")
     }
   }, [loteId])
-
-  const fetchLotes = async () => {
-    if (!establecimientoSeleccionado) return
-
-    try {
-      const response = await fetch(`/api/lotes?establecimiento_id=${establecimientoSeleccionado}`)
-      if (!response.ok) throw new Error("Error al cargar lotes")
-
-      const data = await response.json()
-      setLotes(data.lotes || [])
-    } catch (error) {
-      console.error("Error fetching lotes:", error)
-      toast({
-        title: "❌ Error",
-        description: "Error al cargar lotes",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const fetchCategoriasExistentes = async () => {
-    if (!loteId) return
-
-    setLoadingCategorias(true)
-    try {
-      const response = await fetch(`/api/categorias-existentes-lote?lote_id=${loteId}&sexo=MACHO&edad=JOVEN`)
-      if (!response.ok) throw new Error("Error al cargar categorías")
-
-      const data = await response.json()
-      setCategorias(data.categorias || [])
-    } catch (error) {
-      console.error("Error fetching categorias:", error)
-      toast({
-        title: "❌ Error",
-        description: "Error al cargar categorías de machos jóvenes",
-        variant: "destructive",
-      })
-    } finally {
-      setLoadingCategorias(false)
-    }
-  }
 
   const validarFormularioPrincipal = (): string[] => {
     const errores: string[] = []
@@ -222,14 +181,14 @@ export default function CastracionDrawer({
     setDetallesAnimales(detallesAnimales.filter((_, i) => i !== index))
   }
 
-  const limpiarFormularioDetalleAnimales = () => {
+  const limpiarFormularioDetalleAnimales = useCallback(() => {
     setLoteId("")
     setCategoriaId("")
-    setCantidadAnimales("")
+    resetCantidadAnimales()
     setMostrarFormDetalleAnimales(false)
     setEditandoDetalleAnimales(null)
     setErroresDetalleAnimales([])
-  }
+  }, [resetCantidadAnimales])
 
   const handleSubmit = async () => {
     const erroresValidacion = validarFormularioPrincipal()
@@ -305,19 +264,31 @@ export default function CastracionDrawer({
     setErrores([])
   }
 
-  const opcionesLotes = lotes.map((lote) => ({
-    value: lote.id.toString(),
-    label: lote.nombre,
-  }))
+  const opcionesLotes = useMemo(
+    () =>
+      lotes.map((lote) => ({
+        value: lote.id.toString(),
+        label: lote.nombre,
+      })),
+    [lotes],
+  )
 
-  const opcionesCategorias = categoriasExistentes.map((cat) => ({
-    value: cat.categoria_animal_id.toString(),
-    label: cat.nombre_categoria_animal,
-  }))
+  const opcionesCategorias = useMemo(
+    () =>
+      categoriasExistentes.map((cat) => ({
+        value: cat.categoria_animal_id.toString(),
+        label: cat.nombre_categoria_animal,
+      })),
+    [categoriasExistentes],
+  )
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full">
+      <DrawerContent
+        className="h-full"
+        onInteractOutside={handleInteractOutside}
+        onPointerDownOutside={handlePointerDownOutside}
+      >
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
           <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Scissors className="w-6 h-6 text-blue-600" />

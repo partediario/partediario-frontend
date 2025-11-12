@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { X, Users, Save, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -13,6 +13,7 @@ import { CustomCombobox } from "@/components/ui/custom-combobox"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { useUser } from "@/contexts/user-context"
 import { toast } from "@/hooks/use-toast"
+import { useKeyboardAwareDrawer } from "@/hooks/drawer-optimization/use-keyboard-aware-drawer-v2"
 
 interface CategoriaActual {
   categoria_animal_id: number
@@ -49,6 +50,10 @@ interface ReclasificacionDrawerProps {
 }
 
 export default function ReclasificacionDrawer({ isOpen, onClose, onSuccess }: ReclasificacionDrawerProps) {
+  const { establecimientoSeleccionado, empresaSeleccionada, getEstablecimientoNombre, getEmpresaNombre } =
+    useEstablishment()
+  const { usuario, loading: loadingUsuario } = useUser()
+
   const [loading, setLoading] = useState(false)
   const [categoriasActuales, setCategoriasActuales] = useState<CategoriaActual[]>([])
   const [categoriasDisponibles, setCategoriasDisponibles] = useState<CategoriaDisponible[]>([])
@@ -57,12 +62,8 @@ export default function ReclasificacionDrawer({ isOpen, onClose, onSuccess }: Re
   const [hora, setHora] = useState<string>(new Date().toTimeString().slice(0, 5))
   const [nota, setNota] = useState("")
 
-  // Usar el contexto de establecimiento
-  const { establecimientoSeleccionado, empresaSeleccionada, getEstablecimientoNombre, getEmpresaNombre } =
-    useEstablishment()
-  const { usuario, loading: loadingUsuario } = useUser()
+  const { handleInteractOutside, handlePointerDownOutside } = useKeyboardAwareDrawer({ isOpen })
 
-  // Obtener nombre completo del usuario
   const nombreCompleto = usuario ? `${usuario.nombres} ${usuario.apellidos}`.trim() : "Cargando..."
 
   useEffect(() => {
@@ -149,11 +150,14 @@ export default function ReclasificacionDrawer({ isOpen, onClose, onSuccess }: Re
     }
   }
 
-  const handleReclasificacionChange = (index: number, field: keyof Reclasificacion, value: any) => {
-    const updated = [...reclasificaciones]
-    updated[index] = { ...updated[index], [field]: value }
-    setReclasificaciones(updated)
-  }
+  const handleReclasificacionChange = useCallback(
+    (index: number, field: keyof Reclasificacion, value: any) => {
+      const updated = [...reclasificaciones]
+      updated[index] = { ...updated[index], [field]: value }
+      setReclasificaciones(updated)
+    },
+    [reclasificaciones],
+  )
 
   const handleSubmit = async () => {
     // Validar que al menos una reclasificación esté seleccionada
@@ -229,19 +233,24 @@ export default function ReclasificacionDrawer({ isOpen, onClose, onSuccess }: Re
   }
 
   // Filtrar categorías disponibles por sexo y excluir la categoría actual
-  const getCategoriasDisponiblesPorSexo = (sexoActual: string, categoriaActualId: number) => {
-    const filtradas = categoriasDisponibles.filter((cat) => {
-      const mismosexo = cat.sexo === sexoActual
-      const noEsLaMisma = cat.id !== categoriaActualId
-      return mismosexo && noEsLaMisma
-    })
-
-    return filtradas
-  }
+  const getCategoriasDisponiblesPorSexo = useCallback(
+    (sexoActual: string, categoriaActualId: number) => {
+      return categoriasDisponibles.filter((cat) => {
+        const mismosexo = cat.sexo === sexoActual
+        const noEsLaMisma = cat.id !== categoriaActualId
+        return mismosexo && noEsLaMisma
+      })
+    },
+    [categoriasDisponibles],
+  )
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent className="h-full">
+      <DrawerContent
+        className="h-full"
+        onInteractOutside={handleInteractOutside}
+        onPointerDownOutside={handlePointerDownOutside}
+      >
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
           <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Users className="w-6 h-6 text-orange-600" />
