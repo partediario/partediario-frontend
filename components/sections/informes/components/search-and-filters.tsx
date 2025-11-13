@@ -4,15 +4,9 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { RotateCcw, Search, Filter, ChevronDown } from "lucide-react"
+import { RotateCcw, Search, Filter, ChevronDown, X } from "lucide-react"
 import { CustomDatePicker } from "@/components/ui/custom-date-picker"
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerClose,
-} from "@/components/ui/drawer"
+import { Badge } from "@/components/ui/badge"
 import type { SearchAndFiltersProps as Props } from "@/types"
 
 export default function SearchAndFilters({
@@ -25,7 +19,7 @@ export default function SearchAndFilters({
   onRefresh,
   isLoading = false,
 }: Props) {
-  const [showFilterDrawer, setShowFilterDrawer] = useState(false)
+  const [showFilterMenu, setShowFilterMenu] = useState(false)
 
   const tiposOptions = [
     { value: "todos", label: "Todos los tipos" },
@@ -49,132 +43,98 @@ export default function SearchAndFilters({
 
   const filtrosActivos = contarFiltrosActivos()
 
+  const limpiarFiltros = () => {
+    onSearchChange("")
+    onTypeChange("todos")
+    onDateChange(undefined)
+    setShowFilterMenu(false)
+  }
+
   return (
     <>
-      <div className="flex gap-2 mb-6">
-        {/* Versión móvil: Botón Filtros con Drawer */}
-        <div className="md:hidden flex-1">
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        {/* Campo de búsqueda - Siempre visible */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Buscar..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
+        </div>
+
+        {/* Botón Filtros - Visible en todos los breakpoints */}
+        <div className="relative">
           <Button
             variant="outline"
-            className={`w-full flex items-center justify-center gap-2 h-10 ${
-              filtrosActivos > 0 ? "bg-blue-50 border-blue-300 text-blue-700" : ""
-            }`}
-            onClick={() => setShowFilterDrawer(true)}
+            className={`flex items-center gap-2 ${filtrosActivos > 0 ? "bg-blue-50 border-blue-300 text-blue-700" : ""}`}
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
           >
             <Filter className="w-4 h-4" />
-            <span>Filtros</span>
+            {filtrosActivos > 0 ? `${filtrosActivos} filtros activos` : "Filtros"}
             {filtrosActivos > 0 && (
-              <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
+              <Badge variant="secondary" className="ml-1 bg-blue-100 text-blue-800 text-xs">
                 {filtrosActivos}
-              </span>
+              </Badge>
             )}
             <ChevronDown className="w-4 h-4" />
           </Button>
 
-          <Drawer open={showFilterDrawer} onOpenChange={setShowFilterDrawer}>
-            <DrawerContent size="narrow">
-              <DrawerHeader className="relative">
-                <DrawerTitle>Filtros Combinados</DrawerTitle>
-                <DrawerClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                  <span className="sr-only">Cerrar</span>
-                </DrawerClose>
-              </DrawerHeader>
-              <div className="p-4 space-y-4 overflow-y-auto flex-1">
-                {/* Búsqueda */}
-                <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Búsqueda</label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      placeholder="Buscar por descripción, nota o usuario..."
-                      value={searchTerm}
-                      onChange={(e) => onSearchChange(e.target.value)}
-                      className="pl-10 h-10"
+          {showFilterMenu && (
+            <>
+              {/* Overlay para cerrar al hacer clic fuera */}
+              <div className="fixed inset-0 z-40" onClick={() => setShowFilterMenu(false)} />
+              
+              {/* Menú de filtros */}
+              <div className="absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-80">
+                <div className="p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-sm">Filtros Combinados</h4>
+                    {filtrosActivos > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={limpiarFiltros}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Limpiar todo
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Filtro por Tipo */}
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 mb-1 block">Tipo de Movimiento</label>
+                    <Select value={selectedType} onValueChange={onTypeChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Seleccionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tiposOptions.map((tipo) => (
+                          <SelectItem key={tipo.value} value={tipo.value}>
+                            {tipo.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Filtro por Fecha */}
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 mb-1 block">Fecha</label>
+                    <CustomDatePicker
+                      date={selectedDate}
+                      onDateChange={onDateChange}
+                      placeholder="Seleccionar fecha"
+                      className="w-full"
                     />
                   </div>
                 </div>
-
-                {/* Tipo */}
-                <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Tipo de Movimiento</label>
-                  <Select value={selectedType} onValueChange={onTypeChange}>
-                    <SelectTrigger className="w-full h-10">
-                      <SelectValue placeholder="Todos los tipos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tiposOptions.map((tipo) => (
-                        <SelectItem key={tipo.value} value={tipo.value}>
-                          {tipo.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Fecha */}
-                <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Fecha</label>
-                  <CustomDatePicker
-                    date={selectedDate}
-                    onDateChange={onDateChange}
-                    placeholder="Seleccionar fecha"
-                    className="w-full"
-                  />
-                </div>
               </div>
-            </DrawerContent>
-          </Drawer>
-        </div>
-
-        {/* Versión desktop: Filtros expandidos (ocultos en móvil) */}
-        <div className="hidden md:flex md:flex-row gap-4 flex-1">
-          {/* Campo de búsqueda */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Buscar por descripción, nota o usuario..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 h-10"
-            />
-          </div>
-
-          {/* Filtro por tipo */}
-          <Select value={selectedType} onValueChange={onTypeChange}>
-            <SelectTrigger className="w-[180px] h-10">
-              <SelectValue placeholder="Todos los tipos" />
-            </SelectTrigger>
-            <SelectContent>
-              {tiposOptions.map((tipo) => (
-                <SelectItem key={tipo.value} value={tipo.value}>
-                  {tipo.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Selector de fecha */}
-          <CustomDatePicker
-            date={selectedDate}
-            onDateChange={onDateChange}
-            placeholder="Seleccionar fecha"
-            className="w-[250px]"
-          />
+            </>
+          )}
         </div>
 
         {/* Botón de recarga */}
@@ -183,7 +143,7 @@ export default function SearchAndFilters({
           size="icon"
           onClick={onRefresh}
           disabled={isLoading}
-          className="h-10 w-10 bg-transparent"
+          className="bg-transparent"
         >
           <RotateCcw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
         </Button>
