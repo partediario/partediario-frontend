@@ -89,18 +89,18 @@ export default function SearchAndFilters({
                 
                 {/* Menú de filtros */}
                 <div className="absolute top-full mt-1 left-0 md:left-auto md:right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-[calc(100vw-2rem)] md:w-80">
-                  <div className="p-4 space-y-4">
+                  <div className="p-3 md:p-4 space-y-3 md:space-y-4">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm">Filtros Combinados</h4>
+                      <h4 className="font-medium text-xs md:text-sm">Filtros Combinados</h4>
                       {filtrosActivos > 0 && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={limpiarFiltros}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 h-7 text-xs"
                         >
                           <X className="w-3 h-3 mr-1" />
-                          Limpiar todo
+                          Limpiar
                         </Button>
                       )}
                     </div>
@@ -109,7 +109,7 @@ export default function SearchAndFilters({
                     <div>
                       <label className="text-xs font-medium text-gray-600 mb-1 block">Tipo de Movimiento</label>
                       <Select value={selectedType} onValueChange={onTypeChange}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className="w-full h-9">
                           <SelectValue placeholder="Seleccionar tipo" />
                         </SelectTrigger>
                         <SelectContent>
@@ -129,7 +129,7 @@ export default function SearchAndFilters({
                         date={selectedDate}
                         onDateChange={onDateChange}
                         placeholder="Seleccionar fecha"
-                        className="w-full"
+                        className="w-full h-9"
                       />
                     </div>
                   </div>
