@@ -51,14 +51,15 @@ The design prioritizes a mobile-first, responsive approach, ensuring optimal dis
 - Responsive gaps: `gap-2` on mobile, `md:gap-4` on desktop
 - Stock summary and movement history tables already had proper responsive patterns (grid-cols-1/2/5, overflow-x-auto)
 
-**Partes Diarios Section - Mobile Filter Drawer** (November 13, 2025):
-- **SearchAndFilters** component redesigned for mobile with slide-in Drawer:
-  - Mobile (<md): Filters (búsqueda, tipo, fecha) hidden behind "Filtros" button that opens a Drawer sliding from bottom
-  - Drawer features: DrawerClose button (X icon), controlled state with `onOpenChange`, responsive narrow sizing (384px on md+)
-  - Active filter counter badge displayed on "Filtros" button when filters are applied
-  - Desktop (≥md): Maintains original horizontal layout with all filters visible inline
-- Drawer dismissal: X button, overlay click, or ESC key
-- Ensures consistent UX across breakpoints while maximizing mobile screen space
+**Partes Diarios Section - Unified Filter Dropdown** (November 13, 2025):
+- **SearchAndFilters** component follows the Movimientos Recientes pattern with dropdown filters:
+  - Search field always visible on all breakpoints with placeholder "Buscar..."
+  - "Filtros" button visible on all breakpoints (mobile and desktop) with active filter counter badge
+  - Clicking "Filtros" opens a dropdown (position absolute) containing tipo and fecha filters
+  - "Limpiar todo" button inside dropdown clears all filters including search term
+  - Dropdown dismissal via overlay click or ESC key
+  - No inline expanded filters on desktop; unified dropdown experience across all breakpoints
+- Ensures consistent filter UX matching Movimientos Recientes pattern throughout the application
 
 Key UI elements like cards and data grids adapt fluidly using Tailwind breakpoints. Branding includes a high-resolution "PDP" favicon.
 
