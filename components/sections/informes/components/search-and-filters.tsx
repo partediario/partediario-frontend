@@ -88,7 +88,7 @@ export default function SearchAndFilters({
                 <div className="fixed inset-0 z-40" onClick={() => setShowFilterMenu(false)} />
                 
                 {/* Menú de filtros */}
-                <div className="absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-80">
+                <div className="absolute top-full mt-1 left-0 md:left-auto md:right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-[calc(100vw-2rem)] md:w-80">
                   <div className="p-4 space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-sm">Filtros Combinados</h4>
