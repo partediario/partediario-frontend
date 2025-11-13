@@ -1,7 +1,7 @@
 "use client"
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,10 +14,6 @@ import { useCurrentEstablishment } from "@/hooks/use-current-establishment"
 import { useUser } from "@/contexts/user-context"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { toast } from "@/hooks/use-toast"
-import { useLotesQuery } from "@/hooks/queries/use-lotes-query"
-import { useCategoriasQuery } from "@/hooks/queries/use-categorias-query"
-import { useKeyboardAwareDrawer } from "@/hooks/drawer-optimization/use-keyboard-aware-drawer-v2"
-import { useDebounceInput } from "@/hooks/drawer-optimization/use-debounce-input"
 
 interface TipoActividad {
   id: number
@@ -68,57 +64,52 @@ export default function FaenaDrawer({
   onSuccess,
   actividadSeleccionada = null,
 }: FaenaDrawerProps) {
-  const { usuario, loading: loadingUsuario } = useUser()
-  const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
-
   const [loading, setLoading] = useState(false)
-  const [tipoMovimiento, setTipoMovimiento] = useState<string>("11")
+  const [lotes, setLotes] = useState<Lote[]>([])
+  const [categoriasExistentes, setCategorias] = useState<CategoriaExistente[]>([])
+  const [loadingCategorias, setLoadingCategorias] = useState(false)
+  const [tipoMovimiento, setTipoMovimiento] = useState<string>("11") // ID 11 por defecto
   const [tiposMovimiento, setTiposMovimiento] = useState<TipoMovimiento[]>([])
 
+  // Formulario principal
   const [fecha, setFecha] = useState<Date>(new Date())
   const [hora, setHora] = useState<string>(new Date().toTimeString().slice(0, 5))
   const [nota, setNota] = useState<string>("")
 
+  // Formulario de detalle
   const [mostrarFormDetalle, setMostrarFormDetalle] = useState(false)
   const [editandoDetalle, setEditandoDetalle] = useState<number | null>(null)
   const [loteId, setLoteId] = useState<string>("")
   const [categoriaId, setCategoriaId] = useState<string>("")
+  const [cantidad, setCantidad] = useState<string>("")
+  const [peso, setPeso] = useState<string>("")
   const [tipoPeso, setTipoPeso] = useState<"TOTAL" | "PROMEDIO">("TOTAL")
 
+  // Detalles agregados
   const [detalles, setDetalles] = useState<DetalleActividad[]>([])
 
+  // Errores
   const [errores, setErrores] = useState<string[]>([])
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
   const [mostrarModalErrores, setMostrarModalErrores] = useState(false)
   const [mostrarModalErroresDetalle, setMostrarModalErroresDetalle] = useState(false)
 
-  const { data: lotes = [] } = useLotesQuery(establecimientoSeleccionado ? Number(establecimientoSeleccionado) : null)
-  const { data: categoriasExistentes = [], isLoading: loadingCategorias } = useCategoriasQuery(loteId || null)
+  const { currentEstablishment } = useCurrentEstablishment()
+  const { usuario, loading: loadingUsuario } = useUser()
+  const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
 
-  const {
-    value: cantidad,
-    debouncedValue: cantidadDebounced,
-    handleChange: setCantidad,
-    reset: resetCantidad,
-  } = useDebounceInput("")
-
-  const {
-    value: peso,
-    debouncedValue: pesoDebounced,
-    handleChange: setPeso,
-    reset: resetPeso,
-  } = useDebounceInput("")
-
-  const { handleInteractOutside, handlePointerDownOutside } = useKeyboardAwareDrawer({ isOpen })
-
+  // Obtener nombre completo del usuario
   const nombreCompleto = usuario ? `${usuario.nombres} ${usuario.apellidos}`.trim() : "Cargando..."
 
+  // Cargar datos cuando se abre el drawer
   useEffect(() => {
-    if (isOpen && empresaSeleccionada) {
+    if (isOpen && establecimientoSeleccionado && empresaSeleccionada) {
+      fetchLotes()
       fetchTiposMovimiento()
     }
-  }, [isOpen, empresaSeleccionada])
+  }, [isOpen, establecimientoSeleccionado, empresaSeleccionada])
 
+  // Limpiar formulario al abrir
   useEffect(() => {
     if (isOpen) {
       setFecha(new Date())
@@ -130,11 +121,62 @@ export default function FaenaDrawer({
     }
   }, [isOpen])
 
+  // Cargar categorías cuando se selecciona lote
   useEffect(() => {
-    if (!loteId) {
+    if (loteId) {
+      fetchCategoriasExistentes()
+    } else {
+      setCategorias([])
       setCategoriaId("")
     }
   }, [loteId])
+
+  const fetchLotes = async () => {
+    if (!establecimientoSeleccionado) return
+
+    try {
+      const response = await fetch(`/api/lotes?establecimiento_id=${establecimientoSeleccionado}`)
+      if (!response.ok) throw new Error("Error al cargar lotes")
+
+      const data = await response.json()
+      setLotes(data.lotes || [])
+    } catch (error) {
+      console.error("Error fetching lotes:", error)
+      toast({
+        title: "❌ Error",
+        description: "Error al cargar lotes",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const fetchCategoriasExistentes = async () => {
+    if (!loteId) return
+
+    setLoadingCategorias(true)
+    try {
+      console.log("🔄 Cargando categorías existentes para lote_id:", loteId)
+      const response = await fetch(`/api/categorias-animales-existentes?lote_id=${loteId}`)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.details || errorData.error || `HTTP ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log("✅ Datos de categorías existentes recibidos:", data)
+      setCategorias(data.categorias || [])
+    } catch (error) {
+      console.error("Error fetching categorias:", error)
+      toast({
+        title: "❌ Error",
+        description: "Error al cargar categorías",
+        variant: "destructive",
+      })
+    } finally {
+      setLoadingCategorias(false)
+    }
+  }
 
   const fetchTiposMovimiento = async () => {
     try {
@@ -142,6 +184,7 @@ export default function FaenaDrawer({
       if (!response.ok) throw new Error("Error al cargar tipos de movimiento")
 
       const data = await response.json()
+      // Filtrar para solo incluir los IDs 11 y 7
       const tiposFiltrados = data.tipos.filter((tipo: TipoMovimiento) => tipo.id === 11 || tipo.id === 7)
       setTiposMovimiento(tiposFiltrados || [])
     } catch (error) {
@@ -153,33 +196,6 @@ export default function FaenaDrawer({
       })
     }
   }
-
-  const opcionesLotes = useMemo(
-    () =>
-      lotes.map((lote) => ({
-        value: lote.id.toString(),
-        label: lote.nombre,
-      })),
-    [lotes],
-  )
-
-  const opcionesCategorias = useMemo(
-    () =>
-      categoriasExistentes.map((cat) => ({
-        value: cat.categoria_animal_id.toString(),
-        label: cat.nombre_categoria_animal,
-      })),
-    [categoriasExistentes],
-  )
-
-  const opcionesTiposMovimiento = useMemo(
-    () =>
-      tiposMovimiento.map((tipo) => ({
-        value: tipo.id.toString(),
-        label: tipo.nombre,
-      })),
-    [tiposMovimiento],
-  )
 
   const validarFormularioPrincipal = (): string[] => {
     const errores: string[] = []
@@ -193,21 +209,22 @@ export default function FaenaDrawer({
     return errores
   }
 
-  const validarDetalle = useCallback((): string[] => {
+  const validarDetalle = (): string[] => {
     console.log("🔍 Iniciando validación de detalle...")
-    console.log("Datos del detalle:", { loteId, categoriaId, cantidadDebounced, pesoDebounced })
+    console.log("Datos del detalle:", { loteId, categoriaId, cantidad, peso })
 
     const errores: string[] = []
 
+    // Validar campos obligatorios
     if (!loteId) errores.push("Debe seleccionar un lote")
     if (!categoriaId) errores.push("Debe seleccionar una categoría")
-    if (!cantidadDebounced || Number.parseInt(cantidadDebounced) <= 0) errores.push("La cantidad debe ser mayor a 0")
-    if (!pesoDebounced || Number.parseInt(pesoDebounced) <= 0) errores.push("El peso debe ser mayor a 0")
+    if (!cantidad || Number.parseInt(cantidad) <= 0) errores.push("La cantidad debe ser mayor a 0")
+    if (!peso || Number.parseInt(peso) <= 0) errores.push("El peso debe ser mayor a 0")
 
-    if (categoriaId && cantidadDebounced && Number.parseInt(cantidadDebounced) > 0) {
+    if (categoriaId && cantidad && Number.parseInt(cantidad) > 0) {
       console.log("🔍 INICIANDO VALIDACIÓN DE STOCK")
       console.log("   Categoría seleccionada ID:", categoriaId)
-      console.log("   Cantidad solicitada:", cantidadDebounced)
+      console.log("   Cantidad solicitada:", cantidad)
       console.log("   Categorías disponibles:", categoriasExistentes.length)
 
       const categoriaSeleccionada = categoriasExistentes.find((c) => c.categoria_animal_id.toString() === categoriaId)
@@ -215,12 +232,13 @@ export default function FaenaDrawer({
       console.log("   Categoría encontrada:", categoriaSeleccionada)
 
       if (categoriaSeleccionada) {
+        // Calcular cantidad ya utilizada en otros detalles de la misma categoría
         const cantidadYaUtilizada = detalles
           .filter((d) => d.categoria_animal_id.toString() === categoriaId && editandoDetalle !== detalles.indexOf(d))
           .reduce((sum, d) => sum + d.cantidad, 0)
 
         const stockDisponible = Number(categoriaSeleccionada.cantidad) - cantidadYaUtilizada
-        const cantidadSolicitada = Number.parseInt(cantidadDebounced)
+        const cantidadSolicitada = Number.parseInt(cantidad)
 
         console.log(`📊 Validación de stock para ${categoriaSeleccionada.nombre_categoria_animal}:`)
         console.log(`   Stock total: ${categoriaSeleccionada.cantidad}`)
@@ -246,20 +264,9 @@ export default function FaenaDrawer({
 
     console.log("Errores encontrados en detalle:", errores)
     return errores
-  }, [loteId, categoriaId, cantidadDebounced, pesoDebounced, categoriasExistentes, detalles, editandoDetalle])
+  }
 
-  const limpiarFormularioDetalle = useCallback(() => {
-    setLoteId("")
-    setCategoriaId("")
-    resetCantidad()
-    resetPeso()
-    setTipoPeso("TOTAL")
-    setMostrarFormDetalle(false)
-    setEditandoDetalle(null)
-    setErroresDetalle([])
-  }, [resetCantidad, resetPeso])
-
-  const agregarDetalle = useCallback(() => {
+  const agregarDetalle = () => {
     const erroresValidacion = validarDetalle()
     if (erroresValidacion.length > 0) {
       console.log("❌ Mostrando errores de validación de detalle")
@@ -279,8 +286,8 @@ export default function FaenaDrawer({
     const nuevoDetalle: DetalleActividad = {
       categoria_animal_id: Number.parseInt(categoriaId),
       categoria_nombre: categoriaSeleccionada.nombre_categoria_animal,
-      cantidad: Number.parseInt(cantidadDebounced),
-      peso: Number.parseInt(pesoDebounced),
+      cantidad: Number.parseInt(cantidad),
+      peso: Number.parseInt(peso),
       tipo_peso: tipoPeso,
       lote_id: Number.parseInt(loteId),
       lote_nombre: loteSeleccionado.nombre,
@@ -298,9 +305,9 @@ export default function FaenaDrawer({
     }
 
     limpiarFormularioDetalle()
-  }, [validarDetalle, lotes, categoriasExistentes, loteId, categoriaId, cantidadDebounced, pesoDebounced, tipoPeso, editandoDetalle, detalles, limpiarFormularioDetalle])
+  }
 
-  const editarDetalle = useCallback((index: number) => {
+  const editarDetalle = (index: number) => {
     const detalle = detalles[index]
     setLoteId(detalle.lote_id.toString())
     setCategoriaId(detalle.categoria_animal_id.toString())
@@ -310,13 +317,24 @@ export default function FaenaDrawer({
     setEditandoDetalle(index)
     setMostrarFormDetalle(true)
     setErroresDetalle([])
-  }, [detalles, setCantidad, setPeso])
+  }
 
-  const eliminarDetalle = useCallback((index: number) => {
-    setDetalles((prev) => prev.filter((_, i) => i !== index))
-  }, [])
+  const eliminarDetalle = (index: number) => {
+    setDetalles(detalles.filter((_, i) => i !== index))
+  }
 
-  const handleSubmit = useCallback(async () => {
+  const limpiarFormularioDetalle = () => {
+    setLoteId("")
+    setCategoriaId("")
+    setCantidad("")
+    setPeso("")
+    setTipoPeso("TOTAL")
+    setMostrarFormDetalle(false)
+    setEditandoDetalle(null)
+    setErroresDetalle([])
+  }
+
+  const handleSubmit = async () => {
     const erroresValidacion = validarFormularioPrincipal()
     if (erroresValidacion.length > 0) {
       setErrores(erroresValidacion)
@@ -336,7 +354,7 @@ export default function FaenaDrawer({
           hora,
           nota: nota || null,
           user_id: usuario?.id,
-          tipo_movimiento_animal_id: Number.parseInt(tipoMovimiento),
+          tipo_movimiento_animal_id: Number.parseInt(tipoMovimiento), // Guardar el tipo de movimiento
           detalles: detalles.map((d) => ({
             categoria_animal_id: d.categoria_animal_id,
             cantidad: d.cantidad,
@@ -352,14 +370,17 @@ export default function FaenaDrawer({
         throw new Error(errorData.error || "Error al guardar actividad")
       }
 
+      // Calcular total de animales
       const totalAnimales = detalles.reduce((sum, detalle) => sum + detalle.cantidad, 0)
 
+      // Mostrar alerta de éxito igual que entrada
       toast({
         title: "✅ Parte Diario Guardado",
         description: `Se registraron ${detalles.length} detalles con ${totalAnimales} animales`,
         duration: 4000,
       })
 
+      // Disparar evento para recargar partes diarios (igual que entrada)
       console.log("Disparando evento reloadPartesDiarios después de guardar actividad")
       window.dispatchEvent(new Event("reloadPartesDiarios"))
 
@@ -375,31 +396,37 @@ export default function FaenaDrawer({
     } finally {
       setLoading(false)
     }
-  }, [establecimientoSeleccionado, actividadSeleccionada, fecha, hora, nota, usuario, tipoMovimiento, detalles, onSuccess])
+  }
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     onClose?.()
+    // Reset form
     setFecha(new Date())
     setHora(new Date().toTimeString().slice(0, 5))
     setNota("")
     setDetalles([])
     limpiarFormularioDetalle()
     setErrores([])
-  }, [onClose, limpiarFormularioDetalle])
+  }
 
-  const handleDateChange = useCallback((date: Date | undefined) => {
-    if (date) {
-      setFecha(date)
-    }
-  }, [])
+  const opcionesLotes = lotes.map((lote) => ({
+    value: lote.id.toString(),
+    label: lote.nombre,
+  }))
+
+  const opcionesCategorias = categoriasExistentes.map((cat) => ({
+    value: cat.categoria_animal_id.toString(),
+    label: cat.nombre_categoria_animal,
+  }))
+
+  const opcionesTiposMovimiento = tiposMovimiento.map((tipo) => ({
+    value: tipo.id.toString(),
+    label: tipo.nombre,
+  }))
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent
-        className="h-full"
-        onInteractOutside={handleInteractOutside}
-        onPointerDownOutside={handlePointerDownOutside}
-      >
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
           <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Users className="w-6 h-6 text-green-600" />
@@ -419,7 +446,7 @@ export default function FaenaDrawer({
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Fecha *</Label>
                     <div className="mt-1">
-                      <CustomDatePicker date={fecha} onDateChange={handleDateChange} placeholder="Seleccionar fecha" />
+                      <CustomDatePicker date={fecha} onDateChange={setFecha} placeholder="Seleccionar fecha" />
                     </div>
                   </div>
                   <div>

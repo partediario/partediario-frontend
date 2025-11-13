@@ -51,26 +51,12 @@ The design prioritizes a mobile-first, responsive approach, ensuring optimal dis
 - Responsive gaps: `gap-2` on mobile, `md:gap-4` on desktop
 - Stock summary and movement history tables already had proper responsive patterns (grid-cols-1/2/5, overflow-x-auto)
 
-**Drawer Performance Optimization for Mobile** (November 2025):
-- **TanStack Query (React Query)**: Global cache (5min staleTime, 10min gcTime) for lotes, categorías, insumos to prevent redundant API fetches
-  - `QueryClientProvider` in app/layout.tsx wrapping all providers
-  - Reusable hooks: `useLotesQuery`, `useCategoriasQuery`, `useInsumosQuery` with automatic caching and de-duplication
-- **useKeyboardAwareDrawer v2**: Prevents accidental drawer closure when mobile keyboard appears
-  - Uses `onInteractOutside`/`onPointerDownOutside` from Radix Drawer primitives (no global touchmove intercepts)
-  - Tracks focused inputs (INPUT, TEXTAREA, contenteditable) and blocks outside-click dismiss
-- **useDebounceInput**: 300ms debounce for numeric inputs (cantidad, peso) to reduce validation lag during typing
-  - Returns `{ value, debouncedValue, handleChange, reset }` pattern
-  - Validations run on `debouncedValue` to avoid blocking UI
-- **React optimization patterns**: useMemo for filtered lists, useCallback for event handlers with correct dependencies
-- **Template drawer**: FaenaDrawer fully optimized as reference implementation for 20+ Actividades/Informes drawers
-
 Key UI elements like cards and data grids adapt fluidly using Tailwind breakpoints. Branding includes a high-resolution "PDP" favicon.
 
 ## External Dependencies
 
 - **Supabase:** Authentication and PostgreSQL database services.
 - **Neon Database:** Serverless PostgreSQL integration.
-- **TanStack Query (React Query):** Client-side data caching, background refetching, and request de-duplication for optimized performance.
 - **shadcn/ui & Radix UI:** UI component libraries for accessible and styled components.
 - **Tailwind CSS:** Utility-first CSS framework for styling.
 - **Lucide React:** Icon library.

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,9 +14,6 @@ import { useCurrentEstablishment } from "@/hooks/use-current-establishment"
 import { useUser } from "@/contexts/user-context"
 import { useEstablishment } from "@/contexts/establishment-context"
 import { toast } from "@/hooks/use-toast"
-import { useInsumosQuery } from "@/hooks/queries/use-insumos-query"
-import { useKeyboardAwareDrawer } from "@/hooks/drawer-optimization/use-keyboard-aware-drawer-v2"
-import { useDebounceInput } from "@/hooks/drawer-optimization/use-debounce-input"
 
 interface TipoActividad {
   id: number
@@ -55,19 +52,26 @@ export default function ActividadInsumosDrawer({
   actividadSeleccionada = null,
 }: ActividadInsumosDrawerProps) {
   const [loading, setLoading] = useState(false)
+  const [insumosExistentes, setInsumosExistentes] = useState<InsumoExistente[]>([])
+  const [loadingInsumos, setLoadingInsumos] = useState(false)
 
+  // Formulario principal
   const [fecha, setFecha] = useState<Date>(new Date())
   const [hora, setHora] = useState<string>(new Date().toTimeString().slice(0, 5))
   const [nota, setNota] = useState<string>("")
 
+  // Formulario de detalle
   const [mostrarFormDetalle, setMostrarFormDetalle] = useState(false)
   const [editandoDetalle, setEditandoDetalle] = useState<number | null>(null)
   const [insumoId, setInsumoId] = useState<string>("")
+  const [cantidad, setCantidad] = useState<string>("")
   const [unidadMedidaActual, setUnidadMedidaActual] = useState<string>("")
   const [stockDisponible, setStockDisponible] = useState<number>(0)
 
+  // Detalles agregados
   const [detalles, setDetalles] = useState<DetalleInsumo[]>([])
 
+  // Errores
   const [errores, setErrores] = useState<string[]>([])
   const [erroresDetalle, setErroresDetalle] = useState<string[]>([])
 
@@ -75,24 +79,17 @@ export default function ActividadInsumosDrawer({
   const { usuario, loading: loadingUsuario } = useUser()
   const { establecimientoSeleccionado, empresaSeleccionada } = useEstablishment()
 
-  const { data: insumosExistentes = [], isLoading: loadingInsumos } = useInsumosQuery(
-    establecimientoSeleccionado ? Number(establecimientoSeleccionado) : null
-  )
+  // Obtener nombre completo del usuario
+  const nombreCompleto = usuario ? `${usuario.nombres} ${usuario.apellidos}`.trim() : "Cargando..."
 
-  const {
-    value: cantidad,
-    debouncedValue: cantidadDebounced,
-    handleChange: setCantidad,
-    reset: resetCantidad,
-  } = useDebounceInput("")
+  // Cargar datos cuando se abre el drawer
+  useEffect(() => {
+    if (isOpen && establecimientoSeleccionado) {
+      fetchInsumosExistentes()
+    }
+  }, [isOpen, establecimientoSeleccionado])
 
-  const { handleInteractOutside, handlePointerDownOutside } = useKeyboardAwareDrawer({ isOpen })
-
-  const nombreCompleto = useMemo(
-    () => (usuario ? `${usuario.nombres} ${usuario.apellidos}`.trim() : "Cargando..."),
-    [usuario]
-  )
-
+  // Limpiar formulario al abrir
   useEffect(() => {
     if (isOpen) {
       setFecha(new Date())
@@ -104,6 +101,7 @@ export default function ActividadInsumosDrawer({
     }
   }, [isOpen])
 
+  // Actualizar unidad de medida y stock cuando cambia el insumo seleccionado
   useEffect(() => {
     if (insumoId) {
       const insumoSeleccionado = insumosExistentes.find((i) => i.insumo_id === insumoId)
@@ -117,7 +115,29 @@ export default function ActividadInsumosDrawer({
     }
   }, [insumoId, insumosExistentes])
 
-  const validarFormularioPrincipal = useCallback((): string[] => {
+  const fetchInsumosExistentes = async () => {
+    if (!establecimientoSeleccionado) return
+
+    setLoadingInsumos(true)
+    try {
+      const response = await fetch(`/api/insumos-existentes?establecimiento_id=${establecimientoSeleccionado}`)
+      if (!response.ok) throw new Error("Error al cargar insumos")
+
+      const data = await response.json()
+      setInsumosExistentes(data.insumos || [])
+    } catch (error) {
+      console.error("Error fetching insumos existentes:", error)
+      toast({
+        title: "❌ Error",
+        description: "Error al cargar insumos disponibles",
+        variant: "destructive",
+      })
+    } finally {
+      setLoadingInsumos(false)
+    }
+  }
+
+  const validarFormularioPrincipal = (): string[] => {
     const errores: string[] = []
 
     if (!actividadSeleccionada) errores.push("Debe seleccionar un tipo de actividad")
@@ -126,20 +146,23 @@ export default function ActividadInsumosDrawer({
     if (detalles.length === 0) errores.push("Debe agregar al menos un detalle")
 
     return errores
-  }, [actividadSeleccionada, fecha, hora, detalles])
+  }
 
-  const validarDetalle = useCallback((): string[] => {
+  const validarDetalle = (): string[] => {
     const errores: string[] = []
 
     if (!insumoId) errores.push("Debe seleccionar un insumo")
     if (!cantidad || Number.parseInt(cantidad) <= 0) errores.push("La cantidad debe ser mayor a 0")
 
+    // Calcular cantidad ya usada del mismo insumo (excluyendo el que se está editando)
     const cantidadYaUsada = detalles
       .filter((d, index) => d.insumo_id.toString() === insumoId && index !== editandoDetalle)
       .reduce((sum, d) => sum + d.cantidad, 0)
 
+    // Calcular stock disponible real considerando lo ya usado
     const stockDisponibleReal = stockDisponible - cantidadYaUsada
 
+    // Validar cantidad ingresada
     const cantidadNumerica = Number.parseInt(cantidad) || 0
     if (cantidadNumerica > stockDisponibleReal) {
       if (cantidadYaUsada > 0) {
@@ -152,9 +175,9 @@ export default function ActividadInsumosDrawer({
     }
 
     return errores
-  }, [insumoId, cantidad, detalles, editandoDetalle, stockDisponible])
+  }
 
-  const agregarDetalle = useCallback(() => {
+  const agregarDetalle = () => {
     const erroresValidacion = validarDetalle()
     if (erroresValidacion.length > 0) {
       setErroresDetalle(erroresValidacion)
@@ -183,32 +206,32 @@ export default function ActividadInsumosDrawer({
     }
 
     limpiarFormularioDetalle()
-  }, [validarDetalle, insumosExistentes, insumoId, cantidad, editandoDetalle, detalles])
+  }
 
-  const editarDetalle = useCallback((index: number) => {
+  const editarDetalle = (index: number) => {
     const detalle = detalles[index]
     setInsumoId(detalle.insumo_id.toString())
     setCantidad(detalle.cantidad.toString())
     setEditandoDetalle(index)
     setMostrarFormDetalle(true)
     setErroresDetalle([])
-  }, [detalles, setCantidad])
+  }
 
-  const eliminarDetalle = useCallback((index: number) => {
+  const eliminarDetalle = (index: number) => {
     setDetalles(detalles.filter((_, i) => i !== index))
-  }, [detalles])
+  }
 
-  const limpiarFormularioDetalle = useCallback(() => {
+  const limpiarFormularioDetalle = () => {
     setInsumoId("")
-    resetCantidad()
+    setCantidad("")
     setUnidadMedidaActual("")
     setStockDisponible(0)
     setMostrarFormDetalle(false)
     setEditandoDetalle(null)
     setErroresDetalle([])
-  }, [resetCantidad])
+  }
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     const erroresValidacion = validarFormularioPrincipal()
     if (erroresValidacion.length > 0) {
       setErrores(erroresValidacion)
@@ -239,12 +262,14 @@ export default function ActividadInsumosDrawer({
         throw new Error(errorData.error || "Error al guardar actividad")
       }
 
+      // Mostrar alerta de éxito
       toast({
         title: "✅ Parte Diario Guardado",
         description: `Se registraron ${detalles.length} insumos utilizados`,
         duration: 4000,
       })
 
+      // Disparar evento para recargar partes diarios
       console.log("Disparando evento reloadPartesDiarios después de guardar actividad de insumos")
       window.dispatchEvent(new Event("reloadPartesDiarios"))
 
@@ -260,45 +285,34 @@ export default function ActividadInsumosDrawer({
     } finally {
       setLoading(false)
     }
-  }, [validarFormularioPrincipal, establecimientoSeleccionado, actividadSeleccionada, fecha, hora, nota, usuario, detalles, onSuccess])
+  }
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     onClose?.()
+    // Reset form
     setFecha(new Date())
     setHora(new Date().toTimeString().slice(0, 5))
     setNota("")
     setDetalles([])
     limpiarFormularioDetalle()
     setErrores([])
-  }, [onClose, limpiarFormularioDetalle])
+  }
 
-  const opcionesInsumos = useMemo(() => 
-    insumosExistentes.map((insumo) => ({
-      value: insumo.insumo_id,
-      label: insumo.nombre_insumo,
-    })),
-    [insumosExistentes]
-  )
+  const opcionesInsumos = insumosExistentes.map((insumo) => ({
+    value: insumo.insumo_id,
+    label: insumo.nombre_insumo,
+  }))
 
-  const cantidadYaUsadaEnFormulario = useMemo(() =>
-    detalles
-      .filter((d, index) => d.insumo_id.toString() === insumoId && index !== editandoDetalle)
-      .reduce((sum, d) => sum + d.cantidad, 0),
-    [detalles, insumoId, editandoDetalle]
-  )
+  // Calcular stock disponible real para mostrar
+  const cantidadYaUsadaEnFormulario = detalles
+    .filter((d, index) => d.insumo_id.toString() === insumoId && index !== editandoDetalle)
+    .reduce((sum, d) => sum + d.cantidad, 0)
 
-  const stockDisponibleReal = useMemo(
-    () => stockDisponible - cantidadYaUsadaEnFormulario,
-    [stockDisponible, cantidadYaUsadaEnFormulario]
-  )
+  const stockDisponibleReal = stockDisponible - cantidadYaUsadaEnFormulario
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose} direction="right">
-      <DrawerContent 
-        className="h-full"
-        onInteractOutside={handleInteractOutside}
-        onPointerDownOutside={handlePointerDownOutside}
-      >
+      <DrawerContent className="h-full">
         <DrawerHeader className="flex items-center justify-between border-b pb-4">
           <DrawerTitle className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Package className="w-6 h-6 text-blue-600" />
@@ -324,6 +338,7 @@ export default function ActividadInsumosDrawer({
             </div>
           )}
 
+          {/* Datos Generales */}
           <div className="space-y-6">
             <div>
               <h3 className="text-base md:text-lg font-semibold mb-4">Datos Generales</h3>
@@ -362,6 +377,7 @@ export default function ActividadInsumosDrawer({
               </div>
             </div>
 
+            {/* Detalles */}
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base md:text-lg font-semibold">Detalles *</h3>
@@ -375,8 +391,10 @@ export default function ActividadInsumosDrawer({
                 </Button>
               </div>
 
+              {/* Formulario de detalle expandido */}
               {mostrarFormDetalle && (
                 <div className="bg-gray-50 border rounded-lg p-6 mb-4">
+                  {/* Errores de detalle */}
                   {erroresDetalle.length > 0 && (
                     <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
                       <div className="flex items-center gap-2 text-red-800 font-medium mb-1">
@@ -443,7 +461,9 @@ export default function ActividadInsumosDrawer({
                 </div>
               )}
 
+              {/* Tabla de detalles */}
               <div className="border rounded-lg overflow-hidden overflow-x-auto">
+                {/* Headers de la tabla */}
                 <div className="bg-gray-50 border-b">
                   <div className="grid grid-cols-10 gap-4 p-4 text-sm font-medium text-gray-700">
                     <div className="col-span-4">Insumo</div>
@@ -453,6 +473,7 @@ export default function ActividadInsumosDrawer({
                   </div>
                 </div>
 
+                {/* Contenido de la tabla */}
                 <div className="min-h-[100px]">
                   {detalles.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">No hay detalles agregados</div>
@@ -489,6 +510,7 @@ export default function ActividadInsumosDrawer({
               </div>
             </div>
 
+            {/* Nota */}
             <div>
               <Label htmlFor="nota">Nota</Label>
               <Textarea
@@ -502,6 +524,7 @@ export default function ActividadInsumosDrawer({
           </div>
         </div>
 
+        {/* Footer */}
         <div className="border-t p-4 flex justify-end gap-3">
           <Button variant="outline" onClick={handleClose} disabled={loading}>
             Cancelar
