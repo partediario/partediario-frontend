@@ -51,6 +51,15 @@ The design prioritizes a mobile-first, responsive approach, ensuring optimal dis
 - Responsive gaps: `gap-2` on mobile, `md:gap-4` on desktop
 - Stock summary and movement history tables already had proper responsive patterns (grid-cols-1/2/5, overflow-x-auto)
 
+**Partes Diarios Section - Mobile Filter Drawer** (November 13, 2025):
+- **SearchAndFilters** component redesigned for mobile with slide-in Drawer:
+  - Mobile (<md): Filters (búsqueda, tipo, fecha) hidden behind "Filtros" button that opens a Drawer sliding from bottom
+  - Drawer features: DrawerClose button (X icon), controlled state with `onOpenChange`, responsive narrow sizing (384px on md+)
+  - Active filter counter badge displayed on "Filtros" button when filters are applied
+  - Desktop (≥md): Maintains original horizontal layout with all filters visible inline
+- Drawer dismissal: X button, overlay click, or ESC key
+- Ensures consistent UX across breakpoints while maximizing mobile screen space
+
 Key UI elements like cards and data grids adapt fluidly using Tailwind breakpoints. Branding includes a high-resolution "PDP" favicon.
 
 ## External Dependencies
