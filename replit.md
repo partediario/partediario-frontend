@@ -61,6 +61,21 @@ The design prioritizes a mobile-first, responsive approach, ensuring optimal dis
   - No inline expanded filters on desktop; unified dropdown experience across all breakpoints
 - Ensures consistent filter UX matching Movimientos Recientes pattern throughout the application
 
+**Full-Width Mobile Layout** (November 14, 2025):
+- All 8 primary section views optimized for maximum screen real estate on mobile devices
+- **Pattern**: `px-0` on mobile removes horizontal padding, `md:p-*` restores padding on desktop
+- **Applied sections**:
+  - Actividades: `px-0 py-4 md:px-6 md:py-8`
+  - Clima: `px-0 py-4 md:p-6`
+  - Maquinarias: `px-0 py-6 md:p-6`
+  - Movimientos: Header with `px-0 py-4 md:px-6`, content with `px-0 py-6 md:p-6`
+  - Potreros: `px-0 py-4 md:p-4`
+  - Insumos: `px-0 py-4 md:p-4`
+  - Reportes: `px-0 py-6 md:p-6`
+  - Nueva Configuración: `px-0 py-6 md:p-6`
+- Vertical padding maintained for proper spacing, desktop aesthetics preserved
+- Consistent with Informes/Partes Diarios section layout pattern
+
 Key UI elements like cards and data grids adapt fluidly using Tailwind breakpoints. Branding includes a high-resolution "PDP" favicon.
 
 ## External Dependencies
