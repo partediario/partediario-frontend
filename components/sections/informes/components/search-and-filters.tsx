@@ -64,9 +64,9 @@ export default function SearchAndFilters({
         </div>
 
         {/* Contenedor de botones Filtros y Recargar */}
-        <div className="flex flex-col md:flex-row gap-3">
+        <div className="flex flex-row gap-3">
           {/* Botón Filtros - Visible en todos los breakpoints */}
-          <div className="relative w-full md:w-auto">
+          <div className="relative">
             <Button
               variant="outline"
               className={`flex items-center gap-2 ${filtrosActivos > 0 ? "bg-blue-50 border-blue-300 text-blue-700" : ""}`}
@@ -88,7 +88,7 @@ export default function SearchAndFilters({
                 <div className="fixed inset-0 z-40" onClick={() => setShowFilterMenu(false)} />
                 
                 {/* Menú de filtros */}
-                <div className="absolute top-[calc(100%+0.75rem)] left-1/2 -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-[min(22rem,calc(100vw-2rem))] md:w-80">
+                <div className="fixed top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 md:absolute md:top-[calc(100%+0.75rem)] md:translate-y-0 md:left-auto md:right-0 md:translate-x-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-[min(22rem,calc(100vw-2rem))] md:w-80">
                   <div className="p-3 md:p-4 space-y-3 md:space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-xs md:text-sm">Filtros Combinados</h4>
