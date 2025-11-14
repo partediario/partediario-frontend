@@ -23,7 +23,7 @@ export default function ReportesView() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] p-6">
+    <div className="min-h-screen bg-[#F8F9FA] px-0 py-6 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">

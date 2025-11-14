@@ -944,7 +944,7 @@ export default function ActividadesView() {
       </div>
 
       {/* Contenido principal - completamente fluido */}
-      <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 2xl:px-16 py-4 sm:py-6 lg:py-8">
+      <div className="w-full px-0 py-4 md:px-6 md:py-8">
         {/* Panel de Resumen (KPI) - responsivo */}
         <div className="w-full mb-6 sm:mb-8">
           <Card

@@ -391,7 +391,7 @@ export default function PotrerosView() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 px-0 py-4 md:p-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-4">
             <div className="bg-green-100 p-3 rounded-full">

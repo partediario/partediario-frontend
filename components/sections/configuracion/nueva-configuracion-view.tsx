@@ -97,7 +97,7 @@ export function NuevaConfiguracionView() {
           </div>
         )}
         
-        <div className="p-6">{renderContent()}</div>
+        <div className="px-0 py-6 md:p-6">{renderContent()}</div>
       </div>
     </div>
   )
