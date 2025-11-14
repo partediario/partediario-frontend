@@ -50,7 +50,7 @@ export default function InformesView() {
         />
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="px-0 py-6 md:p-6 space-y-6">
         {/* KPIs ahora son parte del contenido scrolleable */}
         <KpisDinamicos establecimientoId={establecimientoSeleccionado} />
 

@@ -120,7 +120,7 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
 
   if (!establecimientoId) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200">
+      <div className="bg-white rounded-none md:rounded-lg border border-gray-200">
         <div className="px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-4 border-b bg-white">
           <div className="flex items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-bold">Partes Diarios</h2>
@@ -184,7 +184,7 @@ export default function RegistrosList({ establecimientoId: propEstablecimientoId
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
+    <div className="bg-white rounded-none md:rounded-lg border border-gray-200">
       <div className="px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-2 mb-3 sm:mb-4">
           <h2 className="text-xl sm:text-2xl font-bold">Partes Diarios</h2>
